@@ -1,0 +1,29 @@
+{
+  "name": "silence-among-us",
+  "version": "1.0.0",
+  "description": "Discord channel manager for Among Us",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "spectral": "spectral lint schemas/api.yaml"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/tanndev/silence-among-us.git"
+  },
+  "keywords": [
+    "discord",
+    "bot",
+    "among us",
+    "automute"
+  ],
+  "author": "James Tanner <james.tanner@tanndev.com>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/tanndev/silence-among-us/issues"
+  },
+  "homepage": "https://github.com/tanndev/silence-among-us#readme",
+  "devDependencies": {
+    "@stoplight/spectral": "^5.5.0"
+  }
+}
