@@ -35,7 +35,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "lobby.yaml#/"
+                $ref: "#/components/schemas/Lobby"
         "404":
           $ref: "#/components/responses/404NotFoundError"
         "4XX":
@@ -51,7 +51,7 @@ components:
       name: lobbyId
       required: true
       schema:
-        $ref: "lobby.yaml#/properties/id"
+        $ref: "#/components/schemas/Lobby/properties/id"
 
   responses:
     404NotFoundError:
@@ -60,3 +60,11 @@ components:
       description: Something was wrong with the request.
     5xxInternalError:
       description: Something went wrong in the server.
+
+  schemas:
+    Lobby:
+      $ref: "lobby.yaml"
+    Player:
+      $ref: "player.yaml"
+    Discord:
+      $ref: "discord.yaml"
