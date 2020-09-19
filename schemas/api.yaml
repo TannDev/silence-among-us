@@ -1,0 +1,62 @@
+openapi: 3.0.0
+
+info:
+  version:
+    $ref: "../package.json#/version"
+  title: Silence Among Us
+  description: |
+    Discord channel manager for Among Us.
+    See the [README](https://github.com/tanndev/silence-among-us#silence-among-us) for more information.
+
+  contact:
+    name: James Tanner
+    url: https://github.com/tanndev/silence-among-us
+
+servers:
+  - description: Current
+    url: /api
+
+tags:
+  - name: Lobby
+
+paths:
+  /lobby/{lobbyId}:
+    parameters:
+      - $ref: "#/components/parameters/lobbyId"
+    get:
+      operationId: getLobbyInformation
+      summary: Get information about a lobby.
+      tags: [Lobby]
+      description: |
+        Returns information about the lobby currently being tracked.
+      responses:
+        "200":
+          description: The lobby information
+          content:
+            application/json:
+              schema:
+                $ref: "lobby.yaml#/"
+        "404":
+          $ref: "#/components/responses/404NotFoundError"
+        "4XX":
+          $ref: "#/components/responses/4xxClientError"
+        "5XX":
+          $ref: "#/components/responses/5xxInternalError"
+
+components:
+  parameters:
+    lobbyId:
+      description: Unique ID of the lobby
+      in: path
+      name: lobbyId
+      required: true
+      schema:
+        $ref: "lobby.yaml#/properties/id"
+
+  responses:
+    404NotFoundError:
+      description: The requested resource wasn't found.
+    4xxClientError:
+      description: Something was wrong with the request.
+    5xxInternalError:
+      description: Something went wrong in the server.

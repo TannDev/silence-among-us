@@ -1,0 +1,41 @@
+type: object
+description: |
+  Information about a single Discord channel being tracked as a game, along with game-state information for
+  automatically muting/unmuting players.
+required: [id, state, players, discord]
+additionalProperties: false
+properties:
+  id:
+    readOnly: true
+    type: string
+    description: Unique ID of the lobby.
+  roomCode:
+    type: string
+    description: (Optional) The room code of the game, for players to join.
+  roomRegion:
+    type: string
+    description: (Optional) The region where the game is hosted.
+  state:
+    type: string
+    description: |
+      The current state of the lobby, as one of the following values:
+      - `intermission`: Between games
+        - Everyone can talk.
+        - New players join as `living`.
+      - `working`: In game, while the crew are performing tasks
+        - Players with `status:living` are muted and deafened.
+        - Players with `status:dead` are unmuted and can talk to each other.
+        - Other players are muted/unmuted according to settings.
+        - New players join as `waiting`.
+      - `meeting`: In game, during a meeting
+        - Players with `status:living` can talk.
+        - Players with `status:dead` are muted.
+        - Other players are muted/unmuted according to settings.
+    enum: [intermission, working, meeting]
+  players:
+    type: array
+    description: List of all players currently (or recently) in the channel.
+    items:
+      $ref: "player.yaml#"
+  discord:
+    $ref: "discord.yaml#"
