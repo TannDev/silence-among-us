@@ -1,24 +1,27 @@
-type: object
-description: Information about a player, their current state in game, and their voice channel.
-required: [status, discordId]
-additionalProperties: false
-properties:
-  status:
-    type: string
-    description: |
-      The current status of the player, with one of the following values:
-      - `living`: Alive in-game, or in intermission.
-      - `dead`: Dead in-game. (Will change to `living` at next intermission.)
-      - `waiting`: Joined while a game was in progress. (Will change to `living` at next intermission.)
-      - `spectating`: Not playing the game, but still in the voice channel.
-    enum: [living, dead, waiting, spectating]
-  discordId:
-    type: string
-    description: The player's unique ID in Discord
-  amongUsName:
-    type: string
-    description: (Optional) The player's name in-game.
-  amongUsColor:
-    type: string
-    description: (Optional) the player's color in-game.
-    enum: [Red, Blue, Green, Pink, Orange, Yellow, Black, White, Purple, Brown, Cyan, Lime]
+$schema: "http://json-schema.org/draft‑wright‑json‑schema‑00/schema#"
+$id: "https://github.com/tanndev/silence-among-us/blob/main/schemas/player.yaml"
+Player:
+  type: object
+  description: Information about a player, their current state in game, and their voice channel.
+  required: [status, discordId]
+  additionalProperties: false
+  properties:
+    status:
+      type: string
+      description: |
+        The current status of the player, with one of the following values:
+        - `living`: Alive in-game, or in intermission.
+        - `dead`: Dead in-game. (Will change to `living` at next intermission.)
+        - `waiting`: Joined while a game was in progress. (Will change to `living` at next intermission.)
+        - `spectating`: Not playing the game, but still in the voice channel.
+      enum: [living, dead, waiting, spectating]
+    discordId:
+      type: string
+      description: The player's unique ID in Discord
+    amongUsName:
+      type: string
+      description: (Optional) The player's name in-game.
+    amongUsColor:
+      type: string
+      description: (Optional) the player's color in-game.
+      enum: [Red, Blue, Green, Pink, Orange, Yellow, Black, White, Purple, Brown, Cyan, Lime]

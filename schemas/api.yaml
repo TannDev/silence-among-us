@@ -20,9 +20,9 @@ tags:
   - name: Lobby
 
 paths:
-  /lobby/{lobbyId}:
+  /lobby/{channelId}:
     parameters:
-      - $ref: "#/components/parameters/lobbyId"
+      - $ref: "#/components/parameters/channelId"
     get:
       operationId: getLobbyInformation
       summary: Get information about a lobby.
@@ -45,13 +45,13 @@ paths:
 
 components:
   parameters:
-    lobbyId:
-      description: Unique ID of the lobby
+    channelId:
+      description: Unique ID of the Discord channel and related lobby.
       in: path
-      name: lobbyId
+      name: channelId
       required: true
       schema:
-        $ref: "#/components/schemas/Lobby/properties/id"
+        $ref: "#/components/schemas/Lobby/properties/channelId"
 
   responses:
     404NotFoundError:
@@ -63,8 +63,4 @@ components:
 
   schemas:
     Lobby:
-      $ref: "lobby.yaml"
-    Player:
-      $ref: "player.yaml"
-    Discord:
-      $ref: "discord.yaml"
+      $ref: "lobby.yaml#/Lobby"
