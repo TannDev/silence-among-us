@@ -2,6 +2,10 @@
 *.log
 npm-debug.log*
 
+# Secrets
+.env
+*secret*
+
 # Dependency directories
 node_modules/
 
