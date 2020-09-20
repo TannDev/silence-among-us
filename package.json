@@ -1,6 +1,6 @@
 {
   "name": "silence-among-us",
-  "version": "1.0.0",
+  "version": "1.0.0-alpha.1",
   "description": "Discord channel manager for Among Us",
   "main": "index.js",
   "scripts": {

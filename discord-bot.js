@@ -1,6 +1,8 @@
 require("dotenv").config();
 const Discord = require('discord.js');
 
+const executeCommandMessage = require('./bot-commands');
+
 const client = new Discord.Client({
     token: process.env.DISCORD_TOKEN,
     retryLimit: 3,
@@ -14,7 +16,7 @@ const client = new Discord.Client({
 module.exports = client;
 
 client.on('ready', () => {
-    console.log(`Logged in as ${client.user.tag}!`);
+    console.log(`Discord bot logged in as ${client.user.tag}`);
 });
 
 client.on('error', (error) => {
@@ -36,7 +38,6 @@ client.on('rateLimit', (rateLimitInfo) => {
 });
 
 client.on('voiceStateUpdate', (oldState, newState) => {
-    logItem('Voice state update', { oldState, newState });
     const joinExample = {
         "oldState": {
             "guild": "174316320949534720",
@@ -86,9 +87,12 @@ client.on('voiceStateUpdate', (oldState, newState) => {
 });
 
 
-
 client.on('message', (message) => {
-    processMessage(message).catch(error => console.error('Bot Error:', error));
+    executeCommandMessage(message)
+        .catch(error => {
+            console.error('Bot Error:', error);
+            message.reply("Something went wrong! :'(");
+        });
 });
 
 client.on('messageUpdate', (oldMessage, newMessage) => {
@@ -100,6 +104,7 @@ client.on('presenceUpdate', (oldPresence, newPresence) => {
     // logItem('newPresence', newPresence);
 });
 
+// Connect to Discord.
 console.log('Launching Discord bot...');
 client.login()
     .catch(error => {
@@ -108,48 +113,7 @@ client.login()
         process.exit(1);
     });
 
-async function processMessage(message){
-    const commandPattern = /^!s?au\s+(?<command>[^\s]+)(?:\s+(?<arguments>.+))?$/i;
-    // Look for commands.
-    const parsed = message.content.match(commandPattern);
-    if (!parsed) return;
-    const {groups: {command, arguments}} = parsed;
-
-    // Erase commands
-    message.delete();
-
-    // TODO Find the lobby that the player is in.
-
-    // Provide help.
-    if (command.match(/^(?:help|h)$/i)) {
-        // TODO Use a proper command handler, rather than coding this separately.
-        const reply = [
-            'You can use any of the following commands: (Use `!sau [command]`)',
-            '`help` | `h`: Display this help text.',
-            '`game` | `g`: _Coming soon_.'
-        ].join('\n\t- ')
-        await message.reply(reply);
-        return;
-    }
-
-    // Accept hellos.
-    if (command.match(/^(?:hi|hello|he+y+)$/i)) {
-        await message.reply('Hello!')
-        return;
-    }
-
-    // Accept game commands.
-    if (command.match(/^(?:game|g)$/i)){
-        // TODO Follow instructions.
-        await message.reply("I recognize the `game` command, but I can't do anything yet.");
-        return;
-    }
-
-    // If the command wasn't handled by now, respond as unrecognized.
-    await message.reply(`Sorry, I don't recognize that command (\`${command}\`. Try \`!sau help\`.`)
-}
-
-// Helper function TODO Remove this
-function logItem(name, value) {
-    console.log(`${name}:\n${JSON.stringify(value, null, 2)}`);
-}
+// If Node is about to exit, try to log out.
+process.on('exit', () => {
+    require('deasync')(client.destroy());
+});
