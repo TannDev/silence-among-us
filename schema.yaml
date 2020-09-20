@@ -1,0 +1,146 @@
+openapi: 3.0.0
+
+info:
+  version:
+    $ref: "package.json#/version"
+  title: Silence Among Us
+  description: |
+    Discord channel manager for Among Us.
+    See the [README](https://github.com/tanndev/silence-among-us#silence-among-us) for more information.
+
+  contact:
+    name: James Tanner
+    url: https://github.com/tanndev/silence-among-us
+
+servers:
+  - description: Current
+    url: /api
+
+tags:
+  - name: Lobby
+
+paths:
+  /lobby/{channelId}:
+    parameters:
+      - $ref: "#/components/parameters/channelId"
+    get:
+      operationId: getLobbyInformation
+      summary: Get information about a lobby.
+      tags: [Lobby]
+      description: |
+        Returns information about the lobby currently being tracked.
+      responses:
+        "200":
+          description: The lobby information
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Lobby"
+        "404":
+          $ref: "#/components/responses/404NotFoundError"
+        "4XX":
+          $ref: "#/components/responses/4xxClientError"
+        "5XX":
+          $ref: "#/components/responses/5xxInternalError"
+
+components:
+  parameters:
+    channelId:
+      description: Unique ID of the Discord channel and related lobby.
+      in: path
+      name: channelId
+      required: true
+      schema:
+        $ref: "#/components/schemas/Lobby/properties/channelId"
+
+  responses:
+    404NotFoundError:
+      description: The requested resource wasn't found.
+    4xxClientError:
+      description: Something was wrong with the request.
+    5xxInternalError:
+      description: Something went wrong in the server.
+
+  schemas:
+    Lobby:
+      type: object
+      description: |
+        Information about a single Discord channel being tracked as a game, along with game-state information for
+        automatically muting/unmuting players.
+
+        A lobby is built around a single Discord voice channel, and assumes that anyone joining that channel is
+        playing that game. So the `channelId` is also used as a lobby id.
+      required: [channelId, state, players, discord]
+      additionalProperties: false
+      properties:
+        channelId:
+          type: string
+          description: The id of the Discord voice channel being used for the game.
+        state:
+          type: string
+          description: |
+            The current state of the lobby, as one of the following values:
+            - `intermission`: Between games
+              - Everyone can talk.
+              - New players join as `living`.
+            - `working`: In game, while the crew are performing tasks
+              - Players with `status:living` are muted and deafened.
+              - Players with `status:dead` are unmuted and can talk to each other.
+              - Other players are muted/unmuted according to settings.
+              - New players join as `waiting`.
+            - `meeting`: In game, during a meeting
+              - Players with `status:living` can talk.
+              - Players with `status:dead` are muted.
+              - Other players are muted/unmuted according to settings.
+          enum: [intermission, working, meeting]
+        players:
+          type: array
+          description: List of all players currently (or recently) in the channel.
+          items:
+            $ref: "#/components/schemas/Player"
+        room:
+          $ref: "#/components/schemas/Room"
+
+    Player:
+      type: object
+      description: Information about a player, their current state in game, and their voice channel.
+      required: [status, discordId]
+      additionalProperties: false
+      properties:
+        status:
+          type: string
+          description: |
+            The current status of the player, with one of the following values:
+            - `living`: Alive in-game, or in intermission.
+            - `dead`: Dead in-game. (Will change to `living` at next intermission.)
+            - `waiting`: Joined while a game was in progress. (Will change to `living` at next intermission.)
+            - `spectating`: Not playing the game, but still in the voice channel.
+          enum: [living, dead, waiting, spectating]
+        discordId:
+          type: string
+          description: The player's unique ID in Discord
+        amongUsName:
+          type: string
+          description: (Optional) The player's name in-game.
+        amongUsColor:
+          type: string
+          description: (Optional) the player's color in-game.
+          enum: [Red, Blue, Green, Pink, Orange, Yellow, Black, White, Purple, Brown, Cyan, Lime]
+
+    Room:
+      type: object
+      description: (Optional) Game room in Among Us
+      required: [code, region]
+      additionalProperties: false
+      properties:
+        code:
+          type: string
+          description: The room code of the game, for players to join.
+        region:
+          type: string
+          description: The region where the game is hosted.
+          default: North America
+          enum:
+            - North America
+            - Europe
+            - Asia
