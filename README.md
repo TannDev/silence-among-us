@@ -6,6 +6,18 @@ This is a work-in-progress and not ready testing yet.
 ## Goals
 The following documentation represents that current goal of the project. Each of these features may or may not be implemented yet.
 
+### Bot Commands
+These are the current plans for bot commands:
+- `help|h|?`: Print some help text.
+- `join`: Start a new lobby using your current voice channel.
+- `leave`: End your lobby.
+- `room|r [room code] [region]`: Get (or set) the room information of your lobby.
+- `intermission|i`: Mark your lobby as being in intermission. (End a game.)
+- `working|work|w`: Mark your lobby as working on tasks. (Start a game, or end a meeting.)
+- `meeting|meet|m`: Mark your lobby as being in a meeting.
+- `dead|kill|d|k <@mentions...>`: Mark the at-mentioned players as being dead.
+- `revive <@mentions...>`: Mark any at-mentioned players as being alive. (For fixing mistakes with `dead`.)
+
 ### General Structure
 The central data model of the app is a `Lobby`. This consists of two main elements: a Discord channel and a game state. These are inextricably linked, as multiple games can't happen in the same channel (without enormous confusion), and the bot shouldn't mute/unmute people without a game in session.
 
