@@ -4,7 +4,8 @@
   "description": "Discord channel manager for Among Us",
   "main": "index.js",
   "scripts": {
-    "start": "node server/server.js",
+    "start": "node server.js",
+    "bot": "node discord-bot.js",
     "test": "echo \"Error: no test specified\" && exit 1",
     "spectral": "spectral lint schemas/api.yaml"
   },
@@ -24,12 +25,19 @@
     "url": "https://github.com/tanndev/silence-among-us/issues"
   },
   "homepage": "https://github.com/tanndev/silence-among-us#readme",
+  "engines": {
+    "node": ">=12.0.0"
+  },
   "devDependencies": {
     "@stoplight/spectral": "^5.5.0"
   },
   "dependencies": {
     "@apidevtools/json-schema-ref-parser": "^9.0.6",
+    "@discordjs/opus": "^0.3.2",
+    "discord.js": "^12.3.1",
+    "dotenv": "^8.2.0",
     "express": "^4.17.1",
+    "ffmpeg-static": "^4.2.7",
     "http-errors": "^1.8.0",
     "morgan": "^1.10.0",
     "swagger-ui-express": "^4.1.4",
