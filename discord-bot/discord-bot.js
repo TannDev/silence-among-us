@@ -1,7 +1,7 @@
 require("dotenv").config();
 const Discord = require('discord.js');
 
-const executeCommandMessage = require('./bot-commands');
+const processCommandMessage = require('./commands');
 
 const client = new Discord.Client({
     token: process.env.DISCORD_TOKEN,
@@ -86,13 +86,20 @@ client.on('voiceStateUpdate', (oldState, newState) => {
 
 });
 
+client.on('message', (message) => {
+    if (message.content === '!debug'){
+        console.log(client.voice.connections);
+    }
+})
 
 client.on('message', (message) => {
-    executeCommandMessage(message)
-        .catch(error => {
-            console.error('Bot Error:', error);
-            message.reply("Something went wrong! :'(");
-        });
+    processCommandMessage(message).catch(async error => {
+        if (error.reply) await message.reply(error.reply);
+        else {
+            console.error(error);
+            await message.reply("Something went wrong.");
+        }
+    });
 });
 
 client.on('messageUpdate', (oldMessage, newMessage) => {

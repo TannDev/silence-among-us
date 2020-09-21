@@ -70,7 +70,7 @@ components:
 
         A lobby is built around a single Discord voice channel, and assumes that anyone joining that channel is
         playing that game. So the `channelId` is also used as a lobby id.
-      required: [channelId, state, players, discord]
+      required: [channelId, state, players]
       additionalProperties: false
       properties:
         channelId:
@@ -136,6 +136,8 @@ components:
         code:
           type: string
           description: The room code of the game, for players to join.
+          pattern: '^[A-Z]{6}$'
+          example: ABCDEF
         region:
           type: string
           description: The region where the game is hosted.
