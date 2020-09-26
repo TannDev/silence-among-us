@@ -1,4 +1,11 @@
+const Player = require('./Player');
 const Room = require('./Room');
+
+const STATE = {
+    INTERMISSION: 'intermission',
+    WORKING: 'working',
+    MEETING: 'meeting'
+};
 
 /**
  * Maps channel IDs to lobbies.
@@ -10,9 +17,12 @@ const channelLobbies = new Map();
 
 /**
  * @property {string} channelId - Id of the voice channel associated with the lobby.
- * @property {string} state - Current state of the lobby
+ * @property {string} state - Current state of the lobby.
+ * @property {Player[]} players - All the current (and past) players.
  */
 class Lobby {
+    static get STATE() {return STATE;}
+
     /**
      * Create a new lobby for a channel.
      *
@@ -20,18 +30,21 @@ class Lobby {
      * @returns {Promise<Lobby>}
      */
     static async start(channel) {
-        if (typeof channel === 'string'){
+        if (typeof channel === 'string') {
             // TODO Get the voice channel associated with the ID.
             throw new Error("Starting a channel by ID isn't supported yet.");
         }
 
         const channelId = channel.id;
 
-        // TODO Add starting players.
-
-        const lobby = new Lobby({channelId, state: 'intermission', voiceChannel: channel});
+        const lobby = new Lobby({ channelId, state: STATE.INTERMISSION });
+        lobby._voiceChannel = channel;
         channelLobbies.set(channelId, lobby);
-        lobby.emit("Created")
+
+        // Add players
+        await Promise.all(channel.members.map(member => lobby.addPlayer(member)));
+
+        lobby.emit("Created");
 
         // TODO Save to database.
 
@@ -46,7 +59,7 @@ class Lobby {
      */
     static async find(channel) {
         if (!channel) return null;
-        if (typeof channel === 'string'){
+        if (typeof channel === 'string') {
             // TODO Get the voice channel associated with the ID.
             throw new Error("Finding a channel by ID isn't supported yet.");
         }
@@ -54,7 +67,7 @@ class Lobby {
         // TODO Load from database.
 
         const lobby = channelLobbies.get(channel.id);
-        if (lobby) lobby.voiceChannel = channel;
+        if (lobby) lobby._voiceChannel = channel;
         return lobby;
     }
 
@@ -62,21 +75,53 @@ class Lobby {
         if (!channelId || typeof channelId !== 'string') throw new Error("Invalid lobby channelId");
         this.channelId = channelId;
 
-        if (!Object.keys(stateTransitions).includes(state)) throw new Error("Invalid lobby state")
+        if (!Object.values(STATE).includes(state)) throw new Error("Invalid lobby state");
         this.state = state;
 
-        // TODO Store players
+        // TODO Handle players properly
+        this.players = [];
 
         if (room) this.room = new Room(room);
     }
+
+    /**
+     * Get the underlying voice channel for the lobby.
+     * @returns {Discord.VoiceChannel}
+     */
+    get voiceChannel() { return this._voiceChannel; }
 
     emit(message) {
         console.log(`Lobby ${this.channelId}: ${message}`);
     }
 
+    /**
+     * Adds a GuildMember as a player.
+     * @param {Discord.GuildMember} member
+     * @returns {Promise<Player>} - The player added.
+     */
+    async addPlayer(member) {
+        // Ignore bots.
+        if (member.user.bot) return null;
+
+        // TODO Check for duplicate player.
+
+        // Determine the appropriate status for a new player joining.
+        const status = this.state === STATE.INTERMISSION ? Player.STATUS.LIVING : Player.STATUS.WAITING;
+
+        // Create and add the player
+        const player = new Player(this.channelId, member, status);
+        this.players.push(player);
+        return player;
+    }
+
     async stop() {
+        // Unlink the from the "database".
         channelLobbies.delete(this.channelId);
-        this.emit("Destroyed")
+
+        // Unmute all players.
+        await Promise.all(this.players.map(player => player.setMuteDeaf(false, false, "Lobby Stopped")));
+
+        this.emit("Destroyed");
     }
 
     /**
@@ -87,29 +132,46 @@ class Lobby {
      */
     async transition(targetState) {
         if (this.state === targetState) throw new Error(`Already in the ${targetState} state`);
-        const transition = stateTransitions[targetState];
-        if (!transition) throw new Error("Invalid lobby state");
 
         // TODO Get the channel, if not passed in.
 
-        await transition(this);
+        // Handle the transition.
+        switch (targetState) {
+            case STATE.INTERMISSION:
+                this.emit('Transitioning to intermission');
+                await Promise.all(this.players.map(player => {
+                    // TODO Make sure the player is still in this channel.
+                    return player.setForIntermission();
+                }));
+                this.emit('Intermission');
+                break;
+
+            case STATE.WORKING:
+                this.emit('Transitioning to working');
+                // TODO Handle players in correct order.
+                await Promise.all(this.players.map(player => {
+                    // TODO Make sure the player is still in this channel.
+                    return player.setForWorking();
+                }));
+                this.emit('Working');
+                break;
+
+            case STATE.MEETING:
+                this.emit('Transitioning to meeting');
+                // TODO Handle players in correct order.
+                await Promise.all(this.players.map(player => {
+                    // TODO Make sure the player is still in this channel.
+                    return player.setForMeeting();
+                }));
+                this.emit('Meeting');
+                break;
+
+            default:
+                throw new Error("Invalid target state");
+        }
+
         this.state = targetState;
     }
 }
-
-
-const stateTransitions = {
-    intermission: async (lobby) => {
-        lobby.emit('Transitioning to intermission');
-    },
-
-    working: async (lobby) => {
-        lobby.emit('Transitioning to working');
-    },
-
-    meeting: async (lobby) => {
-        lobby.emit('Transitioning to meeting');
-    }
-};
 
 module.exports = Lobby;

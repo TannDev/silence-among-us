@@ -77,7 +77,7 @@ function getLobbyInfoEmbed(lobby, options = {}) {
         .setDescription(options.description || `Channel ID: ${lobby.channelId}`)
         .addField('Game State', lobby.state, true)
         .addField('Room Code', lobby.room || 'None', true)
-        .addField('Players', "_Feature coming soon!_")
+        .addField('Players', lobby.players.map(player => `<@${player.id}>: ${player.status}`).join('\n'))
 }
 
 module.exports = {
