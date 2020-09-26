@@ -30,13 +30,15 @@ async function requireGuildMember(message) {
 async function requireVoiceChannel(message) {
     const { voice: { channel } } = await requireGuildMember(message);
     if (!channel) throw new ReplyError("I can't do that. You're not in a voice channel here.");
+    if(!channel.manageable) throw new ReplyError("Sorry, I don't have permission to manage that channel.");
+
     return channel;
 }
 
 async function requireLobby(message) {
     const { id } = await requireVoiceChannel(message);
     const lobby = await Lobby.find(id);
-    if (!lobby)  throw new ReplyError("You don't appear to be in a lobby here.");
+    if (!lobby)  throw new ReplyError("There's not a lobby for your channel yet. Start one with `start`!");
     return lobby;
 }
 

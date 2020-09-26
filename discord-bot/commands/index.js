@@ -1,12 +1,8 @@
-const versionCommand = require('./version');
-const helpCommand = require('./help');
-const joinCommand = require('./join');
-
-async function notImplementedCommand(message, command) {
+async function notImplementedCommand(message, arguments, command) {
     return message.reply(`I understood the "${command}" command, but I can't handle it yet.`);
 }
 
-async function unknownCommand(message, command) {
+async function unknownCommand(message, arguments, command) {
     return message.reply(`Sorry, I don't recognize \`${command}\`. Try \`!sau help\`.`);
 }
 
@@ -17,8 +13,8 @@ const commands = [
     { aliases: ['version', 'v'], handler: require('./version') },
     { aliases: ['help', 'h', '?'], handler: require('./help') },
     { aliases: ['hello', 'hi', 'hey'], handler: (message) => message.reply('Hello!') },
-    { aliases: ['join'], handler: require('./join') },
-    { aliases: ['leave'], handler: require('./leave') },
+    { aliases: ['start'], handler: require('./start') },
+    { aliases: ['stop'], handler: require('./stop') },
     { aliases: ['room', 'r'], handler: notImplementedCommand },
     { aliases: ['intermission', 'i'], handler: notImplementedCommand },
     { aliases: ['working', 'work', 'w'], handler: notImplementedCommand },
@@ -36,7 +32,7 @@ module.exports = async function processCommandMessage(message) {
     const command = arguments.shift().toLowerCase();
 
     // Erase commands to keep the channel clean.
-    if (message.deletable) await message.delete();
+    // if (message.deletable) await message.delete(); // TODO Do this where it needs
 
     // Find the appropriate command.
     const { handler } = commands.find(({ aliases, handler }) => {
@@ -44,5 +40,5 @@ module.exports = async function processCommandMessage(message) {
     }) || { handler: unknownCommand };
 
     // Run the handler
-    await handler(message, command, arguments);
+    await handler(message, arguments, command);
 }

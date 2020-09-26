@@ -132,6 +132,7 @@ components:
       description: (Optional) Game room in Among Us
       required: [code, region]
       additionalProperties: false
+      nullable: true
       properties:
         code:
           type: string

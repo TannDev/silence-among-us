@@ -1,5 +1,5 @@
 const Lobby = require('../../classes/Lobby');
-const { requireVoiceChannel } = require('./helpers');
+const { requireVoiceChannel } = require('./_helpers');
 
 module.exports = async function leaveCommand(message) {
     // Make sure the user is in a channel, and we have access.
