@@ -8,32 +8,54 @@ const channelLobbies = new Map();
 
 // TODO Store lobbies somewhere outside of memory.
 
+/**
+ * @property {string} channelId - Id of the voice channel associated with the lobby.
+ * @property {string} state - Current state of the lobby
+ */
 class Lobby {
     /**
      * Create a new lobby for a channel.
      *
-     * @param {string} channelId - ID of the channel to be associated with the lobby.
+     * @param {string|Discord.VoiceChannel} channel - Voice channel, or channel ID.
      * @returns {Promise<Lobby>}
      */
-    static async start(channelId) {
+    static async start(channel) {
+        if (typeof channel === 'string'){
+            // TODO Get the voice channel associated with the ID.
+            throw new Error("Starting a channel by ID isn't supported yet.");
+        }
+
+        const channelId = channel.id;
+
         // TODO Add starting players.
-        const lobby = new Lobby({channelId, state: 'intermission'});
+
+        const lobby = new Lobby({channelId, state: 'intermission', voiceChannel: channel});
         channelLobbies.set(channelId, lobby);
         lobby.emit("Created")
+
+        // TODO Save to database.
+
         return lobby;
     }
 
     /**
      * Find a lobby associated with a channel id.
      *
-     * @param {string} channelId - ID of the channel associated with the desired lobby.
+     * @param {string|Discord.VoiceChannel} channel - Voice channel, or channel ID.
      * @returns {Promise<Lobby>} - Lobby matching the channel, or null
      */
-    static async find(channelId) {
-        if (!channelId) return null;
+    static async find(channel) {
+        if (!channel) return null;
+        if (typeof channel === 'string'){
+            // TODO Get the voice channel associated with the ID.
+            throw new Error("Finding a channel by ID isn't supported yet.");
+        }
 
-        // TODO Load from a database and initialize.
-        return channelLobbies.get(channelId);
+        // TODO Load from database.
+
+        const lobby = channelLobbies.get(channel.id);
+        if (lobby) lobby.voiceChannel = channel;
+        return lobby;
     }
 
     constructor({ channelId, state, players, room }) {
@@ -57,27 +79,36 @@ class Lobby {
         this.emit("Destroyed")
     }
 
+    /**
+     * Transition to the new state.
+     *
+     * @param {string} targetState
+     * @returns {Promise<void>}
+     */
     async transition(targetState) {
         if (this.state === targetState) throw new Error(`Already in the ${targetState} state`);
         const transition = stateTransitions[targetState];
         if (!transition) throw new Error("Invalid lobby state");
-        await transition();
+
+        // TODO Get the channel, if not passed in.
+
+        await transition(this);
         this.state = targetState;
     }
 }
 
 
 const stateTransitions = {
-    intermission: async () => {
-        this.emit('Transitioning to intermission');
+    intermission: async (lobby) => {
+        lobby.emit('Transitioning to intermission');
     },
 
-    working: async () => {
-        this.emit('Transitioning to working');
+    working: async (lobby) => {
+        lobby.emit('Transitioning to working');
     },
 
-    meeting: async () => {
-        this.emit('Transitioning to meeting');
+    meeting: async (lobby) => {
+        lobby.emit('Transitioning to meeting');
     }
 };
 

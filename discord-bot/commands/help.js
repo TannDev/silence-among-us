@@ -1,5 +1,9 @@
+const { MessageEmbed } = require('discord.js');
+
+const instructionsUrl = 'https://github.com/tanndev/silence-among-us#readme';
+
 const commands = [
-    '`version|v: Get version information.',
+    '`version|v`: Get version information.',
     '`help|h|?`: Get this help.',
     "`start`: Start a new lobby. (This **doesn't** start the game. Use `working` for that.)",
     "`stop`: End your lobby. (This **doesn't** end the game. Use `intermission` for that.)",
@@ -11,16 +15,12 @@ const commands = [
     '`revive <@mentions...>`: Mark any at-mentioned players as being alive.'
 ].map(command => `\t- ${command}`).join('\n');
 
-const reply = [
-    "Use `!sau <command>` or `!s<command>` to tell me what to do.",
-    "When you give me a command, I'll use your current voice channel to find your lobby.",
-    '',
-    "Available commands:",
-    commands,
-    '',
-    "For more information, see my [instructions](https://github.com/tanndev/silence-among-us#readme)."
-].join('\n')
+const helpEmbed = new MessageEmbed()
+    .setTitle("Silence Among Us - Help")
+    .setURL(instructionsUrl)
+    .setDescription("Use `!sau <command>` or `!<command>` to tell me what to do.\nI'll use your current voice channel to find your lobby.")
+    .addField('Available Commands', `${commands}\n\nSee the instructions for more details:\n${instructionsUrl}`)
 
 module.exports = async function helpCommand(message) {
-    return message.reply(reply);
-}
+    return message.channel.send(helpEmbed);
+};

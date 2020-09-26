@@ -16,16 +16,16 @@ const commands = [
     { aliases: ['start'], handler: require('./start') },
     { aliases: ['stop'], handler: require('./stop') },
     { aliases: ['room', 'r'], handler: notImplementedCommand },
-    { aliases: ['intermission', 'i'], handler: notImplementedCommand },
-    { aliases: ['working', 'work', 'w'], handler: notImplementedCommand },
-    { aliases: ['meeting', 'meet', 'm'], handler: notImplementedCommand },
+    { aliases: ['intermission', 'i'], handler: require('./intermission') },
+    { aliases: ['working', 'work', 'w'], handler: require('./working') },
+    { aliases: ['meeting', 'meet', 'm'], handler: require('./meeting') },
     { aliases: ['dead', 'kill', 'd', 'k'], handler: notImplementedCommand },
     { aliases: ['revive'], handler: notImplementedCommand }
 ];
 
 module.exports = async function processCommandMessage(message) {
     // Look for commands.
-    const commandPattern = /^!s(?:au)?\s*(?<instruction>.+)$/i;
+    const commandPattern = /^!(?:sau\s+)?(?<instruction>.+)$/i;
     const parsed = message.content.match(commandPattern);
     if (!parsed) return;
     const arguments = parsed.groups.instruction.split(/\s+/);
