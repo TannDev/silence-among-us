@@ -1,5 +1,20 @@
+const { Permissions } = require('discord.js');
 const Lobby = require('../../classes/Lobby');
 const Room = require('../../classes/Room');
+
+const requiredTextPermissionsFlags = [
+    'VIEW_CHANNEL',
+    'SEND_MESSAGES',
+    'MANAGE_MESSAGES'
+]
+const requiredTextPermissions = new Permissions((requiredTextPermissionsFlags));
+const requiredVoicePermissionsFlags = [
+    // TODO Confirm that 'CONNECT' and 'SPEAK' aren't required.
+    'VIEW_CHANNEL',
+    'MUTE_MEMBERS',
+    'DEAFEN_MEMBERS'
+]
+const requiredVoicePermissions = new Permissions(requiredVoicePermissionsFlags)
 
 class ReplyError extends Error {
     constructor(reply) {
@@ -22,6 +37,21 @@ async function requireGuildMember(message) {
     return member ;
 }
 
+async function requireTextChannel(message) {
+    const { channel: textChannel, guild } = message
+    if (!guild) throw new ReplyError("I can't do that via direct-message. Try using a text channel.");
+
+    // Check permissions on the channel.
+    if (!textChannel.permissionsFor(guild.me).has(requiredTextPermissions)){
+        throw new ReplyError([
+            'Sorry, I don\'t have enough permissions in this text channel.',
+            `I need the following:\n\t- ${requiredTextPermissionsFlags.join('\n\t- ')}`
+        ].join('\n'))
+    }
+
+    return textChannel;
+}
+
 /**
  * Requires that the sender of the given message is currently in a voice channel.
  * If not, throws an error which will be sent as a reply.
@@ -31,11 +61,18 @@ async function requireGuildMember(message) {
  */
 async function requireVoiceChannel(message) {
     const member = await requireGuildMember(message);
-    const { voice: { channel } } = member;
-    if (!channel) throw new ReplyError("I can't do that. You're not in a voice channel here.");
-    if (!channel.manageable) throw new ReplyError("Sorry, I don't have permission to manage that channel.");
+    const { voice: { channel: voiceChannel } } = member;
+    if (!voiceChannel) throw new ReplyError("I can't do that. You're not in a voice channel here.");
 
-    return channel;
+    // Check channel permissions.
+    if (!voiceChannel.permissionsFor(voiceChannel.guild.me).has(requiredVoicePermissions)){
+        throw new ReplyError([
+            'Sorry, I don\'t have enough permissions in that voice channel.',
+            `I need the following:\n\t- ${requiredVoicePermissionsFlags.join('\n\t- ')}`
+        ].join('\n'))
+    }
+
+    return voiceChannel;
 }
 
 /**
@@ -74,6 +111,7 @@ function parseRoomCode(lobby, arguments) {
 module.exports = {
     ReplyError,
     requireGuildMember,
+    requireTextChannel,
     requireVoiceChannel,
     requireLobby,
     parseRoomCode

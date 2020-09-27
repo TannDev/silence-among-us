@@ -9,6 +9,7 @@ module.exports = async function killCommand(message) {
 
     // Kill the at-mentioned players.
     await Promise.all(message.mentions.members.map(member => lobby.killPlayer(member)));
-    // TODO Stop this from taking parameters, so it can be re-used.
-    if (lobby.state === Lobby.STATE.MEETING) await lobby.postLobbyInfo({title: "Meeting!"})
+
+    // TODO Put this in the killPlayer function
+    if (lobby.state === Lobby.STATE.MEETING) await lobby.postLobbyInfo()
 };

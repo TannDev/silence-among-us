@@ -10,7 +10,5 @@ module.exports = async function workingCommand(message) {
 
     // Transition
     await lobby.transition('working')
-    await lobby.postLobbyInfo({title: "Get to Work!"})
-
-    // TODO Play audio
+    await lobby.postLobbyInfo()
 };

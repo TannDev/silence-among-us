@@ -10,7 +10,5 @@ module.exports = async function intermissionCommand(message) {
 
     // Transition
     await lobby.transition('intermission')
-    await lobby.postLobbyInfo({title: "Game Over!"})
-
-    // TODO Play audio
+    await lobby.postLobbyInfo()
 };

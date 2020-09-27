@@ -10,7 +10,7 @@ module.exports = async function meetingCommand(message) {
 
     // Transition
     await lobby.transition('meeting')
-    await lobby.postLobbyInfo({title: "Meeting!"})
+    await lobby.postLobbyInfo()
 
     // TODO Play audio
 };

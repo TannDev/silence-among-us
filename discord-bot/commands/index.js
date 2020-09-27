@@ -25,7 +25,7 @@ async function unknownCommand(message, arguments, command) {
 
 module.exports = async function processCommandMessage(message) {
     // Look for commands.
-    const commandPattern = /^!(?:sau\s+)?(?<instruction>.+)$/i;
+    const commandPattern = /^!s(?:au\s+)?(?<instruction>.+)$/i;
     const parsed = message.content.match(commandPattern);
     if (!parsed) return;
     const arguments = parsed.groups.instruction.split(/\s+/);

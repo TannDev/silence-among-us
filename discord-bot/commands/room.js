@@ -8,5 +8,5 @@ module.exports = async function roomCommand(message, arguments) {
     parseRoomCode(lobby, arguments);
 
     // Respond with the lobby information.
-    await lobby.postLobbyInfo({title: "Room Change"})
+    await lobby.postLobbyInfo()
 };

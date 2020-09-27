@@ -1,11 +1,11 @@
 const Lobby = require('../../classes/Lobby');
-const { ReplyError, requireVoiceChannel, parseRoomCode } = require('./_helpers');
+const { ReplyError, requireTextChannel, requireVoiceChannel, parseRoomCode } = require('./_helpers');
 
 const greeting = require('../sounds')('hello');
 
 module.exports = async function startCommand(message, arguments) {
+    const textChannel = await requireTextChannel(message);
     const voiceChannel = await requireVoiceChannel(message);
-    const textChannel = message.channel;
 
     // Check if there's already a lobby in that channel.
     let lobby = await Lobby.find(voiceChannel);
@@ -18,7 +18,7 @@ module.exports = async function startCommand(message, arguments) {
     parseRoomCode(lobby, arguments);
 
     // Send lobby info to the channel.
-    await lobby.postLobbyInfo({title: "New Lobby!"})
+    await lobby.postLobbyInfo()
 
     // Join the channel, if possible.
     if (voiceChannel.joinable && voiceChannel.speakable) {
@@ -29,5 +29,4 @@ module.exports = async function startCommand(message, arguments) {
     else {
         await message.reply("I can't speak in your channel, but I'll run a lobby for it anyway.")
     }
-
 };
