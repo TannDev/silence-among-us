@@ -1,5 +1,6 @@
 const { MessageEmbed } = require('discord.js');
 const Lobby = require('../../classes/Lobby');
+const Room = require('../../classes/Room');
 
 class ReplyError extends Error {
     constructor(reply) {
@@ -48,7 +49,7 @@ async function requireVoiceChannel(message) {
 async function requireLobby(message) {
     const channel = await requireVoiceChannel(message);
     const lobby = await Lobby.find(channel);
-    if (!lobby) throw new ReplyError("There's not a lobby for your voice channel. Start one with `start`!");
+    if (!lobby) throw new ReplyError("There's not a lobby for your voice channel. Start one with `!sau start`!");
 
     return lobby;
 }
@@ -77,7 +78,25 @@ function getLobbyInfoEmbed(lobby, options = {}) {
         .addField('Room Code', roomInfo, true)
         .addField('Game State', stateInfo, true)
         .addField('Players', playerInfo)
-        .setFooter(options.footer || `Channel ID: ${lobby.channelId}`)
+        .setFooter(options.footer || `Channel ID: ${lobby.voiceChannelId}`)
+}
+
+function parseRoomCode(lobby, arguments) {
+    if (arguments.length < 1) return;
+    const [code, region] = arguments;
+
+    // If a code was provided, handle it.
+    if (code) {
+        // If the "code" is an unlist instruction, delete it and return.
+        if (code.match(/unlist|delete|remove|private/i)) delete lobby.room;
+
+        // Otherwise, store the new room code.
+        else {
+            // TODO Load this pattern from the schema, instead of hardcoding it.
+            if (!code.match(/^[a-z]{6}$/i)) throw new ReplyError("That room code doesn't make sense.");
+            lobby.room = new Room(code, region);
+        }
+    }
 }
 
 module.exports = {
@@ -85,5 +104,6 @@ module.exports = {
     requireGuildMember,
     requireVoiceChannel,
     requireLobby,
-    getLobbyInfoEmbed
+    getLobbyInfoEmbed,
+    parseRoomCode
 };

@@ -20,9 +20,9 @@ tags:
   - name: Lobby
 
 paths:
-  /lobby/{channelId}:
+  /lobby/{voiceChannelId}:
     parameters:
-      - $ref: "#/components/parameters/channelId"
+      - $ref: "#/components/parameters/voiceChannelId"
     get:
       operationId: getLobbyInformation
       summary: Get information about a lobby.
@@ -45,13 +45,13 @@ paths:
 
 components:
   parameters:
-    channelId:
+    voiceChannelId:
       description: Unique ID of the Discord channel and related lobby.
       in: path
-      name: channelId
+      name: voiceChannelId
       required: true
       schema:
-        $ref: "#/components/schemas/Lobby/properties/channelId"
+        $ref: "#/components/schemas/Lobby/properties/voiceChannelId"
 
   responses:
     404NotFoundError:
@@ -69,13 +69,16 @@ components:
         automatically muting/unmuting players.
 
         A lobby is built around a single Discord voice channel, and assumes that anyone joining that channel is
-        playing that game. So the `channelId` is also used as a lobby id.
-      required: [channelId, state, players]
+        playing that game. So the `voiceChannelId` is also used as a lobby id.
+      required: [voiceChannelId, state, players]
       additionalProperties: false
       properties:
-        channelId:
+        voiceChannelId:
           type: string
           description: The id of the Discord voice channel being used for the game.
+        textChannelId:
+          type: string
+          description: The ID of the Discord text channel where updates should be posted.
         state:
           type: string
           description: |

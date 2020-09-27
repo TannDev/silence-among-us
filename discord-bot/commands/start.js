@@ -1,5 +1,5 @@
 const Lobby = require('../../classes/Lobby');
-const { ReplyError, requireVoiceChannel, getLobbyInfoEmbed } = require('./_helpers');
+const { ReplyError, requireVoiceChannel, parseRoomCode, getLobbyInfoEmbed } = require('./_helpers');
 
 const greeting = require('../sounds')('hello');
 
@@ -8,11 +8,15 @@ module.exports = async function startCommand(message, arguments) {
 
     // Check if there's already a lobby in that channel.
     let lobby = await Lobby.find(channel);
-    if (lobby && !arguments.includes('--force')) {
-        throw new ReplyError("I've already got a lobby in that channel. Use `start --force` if it's not working.");
-    }
+    if (lobby) throw new ReplyError("I've already got a lobby in that channel.");
 
-    lobby = await Lobby.start(channel); // TODO Parse room code as well
+    // Start a new lobby;
+    lobby = await Lobby.start(channel);
+
+    // If a room code was provided, handle it.
+    parseRoomCode(lobby, arguments);
+
+    // Send lobby info to the channel.
     await message.channel.send(getLobbyInfoEmbed(lobby, {title: "New Lobby!"}))
 
     // Join the channel, if possible.

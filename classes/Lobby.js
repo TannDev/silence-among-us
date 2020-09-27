@@ -2,6 +2,9 @@ const discord = require('../discord-bot/discord-bot');
 const Player = require('./Player');
 const Room = require('./Room');
 
+/**
+ * The valid states of a lobby.
+ */
 const STATE = {
     INTERMISSION: 'intermission',
     WORKING: 'working',
@@ -9,15 +12,15 @@ const STATE = {
 };
 
 /**
- * Maps channel IDs to lobbies.
+ * Maps voice channel IDs to lobbies.
  * @type {Map<string, Lobby>}
  */
-const channelLobbies = new Map();
+const lobbies = new Map();
 
 // TODO Store lobbies somewhere outside of memory.
 
 /**
- * @property {string} channelId - Id of the voice channel associated with the lobby.
+ * @property {string} voiceChannelId - Id of the voice channel associated with the lobby.
  * @property {string} state - Current state of the lobby.
  * @property {Player[]} players - All the current (and past) players.
  */
@@ -27,23 +30,30 @@ class Lobby {
     /**
      * Create a new lobby for a channel.
      *
-     * @param {string|Discord.VoiceChannel} channel - Voice channel, or channel ID.
+     * @param {string|Discord.VoiceChannel} voiceChannel - Voice channel, or the id of one.
+     * @param {string|Discord.GuildChannel} [textChannel] - Guild text channel, or the id of one.
      * @returns {Promise<Lobby>}
      */
-    static async start(channel) {
-        if (typeof channel === 'string') {
+    static async start(voiceChannel, textChannel) {
+        if (typeof voiceChannel === 'string') {
+            // TODO Get the voice channel associated with the ID.
+            throw new Error("Starting a channel by ID isn't supported yet.");
+        }
+        if (typeof textChannel === 'string') {
             // TODO Get the voice channel associated with the ID.
             throw new Error("Starting a channel by ID isn't supported yet.");
         }
 
-        const channelId = channel.id;
+        const voiceChannelId = voiceChannel.id;
+        const textChannelId = textChannel && textChannel.id;
 
-        const lobby = new Lobby({ channelId, state: STATE.INTERMISSION });
-        lobby._voiceChannel = channel;
-        channelLobbies.set(channelId, lobby);
+        const lobby = new Lobby({ voiceChannelId, textChannelId, state: STATE.INTERMISSION });
+        lobby._voiceChannel = voiceChannel;
+        lobby._textChannel = textChannel;
+        lobbies.set(voiceChannelId, lobby);
 
         // Add players
-        await Promise.all(channel.members.map(member => lobby.connectPlayer(member)));
+        await Promise.all(voiceChannel.members.map(member => lobby.connectPlayer(member)));
 
         lobby.emit("Created");
 
@@ -55,23 +65,23 @@ class Lobby {
     /**
      * Find a lobby associated with a channel id.
      *
-     * @param {string|Discord.VoiceChannel} channel - Voice channel, or channel ID.
+     * @param {string|Discord.VoiceChannel} voiceChannel - Voice channel, or channel ID.
      * @returns {Promise<Lobby>} - Lobby matching the channel, or null
      */
-    static async find(channel) {
-        if (typeof channel === 'string') channel = await discord.channels.fetch(channel);
-        if (!channel) return null;
+    static async find(voiceChannel) {
+        if (typeof voiceChannel === 'string') voiceChannel = await discord.channels.fetch(voiceChannel);
+        if (!voiceChannel) return null;
 
         // TODO Load from database.
 
-        const lobby = channelLobbies.get(channel.id);
-        if (lobby) lobby._voiceChannel = channel;
+        const lobby = lobbies.get(voiceChannel.id);
+        if (lobby) lobby._voiceChannel = voiceChannel;
         return lobby;
     }
 
-    constructor({ channelId, state, players, room }) {
-        if (!channelId || typeof channelId !== 'string') throw new Error("Invalid lobby channelId");
-        this.channelId = channelId;
+    constructor({ voiceChannelId, state, players, room }) {
+        if (!voiceChannelId || typeof voiceChannelId !== 'string') throw new Error("Invalid lobby voiceChannelId");
+        this.voiceChannelId = voiceChannelId;
 
         if (!Object.values(STATE).includes(state)) throw new Error("Invalid lobby state");
         this.state = state;
@@ -93,7 +103,7 @@ class Lobby {
     get players() { return [...this._players.values()]}
 
     emit(message) {
-        console.log(`Lobby ${this.channelId}: ${message}`);
+        console.log(`Lobby ${this.voiceChannelId}: ${message}`);
     }
 
     /**
@@ -108,7 +118,7 @@ class Lobby {
 
         // Load or create a player.
         const playerId = member.id;
-        const player = this._players.get(playerId) || new Player(this.channelId, member, status)
+        const player = this._players.get(playerId) || new Player(this.voiceChannelId, member, status)
         this._players.set(playerId, player);
 
         // Update the player's state.
@@ -155,7 +165,7 @@ class Lobby {
 
     async stop() {
         // Unlink the from the "database".
-        channelLobbies.delete(this.channelId);
+        lobbies.delete(this.voiceChannelId);
 
         // Unmute all players.
         await Promise.all(this.players.map(player => player.setMuteDeaf(false, false, "Lobby Stopped")));
@@ -178,30 +188,21 @@ class Lobby {
         switch (targetState) {
             case STATE.INTERMISSION:
                 this.emit('Transitioning to intermission');
-                await Promise.all(this.players.map(player => {
-                    // TODO Make sure the player is still in this channel.
-                    return player.setForIntermission();
-                }));
+                await Promise.all(this.players.map(player => player.setForIntermission()));
                 this.emit('Intermission');
                 break;
 
             case STATE.WORKING:
                 this.emit('Transitioning to working');
                 // TODO Handle players in correct order.
-                await Promise.all(this.players.map(player => {
-                    // TODO Make sure the player is still in this channel.
-                    return player.setForWorking();
-                }));
+                await Promise.all(this.players.map(player => player.setForWorking()));
                 this.emit('Working');
                 break;
 
             case STATE.MEETING:
                 this.emit('Transitioning to meeting');
                 // TODO Handle players in correct order.
-                await Promise.all(this.players.map(player => {
-                    // TODO Make sure the player is still in this channel.
-                    return player.setForMeeting();
-                }));
+                await Promise.all(this.players.map(player => player.setForMeeting()));
                 this.emit('Meeting');
                 break;
 

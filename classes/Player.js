@@ -14,12 +14,12 @@ class Player {
 
     /**
      *
-     * @param {string} channelId - ID of the channel the player is playing in.
+     * @param {string} voiceChannelId - ID of the channel the player is playing in.
      * @param {Discord.GuildMember} guildMember
      * @param {string} [status]
      */
-    constructor(channelId, guildMember, status = STATUS.WAITING) {
-        this.channelId = channelId;
+    constructor(voiceChannelId, guildMember, status = STATUS.WAITING) {
+        this.voiceChannelId = voiceChannelId;
         this._guildMember = guildMember;
         this.status = status;
     }
@@ -87,7 +87,7 @@ class Player {
     async setMuteDeaf(mute, deaf, reason){
         // Make sure the user is still in the game channel.
         const {voice} = await this._guildMember.fetch();
-        if (!voice || voice.channelID !== this.channelId) return this;
+        if (!voice || voice.voiceChannelId !== this.voiceChannelId) return this;
 
         console.log(`Setting permissions for ${this.name}: ${mute ? 'mute' : 'unmute'} ${deaf ? 'deaf' : 'undeaf'}`)
         const finalReason = `Silence Among Us${reason ? `: ${reason}` : ''}`
