@@ -1,6 +1,6 @@
 const Lobby = require('../../classes/Lobby');
 const Room = require('../../classes/Room');
-const { ReplyError, requireLobby, requireTextChannel, requireVoiceChannel } = require('./_helpers');
+const { requireLobby, requireTextChannel, requireVoiceChannel } = require('./_helpers');
 
 
 module.exports = async function lobbyCommand(message, arguments) {
@@ -18,12 +18,8 @@ module.exports = async function lobbyCommand(message, arguments) {
         const textChannel = await requireTextChannel(message);
         const voiceChannel = await requireVoiceChannel(message);
 
-        // Check if there's already a lobby in that channel.
-        let lobby = await Lobby.find(voiceChannel);
-        if (lobby) throw new ReplyError("I've already got a lobby in that channel.");
-
         // Start a new lobby;
-        lobby = await Lobby.start(voiceChannel, textChannel, parseRoomCode(code, region));
+        const lobby = await Lobby.start(voiceChannel, textChannel, parseRoomCode(code, region));
 
         // Send lobby info to the channel.
         await lobby.postLobbyInfo()
@@ -71,6 +67,5 @@ module.exports = async function lobbyCommand(message, arguments) {
  */
 function parseRoomCode(code, region) {
     if (!code) return null;
-    if (!code.match(/^[a-z]{6}$/i)) throw new ReplyError("That room code doesn't make sense.");
     return new Room(code, region);
 }

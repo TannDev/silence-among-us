@@ -1,7 +1,9 @@
+// TODO Load this from the schema.
+const codePattern = /^[a-z]{6}$/i;
+
 class Room {
     constructor(code, region) {
-        // Handle the code parameter.
-        if (!code || typeof code !== 'string') code = 'None';
+        if (typeof code !== 'string' || !code.match(codePattern)) throw new Error("That room code doesn't make sense");
         else code = code.toUpperCase();
 
         // Map possible region parameters.

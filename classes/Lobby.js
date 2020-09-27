@@ -1,7 +1,21 @@
-const { MessageEmbed } = require('discord.js');
-const discord = require('../discord-bot/discord-bot');
+const { Permissions, MessageEmbed } = require('discord.js');
+const discordClient = require('../discord-bot/discord-bot');
 const Player = require('./Player');
 const Room = require('./Room');
+
+const requiredTextPermissionsFlags = [
+    'VIEW_CHANNEL',
+    'SEND_MESSAGES',
+    'MANAGE_MESSAGES'
+]
+const requiredTextPermissions = new Permissions((requiredTextPermissionsFlags));
+const requiredVoicePermissionsFlags = [
+    // TODO Confirm that 'CONNECT' and 'SPEAK' aren't required.
+    'VIEW_CHANNEL',
+    'MUTE_MEMBERS',
+    'DEAFEN_MEMBERS'
+]
+const requiredVoicePermissions = new Permissions(requiredVoicePermissionsFlags)
 
 /**
  * The valid states of a lobby.
@@ -34,7 +48,7 @@ class Lobby {
      * Create a new lobby for a channel.
      *
      * @param {string|Discord.VoiceChannel} voiceChannel - Voice channel, or the id of one.
-     * @param {string|Discord.TextChannel} [textChannel] - Guild text channel, or the id of one.
+     * @param {string|Discord.TextChannel} textChannel - Guild text channel, or the id of one.
      * @param {Room} [room] - A room to start with.
      * @returns {Promise<Lobby>}
      */
@@ -48,8 +62,21 @@ class Lobby {
             throw new Error("Starting a channel by ID isn't supported yet.");
         }
 
+        // Don't allow duplicate lobbies.
+        if (await Lobby.find(voiceChannel)) throw new Error("There's already a lobby in that channel.");
+
+        // Make sure the discord bot has sufficient permissions.
+        if (!voiceChannel.permissionsFor(voiceChannel.guild.me).has(requiredVoicePermissions)) throw new Error([
+            'Sorry, I don\'t have enough permissions in that voice channel.',
+            `I need the following:\n\t- ${requiredVoicePermissionsFlags.join('\n\t- ')}`
+        ].join('\n'));
+        if (!textChannel.permissionsFor(textChannel.guild.me).has(requiredTextPermissions)) throw new Error([
+            'Sorry, I don\'t have enough permissions in this text channel.',
+            `I need the following:\n\t- ${requiredTextPermissionsFlags.join('\n\t- ')}`
+        ].join('\n'));
+
         const voiceChannelId = voiceChannel.id;
-        const textChannelId = textChannel && textChannel.id;
+        const textChannelId = textChannel.id;
 
         const lobby = new Lobby({ voiceChannelId, textChannelId, state: STATE.INTERMISSION, room});
         lobby._voiceChannel = voiceChannel;
@@ -75,7 +102,7 @@ class Lobby {
      * @returns {Promise<Lobby>} - Lobby matching the channel, or null
      */
     static async find(voiceChannel) {
-        if (typeof voiceChannel === 'string') voiceChannel = await discord.channels.fetch(voiceChannel);
+        if (typeof voiceChannel === 'string') voiceChannel = await discordClient.channels.fetch(voiceChannel);
         if (!voiceChannel) return null;
 
         // TODO Load from database.
@@ -168,6 +195,8 @@ class Lobby {
      * @returns {Promise<void>}
      */
     async killPlayer(...members) {
+        if (this.state === STATE.INTERMISSION) throw new Error("You can't kill people during intermission.");
+
         // Generate kill orders for each member passed in.
         const killOrders = members.map(async member => {
             // If the member is a player is in this lobby, mark them as dying and update their state.
@@ -297,9 +326,9 @@ class Lobby {
      * @returns {Promise<void>}
      */
     async transition(targetState) {
-        // Prevent multiple transitions.
-        if (this.transitioning) throw new Error("Already transitioning between states")
-        if (this.state === targetState) throw new Error(`Already in the ${targetState} state`);
+        // Prevent multiple or duplicate transitions.
+        if (this.transitioning) throw new Error("The lobby is already transitioning between states")
+        if (this.state === targetState) throw new Error(`The lobby is already in the ${targetState} state`);
         this._targetState = targetState;
 
         // Sort players into batches, to avoid cross-talk.
@@ -333,6 +362,9 @@ class Lobby {
         this.state = targetState;
         delete this._targetState;
         this.emit(`Entered ${targetState}`);
+
+        // Send out an update.
+        await this.postLobbyInfo()
     }
 
     toJSON() {

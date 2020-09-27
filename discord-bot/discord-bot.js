@@ -50,11 +50,8 @@ client.on('rateLimit', (rateLimitInfo) => {
 
 client.on('message', (message) => {
     processCommandMessage(message).catch(async error => {
-        if (error.reply) await message.reply(error.reply);
-        else {
-            console.error(error);
-            await message.reply("Something went wrong.");
-        }
+        console.error(error);
+        await message.reply(error.message || "Something went wrong.");
     });
 });
 
