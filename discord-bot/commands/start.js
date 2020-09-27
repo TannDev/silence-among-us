@@ -1,11 +1,10 @@
 const Lobby = require('../../classes/Lobby');
-const { ReplyError, requireVoiceChannel, deleteMessage, getLobbyInfoEmbed } = require('./_helpers');
+const { ReplyError, requireVoiceChannel, getLobbyInfoEmbed } = require('./_helpers');
 
 const greeting = require('../sounds')('hello');
 
 module.exports = async function startCommand(message, arguments) {
     const channel = await requireVoiceChannel(message);
-    await deleteMessage(message);
 
     // Check if there's already a lobby in that channel.
     let lobby = await Lobby.find(channel);

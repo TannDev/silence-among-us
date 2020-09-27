@@ -1,5 +1,6 @@
 const STATUS = {
     LIVING: 'living',
+    DYING: 'dying',
     DEAD: 'dead',
     WAITING: 'waiting',
     SPECTATING: 'spectating'
@@ -7,6 +8,7 @@ const STATUS = {
 
 class Player {
     static get STATUS() { return STATUS; };
+    get STATUS() { return STATUS; };
 
     // TODO Refactor this class to be database-friendly.
 
@@ -16,7 +18,7 @@ class Player {
      * @param {Discord.GuildMember} guildMember
      * @param {string} [status]
      */
-    constructor(channelId, guildMember, status = STATUS.LIVING) {
+    constructor(channelId, guildMember, status = STATUS.WAITING) {
         this.channelId = channelId;
         this._guildMember = guildMember;
         this.status = status;
@@ -30,7 +32,16 @@ class Player {
         return this._guildMember.displayName;
     }
 
+    kill() {
+        this.status = STATUS.DYING;
+    }
+
+    revive() {
+        this.status = STATUS.LIVING;
+    }
+
     async setForIntermission() {
+        // All non-spectators become living again at intermission.
         if (this.status !== STATUS.SPECTATING) this.status = STATUS.LIVING;
         return this.setMuteDeaf(false, false, "Intermission");
     }
@@ -38,6 +49,7 @@ class Player {
     async setForWorking() {
         switch (this.status) {
             case STATUS.LIVING:
+            case STATUS.DYING:
                 return this.setMuteDeaf(true, true, "Working (Living)");
             case STATUS.DEAD:
             case STATUS.WAITING:
@@ -49,9 +61,13 @@ class Player {
     }
 
     async setForMeeting() {
+        // noinspection FallThroughInSwitchStatementJS
         switch (this.status) {
             case STATUS.LIVING:
                 return this.setMuteDeaf(false, false, "Meeting (Living)");
+            case STATUS.DYING:
+                // Dying players become dead when meeting starts.
+                this.status = STATUS.DEAD;
             case STATUS.DEAD:
             case STATUS.WAITING:
             case STATUS.SPECTATING:

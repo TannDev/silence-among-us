@@ -43,7 +43,7 @@ class Lobby {
         channelLobbies.set(channelId, lobby);
 
         // Add players
-        await Promise.all(channel.members.map(member => lobby.addPlayer(member)));
+        await Promise.all(channel.members.map(member => lobby.connectPlayer(member)));
 
         lobby.emit("Created");
 
@@ -80,6 +80,7 @@ class Lobby {
         this._players = new Map();
         // TODO Add initial players from the constructor.
 
+        // TODO Handle the room properly
         if (room) this.room = new Room(room);
     }
 
@@ -96,44 +97,60 @@ class Lobby {
     }
 
     /**
-     * Adds a GuildMember as a player.
+     * Connects or reconnects a GuildMember as a player.
      * @param {Discord.GuildMember} member
-     * @returns {Promise<Player>} - The player added.
+     * @param {string} [status] - Status for the player to start with.
+     * @returns {Promise<Player>} - The player added/updated.
      */
-    async addPlayer(member) {
+    async connectPlayer(member, status ) {
         // Ignore bots.
         if (member.user.bot) return null;
 
-        // If the player is already in this lobby, reconnect them instead.
+        // Load or create a player.
         const playerId = member.id;
-        if (this._players.has(playerId)) {
-            const player = this._players.get(playerId)
-            if (!player) throw new Error("Member is not a player in this lobby");
-            switch (this.state) {
-                case STATE.INTERMISSION:
-                    return player.setForIntermission();
-                case STATE.WORKING:
-                    return player.setForWorking();
-                case STATE.MEETING:
-                    return player.setForMeeting();
-                default:
-                    throw new Error("Invalid target state");
-            }
-        }
-
-        // Determine the appropriate status for a new player joining.
-        const status = this.state === STATE.INTERMISSION ? Player.STATUS.LIVING : Player.STATUS.WAITING;
-
-        // Create and add the player
-        const player = new Player(this.channelId, member, status);
+        const player = this._players.get(playerId) || new Player(this.channelId, member, status)
         this._players.set(playerId, player);
 
-        // Set their starting voice state.
-        if (this.state === STATE.INTERMISSION) await player.setMuteDeaf(false, false, "New Player");
-        else await player.setMuteDeaf(true, false, "New Player (Mid-game)");
+        // Update the player's state.
+        await this.updatePlayerState(player);
 
-        this.emit(`Added player ${player.name} (${player.id})`);
+        this.emit(`Connected player ${player.name} (${player.id})`);
         return player;
+    }
+
+    async killPlayer(member) {
+        const player = this._players.get(member.id)
+
+        // If the player isn't already in the lobby, add them to it.
+        if (!player) return this.connectPlayer(member, Player.STATUS.DYING);
+
+        // Otherwise, mark them as dying and update their state.
+        player.status = Player.STATUS.DYING;
+        return this.updatePlayerState(player);
+    }
+
+    async revivePlayer(member) {
+        const player = this._players.get(member.id)
+
+        // If the player isn't in the lobby, ignore the request.
+        if (!player) return null;
+
+        // Otherwise, mark them as living and update their state.
+        player.status = Player.STATUS.LIVING;
+        return this.updatePlayerState(player);
+    }
+
+    async updatePlayerState(player) {
+        switch (this.state) {
+            case STATE.INTERMISSION:
+                return player.setForIntermission();
+            case STATE.WORKING:
+                return player.setForWorking();
+            case STATE.MEETING:
+                return player.setForMeeting();
+            default:
+                throw new Error("Invalid target state");
+        }
     }
 
     async stop() {

@@ -19,8 +19,9 @@ const commands = [
     { aliases: ['intermission', 'i'], handler: require('./intermission') },
     { aliases: ['working', 'work', 'w'], handler: require('./working') },
     { aliases: ['meeting', 'meet', 'm'], handler: require('./meeting') },
-    { aliases: ['dead', 'kill', 'd', 'k'], handler: notImplementedCommand },
-    { aliases: ['revive'], handler: notImplementedCommand }
+    { aliases: ['dead', 'kill', 'd', 'k'], handler: require('./kill') },
+    { aliases: ['revive'], handler: require('./revive') },
+    { aliases: ['spoil'], handler: require('./spoil') }
 ];
 
 module.exports = async function processCommandMessage(message) {
@@ -32,7 +33,7 @@ module.exports = async function processCommandMessage(message) {
     const command = arguments.shift().toLowerCase();
 
     // Erase commands to keep the channel clean.
-    // if (message.deletable) await message.delete(); // TODO Do this where it needs
+    if (message.deletable) await message.delete();
 
     // Find the appropriate command.
     const { handler } = commands.find(({ aliases, handler }) => {

@@ -9,16 +9,6 @@ class ReplyError extends Error {
 }
 
 /**
- * If possible, deletes the given message.
- *
- * @param {Discord.Message} message
- * @returns {Promise<void>}
- */
-async function deleteMessage(message) {
-    if (message.deletable) await message.delete();
-}
-
-/**
  * Requires that the given message came via a guild.
  * If not, throws an error which will be sent as a reply.
  *
@@ -82,7 +72,6 @@ function getLobbyInfoEmbed(lobby, options = {}) {
 
 module.exports = {
     ReplyError,
-    deleteMessage,
     requireGuildMember,
     requireVoiceChannel,
     requireLobby,

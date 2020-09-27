@@ -68,8 +68,8 @@ client.on('voiceStateUpdate', async (oldPresence, newPresence) => {
     const {channelID: oldChannelId} = oldPresence;
     const {channelID: newChannelId, member} = newPresence;
 
-    // Ignore any updates that don't involve changing channels.
-    if (oldChannelId === newChannelId) return;
+    // Ignore bots and any updates that don't involve changing channels.
+    if (member.user.bot || oldChannelId === newChannelId) return;
 
     // Determine if a player is joining/leaving a game.
     const [oldLobby, newLobby] = await Promise.all([
@@ -78,7 +78,7 @@ client.on('voiceStateUpdate', async (oldPresence, newPresence) => {
     ]);
 
     // If they're going into a new lobby, add or reconnect them.
-    if (newLobby) await newLobby.addPlayer(member);
+    if (newLobby) await newLobby.connectPlayer(member);
 
     // Otherwise, if they're leaving an old lobby, unmute them.
     else if (oldLobby) {
