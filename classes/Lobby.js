@@ -124,7 +124,7 @@ class Lobby {
      * @returns {Promise<Player>}
      */
     async getPlayer(member) {
-        return this._players.get(member.id || member)
+        return this._players.get(member.id || member);
     }
 
     /**
@@ -199,9 +199,23 @@ class Lobby {
 
         const stateInfo = this.state[0].toUpperCase() + this.state.slice(1);
 
-        const playerInfo = options.spoil || this.state !== STATE.WORKING
-            ? this.players.map(player => `<@${player.discordId}>: ${player.status}`).join('\n')
-            : '_Hidden while crew is working_';
+
+        const playerInfo = this.players
+            .filter(player => player.status !== Player.STATUS.SPECTATING)
+            .map(player => {
+                const workingStates = [Player.STATUS.LIVING, Player.STATUS.DYING];
+                const showStatus = options.spoil
+                    || this.state !== STATE.WORKING
+                    || !workingStates.includes(player.status)
+                const status = showStatus ? player.status[0].toUpperCase() + player.status.slice(1) : '_Working_';
+
+                // TODO Load URL from somewhere.
+                const showLink = this.state !== STATE.INTERMISSION && workingStates.includes(player.status);
+                const killUrl = `http://localhost:3000/api/lobby/${this.voiceChannelId}/${player.discordId}/kill`;
+                const killLink = showLink ? ` - [kill](${killUrl})` : '';
+
+                return `<@${player.discordId}> - ${status}${killLink}`;
+            });
 
         const embed = new MessageEmbed()
             .setTitle(options.title || 'Lobby Info')
@@ -273,12 +287,12 @@ class Lobby {
     }
 
     toJSON() {
-        const {players, room, ...document} = this;
+        const { players, room, ...document } = this;
         Object.keys(document)
             .filter(key => key.startsWith('_'))
             .forEach(key => delete document[key]);
         document.players = players.map(player => player.toJSON());
-        document.room = room
+        document.room = room;
         return document;
     }
 }
