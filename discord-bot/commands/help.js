@@ -5,8 +5,9 @@ const instructionsUrl = 'https://github.com/tanndev/silence-among-us#readme';
 const commands = [
     '`version|v`: Get version information.',
     '`help|h|?`: Get this help.',
-    "`start [room code] [na|eu|asia]`: Start a new lobby.",
-    "`stop`: End your lobby.",
+    '`lobby|l|info`: Re-post information about your lobby.',
+    '`start [room code] [na|eu|asia]`: Start a new lobby.',
+    '`stop`: End your lobby.',
     '`room|r [room code] [na|eu|asia]`: Get (or set) the room information of your lobby.',
     '`intermission|i`: Mark your lobby as being in intermission.',
     '`working|work|w`: Mark your lobby as working on tasks.',

@@ -80,8 +80,8 @@ client.on('voiceStateUpdate', async (oldPresence, newPresence) => {
     // If they're going into a new lobby, add or reconnect them.
     if (newLobby) await newLobby.connectPlayer(member);
 
-    // Otherwise, if they're leaving an old lobby, unmute them.
-    else if (oldLobby) {
+    // Otherwise, if they're leaving an old lobby, but are still in a voice channel, unmute them.
+    else if (oldLobby && newChannelId) {
         const {voice} = member;
         if (!voice) return;
         const reason = `Silence Among Us: Left Lobby`

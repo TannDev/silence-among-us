@@ -45,6 +45,15 @@ class Player {
         this.status = STATUS.LIVING;
     }
 
+    /**
+     * Identifies whether this player is a "worker" (currently in the either the living or dying state).
+     *
+     * @return {boolean}
+     */
+    get isWorker() {
+        return this.status === STATUS.LIVING || this.status === STATUS.DYING;
+    }
+
     async setForIntermission() {
         // All non-spectators become living again at intermission.
         if (this.status !== STATUS.SPECTATING) this.status = STATUS.LIVING;
@@ -52,34 +61,20 @@ class Player {
     }
 
     async setForWorking() {
-        switch (this.status) {
-            case STATUS.LIVING:
-            case STATUS.DYING:
-                return this.setMuteDeaf(true, true, "Working (Living)");
-            case STATUS.DEAD:
-            case STATUS.WAITING:
-            case STATUS.SPECTATING:
-                return this.setMuteDeaf(false, false, "Working (Non-Living)");
-            default:
-                throw new Error(`Unknown status: ${this.status}`);
-        }
+        // Set audio permissions based on working state.
+        return this.isWorker
+            ? this.setMuteDeaf(true, true, "Working (Worker)")
+            : this.setMuteDeaf(false, false, "Working (Non-Worker)");
     }
 
     async setForMeeting() {
-        // noinspection FallThroughInSwitchStatementJS
-        switch (this.status) {
-            case STATUS.LIVING:
-                return this.setMuteDeaf(false, false, "Meeting (Living)");
-            case STATUS.DYING:
-                // Dying players become dead when meeting starts.
-                this.status = STATUS.DEAD;
-            case STATUS.DEAD:
-            case STATUS.WAITING:
-            case STATUS.SPECTATING:
-                return this.setMuteDeaf(true, false, "Meeting (Non-Living)");
-            default:
-                throw new Error(`Unknown status: ${this.status}`);
-        }
+        // At the start of meetings, dying players become dead.
+        if (this.status === STATUS.DYING) this.status = STATUS.DEAD;
+
+        // Set audio permissions based living status
+        return this.status === STATUS.LIVING
+            ? this.setMuteDeaf(false, false, "Meeting (Living)")
+            : this.setMuteDeaf(true, false, "Meeting (Non-Living)");
     }
 
     /**

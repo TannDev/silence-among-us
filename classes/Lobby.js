@@ -113,6 +113,11 @@ class Lobby {
 
     get players() { return [...this._players.values()];}
 
+    /**
+     * @returns {boolean} - Whether or not the lobby is currently transitioning between states.
+     */
+    get transitioning() {return Boolean(this._targetState);}
+
     emit(message) {
         console.log(`Lobby ${this.voiceChannelId}: ${message}`);
     }
@@ -190,8 +195,7 @@ class Lobby {
     /**
      * Post information about the lobby to the text channel.
      * @param {object} [options]
-     * @param {string} [options.title]
-     * @param {string} [options.footer]
+     * @param {boolean} [options.spoil] - Display Living and Dying players during the working state.
      * @returns {module:"discord.js".MessageEmbed}
      */
     async postLobbyInfo(options = {}) {
@@ -206,34 +210,37 @@ class Lobby {
                 const workingStates = [Player.STATUS.LIVING, Player.STATUS.DYING];
                 const showStatus = options.spoil
                     || this.state !== STATE.WORKING
-                    || !workingStates.includes(player.status)
+                    || !workingStates.includes(player.status);
                 const status = showStatus ? player.status[0].toUpperCase() + player.status.slice(1) : '_Working_';
 
                 // TODO Load URL from somewhere.
-                const showLink = this.state !== STATE.INTERMISSION && workingStates.includes(player.status);
-                const killUrl = `http://localhost:3000/api/lobby/${this.voiceChannelId}/${player.discordId}/kill`;
-                const killLink = showLink ? ` - [kill](${killUrl})` : '';
+                // const showLink = this.state !== STATE.INTERMISSION && workingStates.includes(player.status);
+                // const killUrl = `http://localhost:3000/api/lobby/${this.voiceChannelId}/${player.discordId}/kill`;
+                // const killLink = showLink ? ` - [kill](${killUrl})` : '';
 
-                return `<@${player.discordId}> - ${status}${killLink}`;
+                return `<@${player.discordId}> - ${status}`;
             });
 
         const embed = new MessageEmbed()
-            .setTitle(options.title || 'Lobby Info')
-            .addField('Room Code', roomInfo, true)
+            .setTitle(`Among Us - Playing in "${this.voiceChannel.name}"`)
             .addField('Game State', stateInfo, true)
+            .addField('Room Code', roomInfo, true)
             .addField('Players', playerInfo)
-            .setFooter(options.footer || `Channel ID: ${this.voiceChannelId}`);
+            .setFooter(`Channel ID: ${this.voiceChannelId}`);
 
         // If there's a text channel bound, send the embed to it.
         if (this.textChannel) {
-            // If there was an old message, delete it.
-            if (this._lastInfoPosted && this._lastInfoPosted.deletable) await this._lastInfoPosted.delete();
-
-            // Post the new one.
+            await this.deleteLastLobbyInfo();
             this._lastInfoPosted = await this.textChannel.send(embed);
         }
 
         return embed;
+    }
+
+    async deleteLastLobbyInfo() {
+        // If there was an old message, delete it.
+        if (this._lastInfoPosted && this._lastInfoPosted.deletable) await this._lastInfoPosted.delete();
+        delete this._lastInfoPosted;
     }
 
     async stop() {
@@ -242,6 +249,9 @@ class Lobby {
 
         // Unmute all players.
         await Promise.all(this.players.map(player => player.setMuteDeaf(false, false, "Lobby Stopped")));
+
+        // Delete the last lobby info.
+        await this.deleteLastLobbyInfo();
 
         this.emit("Destroyed");
     }
@@ -253,30 +263,33 @@ class Lobby {
      * @returns {Promise<void>}
      */
     async transition(targetState) {
+        // Prevent multiple transitions.
+        if (this.transitioning) throw new Error("Already transitioning between states")
         if (this.state === targetState) throw new Error(`Already in the ${targetState} state`);
+        this._targetState = targetState;
 
-        // TODO Get the channel, if not passed in.
+        // Sort players into batches, to avoid cross-talk.
+        const everyone = this.players;
+        const workers = everyone.filter(player => player.isWorker);
+        const nonWorkers = everyone.filter(player => !player.isWorker);
 
         // Handle the transition.
+        this.emit(`Transitioning to ${targetState}`);
         switch (targetState) {
             case STATE.INTERMISSION:
-                this.emit('Transitioning to intermission');
-                await Promise.all(this.players.map(player => player.setForIntermission()));
-                this.emit('Intermission');
+                await Promise.all(everyone.map(player => player.setForIntermission()));
                 break;
 
             case STATE.WORKING:
-                this.emit('Transitioning to working');
-                // TODO Handle players in correct order.
-                await Promise.all(this.players.map(player => player.setForWorking()));
-                this.emit('Working');
+                // Update workers first, to avoid cross-talk, then everyone else.
+                await Promise.all(workers.map(player => player.setForWorking()));
+                await Promise.all(nonWorkers.map(player => player.setForWorking()));
                 break;
 
             case STATE.MEETING:
-                this.emit('Transitioning to meeting');
-                // TODO Handle players in correct order.
-                await Promise.all(this.players.map(player => player.setForMeeting()));
-                this.emit('Meeting');
+                // Update non-workers first, to avoid cross-talk, then everyone else.
+                await Promise.all(nonWorkers.map(player => player.setForMeeting()));
+                await Promise.all(workers.map(player => player.setForMeeting()));
                 break;
 
             default:
@@ -284,6 +297,8 @@ class Lobby {
         }
 
         this.state = targetState;
+        delete this._targetState;
+        this.emit(`Entered ${targetState}`);
     }
 
     toJSON() {
