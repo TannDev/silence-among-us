@@ -4,8 +4,9 @@
   "description": "Discord channel manager for Among Us",
   "main": "index.js",
   "scripts": {
-    "start": "node server.js",
+    "start": "node .",
     "bot": "node discord-bot/discord-bot.js",
+    "sever": "node server/server.js",
     "test": "echo \"Error: no test specified\" && exit 1",
     "spectral": "spectral lint schema.yaml"
   },

@@ -19,7 +19,7 @@ const helpEmbed = new MessageEmbed()
     .setTitle("Silence Among Us - Help")
     .setURL(instructionsUrl)
     .setDescription("Use `!sau <command>` or `!<command>` to tell me what to do.\nI'll use your current voice channel to find your lobby.")
-    .addField('Available Commands', `${commands}\n\nSee the instructions for more details:\n${instructionsUrl}`)
+    .addField('Available Commands', `${commands}\n\nSee the [instructions](${instructionsUrl}) for more details.`)
 
 module.exports = async function helpCommand(message) {
     return message.channel.send(helpEmbed);

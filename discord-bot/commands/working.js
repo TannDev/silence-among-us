@@ -1,4 +1,4 @@
-const { ReplyError, requireLobby, getLobbyInfoEmbed } = require('./_helpers');
+const { ReplyError, requireLobby } = require('./_helpers');
 
 
 module.exports = async function workingCommand(message) {
@@ -9,7 +9,7 @@ module.exports = async function workingCommand(message) {
 
     // Transition
     await lobby.transition('working')
-    await message.channel.send(getLobbyInfoEmbed(lobby, {title: "Get to Work!"}))
+    await lobby.postLobbyInfo({title: "Get to Work!"})
 
     // TODO Play audio
 };

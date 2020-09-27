@@ -1,4 +1,4 @@
-const { ReplyError, requireLobby, getLobbyInfoEmbed } = require('./_helpers');
+const { ReplyError, requireLobby } = require('./_helpers');
 
 
 module.exports = async function meetingCommand(message) {
@@ -9,7 +9,7 @@ module.exports = async function meetingCommand(message) {
 
     // Transition
     await lobby.transition('meeting')
-    await message.channel.send(getLobbyInfoEmbed(lobby, {title: "Meeting Started!"}))
+    await lobby.postLobbyInfo({title: "Meeting!"})
 
     // TODO Play audio
 };

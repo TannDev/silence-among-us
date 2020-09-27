@@ -18,6 +18,7 @@ servers:
 
 tags:
   - name: Lobby
+  - name: Player
 
 paths:
   /lobby/{voiceChannelId}:
@@ -43,6 +44,30 @@ paths:
         "5XX":
           $ref: "#/components/responses/5xxInternalError"
 
+  /lobby/{voiceChannelId}/{playerId}/kill:
+    parameters:
+      - $ref: "#/components/parameters/voiceChannelId"
+      - $ref: "#/components/parameters/playerId"
+    get:
+      operationId: killLobbyPlayer
+      summary: Kill a player in the lobby
+      tags: [Lobby, Player]
+      description: |
+        Kills the specified player in the lobby.
+      responses:
+        "200":
+          description: The updated player information
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Player"
+        "404":
+          $ref: "#/components/responses/404NotFoundError"
+        "4XX":
+          $ref: "#/components/responses/4xxClientError"
+        "5XX":
+          $ref: "#/components/responses/5xxInternalError"
+
 components:
   parameters:
     voiceChannelId:
@@ -52,6 +77,13 @@ components:
       required: true
       schema:
         $ref: "#/components/schemas/Lobby/properties/voiceChannelId"
+    playerId:
+      description: Unique ID of the player.
+      in: path
+      name: playerId
+      required: true
+      schema:
+        $ref: "#/components/schemas/Player/properties/discordId"
 
   responses:
     404NotFoundError:
@@ -122,6 +154,9 @@ components:
         discordId:
           type: string
           description: The player's unique ID in Discord
+        discordName:
+          type: string
+          description: The player's display name in Discord
         amongUsName:
           type: string
           description: (Optional) The player's name in-game.

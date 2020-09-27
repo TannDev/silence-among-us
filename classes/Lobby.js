@@ -1,3 +1,4 @@
+const { MessageEmbed } = require('discord.js');
 const discord = require('../discord-bot/discord-bot');
 const Player = require('./Player');
 const Room = require('./Room');
@@ -23,6 +24,8 @@ const lobbies = new Map();
  * @property {string} voiceChannelId - Id of the voice channel associated with the lobby.
  * @property {string} state - Current state of the lobby.
  * @property {Player[]} players - All the current (and past) players.
+ * @property {Discord.VoiceChannel} _voiceChannel - The bound voice channel.
+ * @property {Discord.TextChannel} _textChannel - The bound text channel.
  */
 class Lobby {
     static get STATE() {return STATE;}
@@ -31,7 +34,7 @@ class Lobby {
      * Create a new lobby for a channel.
      *
      * @param {string|Discord.VoiceChannel} voiceChannel - Voice channel, or the id of one.
-     * @param {string|Discord.GuildChannel} [textChannel] - Guild text channel, or the id of one.
+     * @param {string|Discord.TextChannel} [textChannel] - Guild text channel, or the id of one.
      * @returns {Promise<Lobby>}
      */
     static async start(voiceChannel, textChannel) {
@@ -79,9 +82,10 @@ class Lobby {
         return lobby;
     }
 
-    constructor({ voiceChannelId, state, players, room }) {
-        if (!voiceChannelId || typeof voiceChannelId !== 'string') throw new Error("Invalid lobby voiceChannelId");
+    constructor({ voiceChannelId, textChannelId, state, players, room }) {
+        if (!voiceChannelId || typeof voiceChannelId !== 'string') throw new Error("Invalid voiceChannelId");
         this.voiceChannelId = voiceChannelId;
+        this.textChannelId = textChannelId;
 
         if (!Object.values(STATE).includes(state)) throw new Error("Invalid lobby state");
         this.state = state;
@@ -100,10 +104,27 @@ class Lobby {
      */
     get voiceChannel() { return this._voiceChannel; }
 
-    get players() { return [...this._players.values()]}
+
+    /**
+     * Get the text channel used for the lobby.
+     * @returns {Discord.TextChannel}
+     */
+    get textChannel() { return this._textChannel; }
+
+    get players() { return [...this._players.values()];}
 
     emit(message) {
         console.log(`Lobby ${this.voiceChannelId}: ${message}`);
+    }
+
+    /**
+     * Searches for players in the lobby.
+     *
+     * @param {Discord.GuildMember|string} member
+     * @returns {Promise<Player>}
+     */
+    async getPlayer(member) {
+        return this._players.get(member.id || member)
     }
 
     /**
@@ -112,24 +133,27 @@ class Lobby {
      * @param {string} [status] - Status for the player to start with.
      * @returns {Promise<Player>} - The player added/updated.
      */
-    async connectPlayer(member, status ) {
+    async connectPlayer(member, status) {
+        // Reject string-based connections.
+        if (typeof member === 'string') throw new Error("Cannot connect new players via string ID");
+
         // Ignore bots.
         if (member.user.bot) return null;
 
         // Load or create a player.
         const playerId = member.id;
-        const player = this._players.get(playerId) || new Player(this.voiceChannelId, member, status)
+        const player = this._players.get(playerId) || new Player(this.voiceChannelId, member, status);
         this._players.set(playerId, player);
 
         // Update the player's state.
         await this.updatePlayerState(player);
 
-        this.emit(`Connected player ${player.name} (${player.id})`);
+        this.emit(`Connected player ${player.discordName} (${player.discordId})`);
         return player;
     }
 
     async killPlayer(member) {
-        const player = this._players.get(member.id)
+        const player = await this.getPlayer(member);
 
         // If the player isn't already in the lobby, add them to it.
         if (!player) return this.connectPlayer(member, Player.STATUS.DYING);
@@ -140,7 +164,7 @@ class Lobby {
     }
 
     async revivePlayer(member) {
-        const player = this._players.get(member.id)
+        const player = await this.getPlayer(member);
 
         // If the player isn't in the lobby, ignore the request.
         if (!player) return null;
@@ -161,6 +185,41 @@ class Lobby {
             default:
                 throw new Error("Invalid target state");
         }
+    }
+
+    /**
+     * Post information about the lobby to the text channel.
+     * @param {object} [options]
+     * @param {string} [options.title]
+     * @param {string} [options.footer]
+     * @returns {module:"discord.js".MessageEmbed}
+     */
+    async postLobbyInfo(options = {}) {
+        const roomInfo = this.room ? `*${this.room.code}* (${this.room.region})` : 'Not Listed';
+
+        const stateInfo = this.state[0].toUpperCase() + this.state.slice(1);
+
+        const playerInfo = options.spoil || this.state !== STATE.WORKING
+            ? this.players.map(player => `<@${player.discordId}>: ${player.status}`).join('\n')
+            : '_Hidden while crew is working_';
+
+        const embed = new MessageEmbed()
+            .setTitle(options.title || 'Lobby Info')
+            .addField('Room Code', roomInfo, true)
+            .addField('Game State', stateInfo, true)
+            .addField('Players', playerInfo)
+            .setFooter(options.footer || `Channel ID: ${this.voiceChannelId}`);
+
+        // If there's a text channel bound, send the embed to it.
+        if (this.textChannel) {
+            // If there was an old message, delete it.
+            if (this._lastInfoPosted && this._lastInfoPosted.deletable) await this._lastInfoPosted.delete();
+
+            // Post the new one.
+            this._lastInfoPosted = await this.textChannel.send(embed);
+        }
+
+        return embed;
     }
 
     async stop() {
@@ -211,6 +270,16 @@ class Lobby {
         }
 
         this.state = targetState;
+    }
+
+    toJSON() {
+        const {players, room, ...document} = this;
+        Object.keys(document)
+            .filter(key => key.startsWith('_'))
+            .forEach(key => delete document[key]);
+        document.players = players.map(player => player.toJSON());
+        document.room = room
+        return document;
     }
 }
 

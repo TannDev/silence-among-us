@@ -1,4 +1,3 @@
-const { MessageEmbed } = require('discord.js');
 const Lobby = require('../../classes/Lobby');
 const Room = require('../../classes/Room');
 
@@ -47,38 +46,11 @@ async function requireVoiceChannel(message) {
  * @returns {Promise<Lobby>}
  */
 async function requireLobby(message) {
-    const channel = await requireVoiceChannel(message);
-    const lobby = await Lobby.find(channel);
+    const voiceChannel = await requireVoiceChannel(message);
+    const lobby = await Lobby.find(voiceChannel);
     if (!lobby) throw new ReplyError("There's not a lobby for your voice channel. Start one with `!sau start`!");
 
     return lobby;
-}
-
-/**
- * Create a message embed with information about the given lobby/
- * @param {Lobby} lobby
- * @param {object} [options]
- * @param {string} [options.title]
- * @param {string} [options.description]
- * @returns {module:"discord.js".MessageEmbed}
- */
-function getLobbyInfoEmbed(lobby, options = {}) {
-    const {room, state, players} = lobby;
-
-    const roomInfo = room ? `*${room.code}* (${room.region})` : 'Not Listed'
-
-    const stateInfo = state[0].toUpperCase() + state.slice(1);
-
-    const playerInfo = options.spoil || state !== Lobby.STATE.WORKING
-        ? players.map(player => `<@${player.id}>: ${player.status}`).join('\n')
-        : '_Hidden while crew is working_'
-
-    return new MessageEmbed()
-        .setTitle(options.title || 'Lobby Info')
-        .addField('Room Code', roomInfo, true)
-        .addField('Game State', stateInfo, true)
-        .addField('Players', playerInfo)
-        .setFooter(options.footer || `Channel ID: ${lobby.voiceChannelId}`)
 }
 
 function parseRoomCode(lobby, arguments) {
@@ -104,6 +76,5 @@ module.exports = {
     requireGuildMember,
     requireVoiceChannel,
     requireLobby,
-    getLobbyInfoEmbed,
     parseRoomCode
 };

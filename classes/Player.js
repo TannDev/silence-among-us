@@ -8,6 +8,7 @@ const STATUS = {
 
 class Player {
     static get STATUS() { return STATUS; };
+
     get STATUS() { return STATUS; };
 
     // TODO Refactor this class to be database-friendly.
@@ -24,12 +25,16 @@ class Player {
         this.status = status;
     }
 
-    get id() {
-        return this._guildMember.id;
+    get member() {
+        return this._guildMember;
     }
 
-    get name() {
-        return this._guildMember.displayName;
+    get discordId() {
+        return this.member.id;
+    }
+
+    get discordName() {
+        return this.member.displayName;
     }
 
     kill() {
@@ -84,15 +89,24 @@ class Player {
      * @param {string} [reason] - Reason for changing the settings.
      * @returns {Promise<Player>}
      */
-    async setMuteDeaf(mute, deaf, reason){
+    async setMuteDeaf(mute, deaf, reason) {
         // Make sure the user is still in the game channel.
-        const {voice} = await this._guildMember.fetch();
-        if (!voice || voice.voiceChannelId !== this.voiceChannelId) return this;
+        const { voice } = await this._guildMember.fetch();
+        if (!voice || voice.channelID !== this.voiceChannelId) return this;
 
-        console.log(`Setting permissions for ${this.name}: ${mute ? 'mute' : 'unmute'} ${deaf ? 'deaf' : 'undeaf'}`)
-        const finalReason = `Silence Among Us${reason ? `: ${reason}` : ''}`
+        console.log(`Setting permissions for ${this.discordName}: ${mute ? 'mute' : 'unmute'} ${deaf ? 'deaf' : 'undeaf'}`);
+        const finalReason = `Silence Among Us${reason ? `: ${reason}` : ''}`;
         await Promise.all([voice.setMute(mute, finalReason), voice.setDeaf(deaf, finalReason)]);
         return this;
+    }
+
+    toJSON() {
+        // TODO Find a better way to do this.
+        return {
+            discordName: this.discordName,
+            discordId: this.discordId,
+            status: this.status
+        };
     }
 }
 

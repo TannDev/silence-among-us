@@ -1,4 +1,4 @@
-const { ReplyError, requireLobby, getLobbyInfoEmbed } = require('./_helpers');
+const { ReplyError, requireLobby } = require('./_helpers');
 
 
 module.exports = async function intermissionCommand(message) {
@@ -9,7 +9,7 @@ module.exports = async function intermissionCommand(message) {
 
     // Transition
     await lobby.transition('intermission')
-    await message.channel.send(getLobbyInfoEmbed(lobby, {title: "Game Over!"}))
+    await lobby.postLobbyInfo({title: "Game Over!"})
 
     // TODO Play audio
 };

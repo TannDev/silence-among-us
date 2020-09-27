@@ -1,5 +1,4 @@
-const Room = require('../../classes/Room');
-const { ReplyError, requireLobby, parseRoomCode, getLobbyInfoEmbed } = require('./_helpers');
+const { requireLobby, parseRoomCode } = require('./_helpers');
 
 module.exports = async function roomCommand(message, arguments) {
     // Make sure the user is in a channel, and we have access.
@@ -9,5 +8,5 @@ module.exports = async function roomCommand(message, arguments) {
     parseRoomCode(lobby, arguments);
 
     // Respond with the lobby information.
-    await message.channel.send(getLobbyInfoEmbed(lobby, {title: "Room Code Changed"}))
+    await lobby.postLobbyInfo({title: "Room Change"})
 };

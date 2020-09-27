@@ -5,9 +5,12 @@ const swaggerUI = require('swagger-ui-express');
 // Initialize the server
 const app = express();
 
-// Serve swagger UI
+// Serve swagger UI/
 app.use(swaggerUI.serve);
-app.get('/', swaggerUI.setup(require('./lib/loadSchema')));
+app.get('/', swaggerUI.setup(require('../lib/loadSchema')));
+
+// Mount the API.
+app.use('/api', require('./api'));
 
 // Fail on anything else.
 app.use((req, res, next) => {
