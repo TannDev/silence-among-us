@@ -256,6 +256,9 @@ class Lobby {
         // Delete the last lobby info.
         await this.deleteLastLobbyInfo();
 
+        // Leave the voice channel
+        this.voiceChannel.leave();
+
         this.emit("Destroyed");
     }
 
