@@ -62,12 +62,22 @@ async function requireLobby(message) {
  * @returns {module:"discord.js".MessageEmbed}
  */
 function getLobbyInfoEmbed(lobby, options = {}) {
+    const {room, state, players} = lobby;
+
+    const roomInfo = room ? `*${room.code}* (${room.region})` : 'Not Listed'
+
+    const stateInfo = state[0].toUpperCase() + state.slice(1);
+
+    const playerInfo = options.spoil || state !== Lobby.STATE.WORKING
+        ? players.map(player => `<@${player.id}>: ${player.status}`).join('\n')
+        : '_Hidden while crew is working_'
+
     return new MessageEmbed()
         .setTitle(options.title || 'Lobby Info')
-        .setDescription(options.description || `Channel ID: ${lobby.channelId}`)
-        .addField('Game State', lobby.state, true)
-        .addField('Room Code', lobby.room || 'None', true)
-        .addField('Players', lobby.players.map(player => `<@${player.id}>: ${player.status}`).join('\n'))
+        .addField('Room Code', roomInfo, true)
+        .addField('Game State', stateInfo, true)
+        .addField('Players', playerInfo)
+        .setFooter(options.footer || `Channel ID: ${lobby.channelId}`)
 }
 
 module.exports = {

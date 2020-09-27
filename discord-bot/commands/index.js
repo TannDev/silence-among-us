@@ -1,11 +1,3 @@
-async function notImplementedCommand(message, arguments, command) {
-    return message.reply(`I understood the "${command}" command, but I can't handle it yet.`);
-}
-
-async function unknownCommand(message, arguments, command) {
-    return message.reply(`Sorry, I don't recognize \`${command}\`. Try \`!sau help\`.`);
-}
-
 /**
  * All registered commands, with their aliases and handlers.
  */
@@ -15,7 +7,7 @@ const commands = [
     { aliases: ['hello', 'hi', 'hey'], handler: (message) => message.reply('Hello!') },
     { aliases: ['start'], handler: require('./start') },
     { aliases: ['stop'], handler: require('./stop') },
-    { aliases: ['room', 'r'], handler: notImplementedCommand },
+    { aliases: ['room', 'r'], handler: require('./room') },
     { aliases: ['intermission', 'i'], handler: require('./intermission') },
     { aliases: ['working', 'work', 'w'], handler: require('./working') },
     { aliases: ['meeting', 'meet', 'm'], handler: require('./meeting') },
@@ -23,6 +15,10 @@ const commands = [
     { aliases: ['revive'], handler: require('./revive') },
     { aliases: ['spoil'], handler: require('./spoil') }
 ];
+
+async function unknownCommand(message, arguments, command) {
+    return message.reply(`Sorry, I don't recognize \`${command}\`. Try \`!sau help\`.`);
+}
 
 module.exports = async function processCommandMessage(message) {
     // Look for commands.

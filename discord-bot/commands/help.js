@@ -7,7 +7,7 @@ const commands = [
     '`help|h|?`: Get this help.',
     "`start`: Start a new lobby. (This **doesn't** start the game. Use `working` for that.)",
     "`stop`: End your lobby. (This **doesn't** end the game. Use `intermission` for that.)",
-    '`room|r [room code] [region]`: Get (or set) the room information of your lobby.',
+    '`room|r [room code] [na|eu|asia]`: Get (or set) the room information of your lobby.',
     '`intermission|i`: Mark your lobby as being in intermission. (End a game.)',
     '`working|work|w`: Mark your lobby as working on tasks. (Start a game, or end a meeting.)',
     '`meeting|meet|m`: Mark your lobby as being in a meeting.',
