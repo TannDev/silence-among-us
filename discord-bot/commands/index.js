@@ -13,7 +13,9 @@ const commands = [
     { aliases: ['meeting', 'meet', 'm'], handler: require('./meeting') },
     { aliases: ['dead', 'kill', 'd', 'k'], handler: require('./kill') },
     { aliases: ['revive'], handler: require('./revive') },
-    { aliases: ['spoil'], handler: require('./spoil') }
+    { aliases: ['spoil'], handler: require('./spoil') },
+    { aliases: ['test', 't'], handler: require('./test') }
+
 ];
 
 async function unknownCommand(message, arguments, command) {

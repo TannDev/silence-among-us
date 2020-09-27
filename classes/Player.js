@@ -94,10 +94,21 @@ class Player {
         const { voice } = await this._guildMember.fetch();
         if (!voice || voice.channelID !== this.voiceChannelId) return this;
 
-        console.log(`Setting permissions for ${this.discordName}: ${mute ? 'mute' : 'unmute'} ${deaf ? 'deaf' : 'undeaf'}`);
+        // Set the reason for the change
         const finalReason = `Silence Among Us${reason ? `: ${reason}` : ''}`;
-        await Promise.all([voice.setMute(mute, finalReason), voice.setDeaf(deaf, finalReason)]);
+
+        // Don't waste rate limits on duplicate requests.
+        const requests = [];
+        if (voice.serverMute !== mute) requests.push(voice.setMute(mute, finalReason));
+        if (voice.serverDeaf !== deaf) requests.push(voice.setDeaf(deaf, finalReason));
+        await Promise.all(requests)
+
+        this.emit(`Set ${mute ? 'mute' : 'unmute'} ${deaf ? 'deaf' : 'undeaf'}`);
         return this;
+    }
+
+    emit(message) {
+        console.log(`Player ${this.discordName} (${this.discordId}): ${message}`);
     }
 
     toJSON() {
