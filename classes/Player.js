@@ -66,16 +66,17 @@ class Player {
      * @param {boolean} mute - Whether the player should be allowed to speak
      * @param {boolean} deaf - Whether the player should be allowed to hear
      * @param {string} [reason] - Reason for changing the settings.
-     * @returns {Promise<void>}
+     * @returns {Promise<Player>}
      */
     async setMuteDeaf(mute, deaf, reason){
         // Make sure the user is still in the game channel.
         const {voice} = await this._guildMember.fetch();
-        if (!voice || voice.channelID !== this.channelId) return;
+        if (!voice || voice.channelID !== this.channelId) return this;
 
         console.log(`Setting permissions for ${this.name}: ${mute ? 'mute' : 'unmute'} ${deaf ? 'deaf' : 'undeaf'}`)
         const finalReason = `Silence Among Us${reason ? `: ${reason}` : ''}`
         await Promise.all([voice.setMute(mute, finalReason), voice.setDeaf(deaf, finalReason)]);
+        return this;
     }
 }
 

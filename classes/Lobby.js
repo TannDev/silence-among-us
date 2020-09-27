@@ -1,3 +1,4 @@
+const discord = require('../discord-bot/discord-bot');
 const Player = require('./Player');
 const Room = require('./Room');
 
@@ -58,11 +59,8 @@ class Lobby {
      * @returns {Promise<Lobby>} - Lobby matching the channel, or null
      */
     static async find(channel) {
+        if (typeof channel === 'string') channel = await discord.channels.fetch(channel);
         if (!channel) return null;
-        if (typeof channel === 'string') {
-            // TODO Get the voice channel associated with the ID.
-            throw new Error("Finding a channel by ID isn't supported yet.");
-        }
 
         // TODO Load from database.
 
@@ -78,8 +76,9 @@ class Lobby {
         if (!Object.values(STATE).includes(state)) throw new Error("Invalid lobby state");
         this.state = state;
 
-        // TODO Handle players properly
-        this.players = [];
+        // Create a map to hold the players.
+        this._players = new Map();
+        // TODO Add initial players from the constructor.
 
         if (room) this.room = new Room(room);
     }
@@ -89,6 +88,8 @@ class Lobby {
      * @returns {Discord.VoiceChannel}
      */
     get voiceChannel() { return this._voiceChannel; }
+
+    get players() { return [...this._players.values()]}
 
     emit(message) {
         console.log(`Lobby ${this.channelId}: ${message}`);
@@ -103,14 +104,35 @@ class Lobby {
         // Ignore bots.
         if (member.user.bot) return null;
 
-        // TODO Check for duplicate player.
+        // If the player is already in this lobby, reconnect them instead.
+        const playerId = member.id;
+        if (this._players.has(playerId)) {
+            const player = this._players.get(playerId)
+            if (!player) throw new Error("Member is not a player in this lobby");
+            switch (this.state) {
+                case STATE.INTERMISSION:
+                    return player.setForIntermission();
+                case STATE.WORKING:
+                    return player.setForWorking();
+                case STATE.MEETING:
+                    return player.setForMeeting();
+                default:
+                    throw new Error("Invalid target state");
+            }
+        }
 
         // Determine the appropriate status for a new player joining.
         const status = this.state === STATE.INTERMISSION ? Player.STATUS.LIVING : Player.STATUS.WAITING;
 
         // Create and add the player
         const player = new Player(this.channelId, member, status);
-        this.players.push(player);
+        this._players.set(playerId, player);
+
+        // Set their starting voice state.
+        if (this.state === STATE.INTERMISSION) await player.setMuteDeaf(false, false, "New Player");
+        else await player.setMuteDeaf(true, false, "New Player (Mid-game)");
+
+        this.emit(`Added player ${player.name} (${player.id})`);
         return player;
     }
 

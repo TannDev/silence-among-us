@@ -22,6 +22,7 @@ module.exports = client;
 // ==== It's now safe to require other modules. ====
 
 const processCommandMessage = require('./commands');
+const Lobby = require('../classes/Lobby')
 
 client.on('ready', () => {
     console.log(`Discord bot logged in as ${client.user.tag}`);
@@ -61,9 +62,31 @@ client.on('messageUpdate', (oldMessage, newMessage) => {
     // TODO Consider handling message updates to allow commands to be fixed.
 });
 
-client.on('presenceUpdate', (oldPresence, newPresence) => {
-    // TODO Say hello
-    // logItem('newPresence', newPresence);
+client.on('voiceStateUpdate', async (oldPresence, newPresence) => {
+    // TODO Find a better file for this to live in.
+    // Track players as they move from channel to channel.
+    const {channelID: oldChannelId} = oldPresence;
+    const {channelID: newChannelId, member} = newPresence;
+
+    // Ignore any updates that don't involve changing channels.
+    if (oldChannelId === newChannelId) return;
+
+    // Determine if a player is joining/leaving a game.
+    const [oldLobby, newLobby] = await Promise.all([
+        Lobby.find(oldChannelId),
+        Lobby.find(newChannelId)
+    ]);
+
+    // If they're going into a new lobby, add or reconnect them.
+    if (newLobby) await newLobby.addPlayer(member);
+
+    // Otherwise, if they're leaving an old lobby, unmute them.
+    else if (oldLobby) {
+        const {voice} = member;
+        if (!voice) return;
+        const reason = `Silence Among Us: Left Lobby`
+        await Promise.all([voice.setMute(false, reason), voice.setDeaf(false, reason)]);
+    }
 });
 
 // Connect to Discord.
