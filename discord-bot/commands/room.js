@@ -5,7 +5,7 @@ module.exports = async function roomCommand(message, arguments) {
     const lobby = await requireLobby(message);
 
     // If a room code was provided, handle it.
-    parseRoomCode(lobby, arguments);
+    parseRoomCode(arguments, lobby);
 
     // Respond with the lobby information.
     await lobby.postLobbyInfo()

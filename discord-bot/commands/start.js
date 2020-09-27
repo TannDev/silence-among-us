@@ -11,20 +11,21 @@ module.exports = async function startCommand(message, arguments) {
     let lobby = await Lobby.find(voiceChannel);
     if (lobby) throw new ReplyError("I've already got a lobby in that channel.");
 
-    // Start a new lobby;
-    lobby = await Lobby.start(voiceChannel, textChannel);
-
     // If a room code was provided, handle it.
-    parseRoomCode(lobby, arguments);
+    const room = parseRoomCode(arguments);
+
+    // Start a new lobby;
+    lobby = await Lobby.start(voiceChannel, textChannel, room);
 
     // Send lobby info to the channel.
     await lobby.postLobbyInfo()
 
     // Join the channel, if possible.
+    // TODO Move the speaking into the Lobby class.
     if (voiceChannel.joinable && voiceChannel.speakable) {
         const voiceConnection = await voiceChannel.join();
         voiceConnection.setSpeaking(0);
-        voiceConnection.play(greeting);
+        // voiceConnection.play(greeting);
     }
     else {
         await message.reply("I can't speak in your channel, but I'll run a lobby for it anyway.")

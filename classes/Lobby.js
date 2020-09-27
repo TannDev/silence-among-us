@@ -35,9 +35,10 @@ class Lobby {
      *
      * @param {string|Discord.VoiceChannel} voiceChannel - Voice channel, or the id of one.
      * @param {string|Discord.TextChannel} [textChannel] - Guild text channel, or the id of one.
+     * @param {Room} [room] - A room to start with.
      * @returns {Promise<Lobby>}
      */
-    static async start(voiceChannel, textChannel) {
+    static async start(voiceChannel, textChannel, room) {
         if (typeof voiceChannel === 'string') {
             // TODO Get the voice channel associated with the ID.
             throw new Error("Starting a channel by ID isn't supported yet.");
@@ -50,13 +51,15 @@ class Lobby {
         const voiceChannelId = voiceChannel.id;
         const textChannelId = textChannel && textChannel.id;
 
-        const lobby = new Lobby({ voiceChannelId, textChannelId, state: STATE.INTERMISSION });
+        const lobby = new Lobby({ voiceChannelId, textChannelId, state: STATE.INTERMISSION, room});
         lobby._voiceChannel = voiceChannel;
         lobby._textChannel = textChannel;
         lobbies.set(voiceChannelId, lobby);
 
         // Add players
+        // TODO Do this silently.
         await Promise.all(voiceChannel.members.map(member => lobby.connectPlayer(member)));
+
 
         lobby.emit("Created");
 
@@ -95,7 +98,7 @@ class Lobby {
         // TODO Add initial players from the constructor.
 
         // TODO Handle the room properly
-        if (room) this.room = new Room(room);
+        if (room) this.room = room;
     }
 
     /**

@@ -90,21 +90,32 @@ async function requireLobby(message) {
     return lobby;
 }
 
-function parseRoomCode(lobby, arguments) {
-    if (arguments.length < 1) return;
+/**
+ * Parses the room code and returns a room.
+ * If a lobby is provided, it is also updated automatically.
+ *
+ * @param arguments
+ * @param {Lobby} [lobby]
+ * @return {Room}
+ */
+function parseRoomCode(arguments, lobby) {
+    if (arguments.length < 1) return null;
     const [code, region] = arguments;
 
     // If a code was provided, handle it.
     if (code) {
         // If the "code" is an unlist instruction, delete it and return.
-        if (code.match(/unlist|delete|remove|private/i)) delete lobby.room;
+        if (code.match(/unlist|delete|remove|private/i)) {
+            if (lobby) delete lobby.room;
+            return null;
+        }
 
         // Otherwise, store the new room code.
-        else {
-            // TODO Load this pattern from the schema, instead of hardcoding it.
-            if (!code.match(/^[a-z]{6}$/i)) throw new ReplyError("That room code doesn't make sense.");
-            lobby.room = new Room(code, region);
-        }
+        // TODO Load this pattern from the schema, instead of hardcoding it.
+        if (!code.match(/^[a-z]{6}$/i)) throw new ReplyError("That room code doesn't make sense.");
+        const room = new Room(code, region);
+        if (lobby) lobby.room = room;
+        return room;
     }
 }
 
