@@ -160,26 +160,54 @@ class Lobby {
         return player;
     }
 
-    async killPlayer(member) {
-        const player = await this.getPlayer(member);
+    /**
+     * Kill the player(s) passed in.
+     * Accepts arbitrarily many GuildMembers as arguments.
+     *
+     * @param {Discord.GuildMember} members
+     * @returns {Promise<void>}
+     */
+    async killPlayer(...members) {
+        // Generate kill orders for each member passed in.
+        const killOrders = members.map(async member => {
+            // If the member is a player is in this lobby, mark them as dying and update their state.
+            const player = await this.getPlayer(member);
+            if (player) {
+                player.status = Player.STATUS.DYING;
+                return this.updatePlayerState(player);
+            }
+        })
 
-        // If the player isn't already in the lobby, add them to it.
-        if (!player) return this.connectPlayer(member, Player.STATUS.DYING);
+        // Wait for all the kill orders to finish processing.
+        await Promise.all(killOrders);
 
-        // Otherwise, mark them as dying and update their state.
-        player.status = Player.STATUS.DYING;
-        return this.updatePlayerState(player);
+        // If a meeting is already underway, post updated lobby information.
+        if (this.state === STATE.MEETING) await this.postLobbyInfo()
     }
 
-    async revivePlayer(member) {
-        const player = await this.getPlayer(member);
+    /**
+     * Revive the player(s) passed in.
+     * Accepts arbitrarily many GuildMembers as arguments.
+     *
+     * @param {Discord.GuildMember} members
+     * @returns {Promise<void>}
+     */
+    async revivePlayer(...members) {
+        // Generate revival orders for each member passed in.
+        const reviveOrders = members.map(async member => {
+            // If the member is a player is in this lobby, mark them as living and update their state.
+            const player = await this.getPlayer(member);
+            if (player) {
+                player.status = Player.STATUS.LIVING;
+                return this.updatePlayerState(player);
+            }
+        })
 
-        // If the player isn't in the lobby, ignore the request.
-        if (!player) return null;
+        // Wait for all the revival orders to finish processing.
+        await Promise.all(reviveOrders);
 
-        // Otherwise, mark them as living and update their state.
-        player.status = Player.STATUS.LIVING;
-        return this.updatePlayerState(player);
+        // If a meeting is already underway, post updated lobby information.
+        if (this.state === STATE.MEETING) await this.postLobbyInfo()
     }
 
     async updatePlayerState(player) {
