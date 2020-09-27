@@ -1,0 +1,8 @@
+*secret*
+.idea
+node_modules
+.dockerignore
+.gitignore
+.env
+CONTRIBUTING.md
+README.md

@@ -1,0 +1,12 @@
+version: '3.5'
+
+services:
+  app:
+    image: jftanner/silence-among-us
+    build: .
+    env_file: .env
+    environment:
+      - PORT=8080
+    ports:
+      - 127.0.0.1:8080:8080
+
