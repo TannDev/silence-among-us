@@ -58,29 +58,54 @@ Unfortunately, there's no direct connection to the game at the moment. So you'll
 
 ... for now!
 
-## Installation
-The bot is currently available only via Docker, and there's some setup required to make it work.
+## Running the Bot
+If you want to use the bot, it'll need to be running somewhere.
 
-_Note:_ If you're unfamiliar with Docker, you'll need to wait for a future release. Unfortunately, TannDev can't provide introductory-level user support just yet.
+Here's a few ways to make that happen...
 
-If you **are** familiar with Docker, proceed as follows:
-1. Create a new Discord application
-    - _Instructions not yet available._
-1. Start the bot via Docker.
-    - The docker image is `jftanner/silence-among-us`
-    - The bot uses two environment variables:
-        - `PORT`: Which port the API server should listen on. (Default: 3000)
-        - `DISCORD_TOKEN`: The bot token for your Discord application
-    - If you want to use the API server, you'll need to expose or publish whichever port you selected.
-1. Have fun!
+### Using the TannDev-Hosted Bot
+Unfortunately, we don't have the CPU or bandwidth to provide the bot to everybody and have to be very stingy with access to the deployment we use for testing. If you know someone from TannDev personally, you can reach out to them directly. Otherwise, you'll need to host your own or wait for a larger launch.
 
-## Develop or Build From Source
-If you'd like to run the bot from source, you'll need a few things:
-1. Prerequisites
-    - Node.js (v12 or higher)
-1. Clone the repository.
-1. Install the dependencies with `npm install`
-1. Create a `.env` file with your `DISCORD_TOKEN` in the standard `VAR=value` format.
-1. Start everything with `npm start`, or run the bot without the API with `npm run bot`
+### Hosting Your Own
+If you can't get access to an already-running bot, you can host your own.
+You can do this via docker, or natively with Node.js.
 
+Either way, though, you'll need to create a new Discord application for authorization.
+You'll also need to provide some environment variable.
+
+#### Create a Discord Application
+_Instructions not yet available._
+
+#### Environment Variables
+The bot uses a couple environment variables:
+- `PORT`: Which port the API server should listen on. (Default: 3000)
+- `DISCORD_TOKEN`: The bot token for your Discord application
+
+The easiest way to store these is to create `.env` file in the standard `VAR=value` format:
+```
+PORT=3000
+DISCORD_TOKEN=your-token-goes-here
+```
+
+#### Run via Docker
+_Note:_ Unfortunately, we can't provide support for users that are unfamiliar with Docker. 
+
+If you're comfortable with Docker, here's what you need to know:
+- The docker image is `jftanner/silence-among-us`
+- Make sure to add the environment variables via `-e DISCORD_TOKEN=your-token` or with the `.env` file.
+- If you want to use the API server, you'll need to expose or publish whichever port you selected.
+
+Here's a quick and dirty example, if you're running locally:
+`docker run -it --rm -p 3000:3000 --env-file=.env jftanner/silence-among-us`
+
+#### Run via Node.js
+_Note:_ Unfortunately, we can't provide support for users that are unfamiliar with running Node.js apps. 
+
+If you're comfortable with Node.js, here's what you need to know:
+- You'll need Node.js v12 or higher
+- Clone or download the repo.
+- Make sure the `.env` file is at the root of the project, next to `package.json`
+- Start everything with `npm start`, or run the bot without the API with `npm run bot`
+
+## Contributing
 If you'd like to contribute, check out our [Contributing Guidelines](CONTRIBUTING.md).
