@@ -17,12 +17,20 @@ const commands = [
     '`revive <@mentions...>`: Mark any at-mentioned players as being alive.'
 ].map(command => `\t- ${command}`).join('\n');
 
+const examples = [
+    '`!sau lobby start`: Start a new lobby with no room code.',
+    '`!sl start abcdef eu`: Start a new lobby with a room code.',
+    '`!sau work`: Start a new game, from intermission, or end a meeting.',
+    '`!sw`: Same thing as `!sau work`, but shorter.',
+    '`!sk me @tanner`: Mark yourself and @tanner as dead. (Must be a real at-mention)'
+].map(command => `\t- ${command}`).join('\n');
 
 const helpEmbed = new MessageEmbed()
     .setTitle("Silence Among Us - Help")
     .setURL(instructionsUrl)
     .setDescription("Use `!sau <command>` or `!s<command>` to tell me what to do.\nI'll use your current voice channel to find your lobby.")
     .addField('Available Commands', `${commands}\n\nSee the [instructions](${instructionsUrl}) for more details.`)
+    .addField('Examples', examples);
 
 module.exports = async function helpCommand(message) {
     return message.channel.send(helpEmbed);
