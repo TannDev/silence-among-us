@@ -10,9 +10,9 @@ const commands = [
     '`lobby|l stop`: End your lobby.',
     '`lobby|l room|r <room code> [na|eu|asia]`: Update the room information of your lobby.',
     '`lobby|l room|r unlist|remove|x`: Remove the room information of your lobby.',
-    '`intermission|i`: Mark your lobby as being in intermission.',
-    '`working|work|w`: Mark your lobby as working on tasks.',
-    '`meeting|meet|m`: Mark your lobby as being in a meeting.',
+    '`intermission|i`: Transition your lobby to the "intermission" phase.',
+    '`working|work|w`: Transition your lobby to the "working" phase.',
+    '`meeting|meet|m`: Transition your lobby to the "meeting" phase.',
     '`dead|kill|d|k <@mentions...>`: Mark the at-mentioned players as being dead.',
     '`revive <@mentions...>`: Mark any at-mentioned players as being alive.'
 ].map(command => `\t- ${command}`).join('\n');

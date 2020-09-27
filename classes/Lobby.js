@@ -18,9 +18,9 @@ const requiredVoicePermissionsFlags = [
 const requiredVoicePermissions = new Permissions(requiredVoicePermissionsFlags)
 
 /**
- * The valid states of a lobby.
+ * The valid phases of a lobby.
  */
-const STATE = {
+const PHASE = {
     INTERMISSION: 'intermission',
     WORKING: 'working',
     MEETING: 'meeting'
@@ -36,13 +36,13 @@ const lobbies = new Map();
 
 /**
  * @property {string} voiceChannelId - Id of the voice channel associated with the lobby.
- * @property {string} state - Current state of the lobby.
+ * @property {string} phase - Current phase of the lobby.
  * @property {Player[]} players - All the current (and past) players.
  * @property {Discord.VoiceChannel} _voiceChannel - The bound voice channel.
  * @property {Discord.TextChannel} _textChannel - The bound text channel.
  */
 class Lobby {
-    static get STATE() {return STATE;}
+    static get PHASE() {return PHASE;}
 
     /**
      * Create a new lobby for a channel.
@@ -78,7 +78,7 @@ class Lobby {
         const voiceChannelId = voiceChannel.id;
         const textChannelId = textChannel.id;
 
-        const lobby = new Lobby({ voiceChannelId, textChannelId, state: STATE.INTERMISSION, room});
+        const lobby = new Lobby({ voiceChannelId, textChannelId, phase: PHASE.INTERMISSION, room});
         lobby._voiceChannel = voiceChannel;
         lobby._textChannel = textChannel;
         lobbies.set(voiceChannelId, lobby);
@@ -112,13 +112,13 @@ class Lobby {
         return lobby;
     }
 
-    constructor({ voiceChannelId, textChannelId, state, players, room }) {
+    constructor({ voiceChannelId, textChannelId, phase, players, room }) {
         if (!voiceChannelId || typeof voiceChannelId !== 'string') throw new Error("Invalid voiceChannelId");
         this.voiceChannelId = voiceChannelId;
         this.textChannelId = textChannelId;
 
-        if (!Object.values(STATE).includes(state)) throw new Error("Invalid lobby state");
-        this.state = state;
+        if (!Object.values(PHASE).includes(phase)) throw new Error("Invalid lobby phase");
+        this.phase = phase;
 
         // Create a map to hold the players.
         this._players = new Map();
@@ -144,9 +144,9 @@ class Lobby {
     get players() { return [...this._players.values()];}
 
     /**
-     * @returns {boolean} - Whether or not the lobby is currently transitioning between states.
+     * @returns {boolean} - Whether or not the lobby is currently transitioning between phases.
      */
-    get transitioning() {return Boolean(this._targetState);}
+    get transitioning() {return Boolean(this._targetPhase);}
 
     emit(message) {
         console.log(`Lobby ${this.voiceChannelId}: ${message}`);
@@ -195,7 +195,7 @@ class Lobby {
      * @returns {Promise<void>}
      */
     async killPlayer(...members) {
-        if (this.state === STATE.INTERMISSION) throw new Error("You can't kill people during intermission.");
+        if (this.phase === PHASE.INTERMISSION) throw new Error("You can't kill people during intermission.");
 
         // Generate kill orders for each member passed in.
         const killOrders = members.map(async member => {
@@ -211,7 +211,7 @@ class Lobby {
         await Promise.all(killOrders);
 
         // If a meeting is already underway, post updated lobby information.
-        if (this.state === STATE.MEETING) await this.postLobbyInfo()
+        if (this.phase === PHASE.MEETING) await this.postLobbyInfo()
     }
 
     /**
@@ -236,45 +236,42 @@ class Lobby {
         await Promise.all(reviveOrders);
 
         // If a meeting is already underway, post updated lobby information.
-        if (this.state === STATE.MEETING) await this.postLobbyInfo()
+        if (this.phase === PHASE.MEETING) await this.postLobbyInfo()
     }
 
     async updatePlayerState(player) {
-        switch (this.state) {
-            case STATE.INTERMISSION:
+        switch (this.phase) {
+            case PHASE.INTERMISSION:
                 return player.setForIntermission();
-            case STATE.WORKING:
+            case PHASE.WORKING:
                 return player.setForWorking();
-            case STATE.MEETING:
+            case PHASE.MEETING:
                 return player.setForMeeting();
             default:
-                throw new Error("Invalid target state");
+                throw new Error("Invalid target phase");
         }
     }
 
     /**
      * Post information about the lobby to the text channel.
      * @param {object} [options]
-     * @param {boolean} [options.spoil] - Display Living and Dying players during the working state.
+     * @param {boolean} [options.spoil] - Display Living and Dying players during the working phase.
      * @returns {module:"discord.js".MessageEmbed}
      */
     async postLobbyInfo(options = {}) {
         const roomInfo = this.room ? `*${this.room.code}* (${this.room.region})` : 'Not Listed';
 
-        const stateInfo = this.state[0].toUpperCase() + this.state.slice(1);
+        const phaseInfo = this.phase[0].toUpperCase() + this.phase.slice(1);
 
 
         const playerInfo = this.players
             .filter(player => player.status !== Player.STATUS.SPECTATING)
             .map(player => {
-                const workingStates = [Player.STATUS.LIVING, Player.STATUS.DYING];
-                const showStatus = options.spoil
-                    || this.state !== STATE.WORKING
-                    || !workingStates.includes(player.status);
+                const showStatus = options.spoil || this.phase !== PHASE.WORKING || !player.isWorker;
                 const status = showStatus ? player.status[0].toUpperCase() + player.status.slice(1) : '_Working_';
 
                 // TODO Load URL from somewhere.
-                // const showLink = this.state !== STATE.INTERMISSION && workingStates.includes(player.status);
+                // const showLink = this.phase !== PHASE.INTERMISSION && workingPhases.includes(player.status);
                 // const killUrl = `http://localhost:3000/api/lobby/${this.voiceChannelId}/${player.discordId}/kill`;
                 // const killLink = showLink ? ` - [kill](${killUrl})` : '';
 
@@ -283,7 +280,7 @@ class Lobby {
 
         const embed = new MessageEmbed()
             .setTitle(`Among Us - Playing in "${this.voiceChannel.name}"`)
-            .addField('Game State', stateInfo, true)
+            .addField('Game Phase', phaseInfo, true)
             .addField('Room Code', roomInfo, true)
             .addField('Players', playerInfo)
             .setFooter(`Channel ID: ${this.voiceChannelId}`);
@@ -320,16 +317,16 @@ class Lobby {
     }
 
     /**
-     * Transition to the new state.
+     * Transition to the new phase.
      *
-     * @param {string} targetState
+     * @param {string} targetPhase
      * @returns {Promise<void>}
      */
-    async transition(targetState) {
+    async transition(targetPhase) {
         // Prevent multiple or duplicate transitions.
-        if (this.transitioning) throw new Error("The lobby is already transitioning between states")
-        if (this.state === targetState) throw new Error(`The lobby is already in the ${targetState} state`);
-        this._targetState = targetState;
+        if (this.transitioning) throw new Error("The lobby is already transitioning between phases")
+        if (this.phase === targetPhase) throw new Error(`The lobby is already in the ${targetPhase} phase`);
+        this._targetPhase = targetPhase;
 
         // Sort players into batches, to avoid cross-talk.
         const everyone = this.players;
@@ -337,31 +334,31 @@ class Lobby {
         const nonWorkers = everyone.filter(player => !player.isWorker);
 
         // Handle the transition.
-        this.emit(`Transitioning to ${targetState}`);
-        switch (targetState) {
-            case STATE.INTERMISSION:
+        this.emit(`Transitioning to ${targetPhase}`);
+        switch (targetPhase) {
+            case PHASE.INTERMISSION:
                 await Promise.all(everyone.map(player => player.setForIntermission()));
                 break;
 
-            case STATE.WORKING:
+            case PHASE.WORKING:
                 // Update workers first, to avoid cross-talk, then everyone else.
                 await Promise.all(workers.map(player => player.setForWorking()));
                 await Promise.all(nonWorkers.map(player => player.setForWorking()));
                 break;
 
-            case STATE.MEETING:
+            case PHASE.MEETING:
                 // Update non-workers first, to avoid cross-talk, then everyone else.
                 await Promise.all(nonWorkers.map(player => player.setForMeeting()));
                 await Promise.all(workers.map(player => player.setForMeeting()));
                 break;
 
             default:
-                throw new Error("Invalid target state");
+                throw new Error("Invalid target phase");
         }
 
-        this.state = targetState;
-        delete this._targetState;
-        this.emit(`Entered ${targetState}`);
+        this.phase = targetPhase;
+        delete this._targetPhase;
+        this.emit(`Entered ${targetPhase}`);
 
         // Send out an update.
         await this.postLobbyInfo()

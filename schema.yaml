@@ -102,7 +102,7 @@ components:
 
         A lobby is built around a single Discord voice channel, and assumes that anyone joining that channel is
         playing that game. So the `voiceChannelId` is also used as a lobby id.
-      required: [voiceChannelId, state, players]
+      required: [voiceChannelId, phase, players]
       additionalProperties: false
       properties:
         voiceChannelId:
@@ -111,10 +111,10 @@ components:
         textChannelId:
           type: string
           description: The ID of the Discord text channel where updates should be posted.
-        state:
+        phase:
           type: string
           description: |
-            The current state of the lobby, as one of the following values:
+            The current phase of the lobby, as one of the following values:
             - `intermission`: Between games
               - Everyone can talk.
               - New players join as living.

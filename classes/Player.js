@@ -46,7 +46,7 @@ class Player {
     }
 
     /**
-     * Identifies whether this player is a "worker" (currently in the either the living or dying state).
+     * Identifies whether this player is a "worker" (currently in the either the living or dying status).
      *
      * @return {boolean}
      */
@@ -61,7 +61,7 @@ class Player {
     }
 
     async setForWorking() {
-        // Set audio permissions based on working state.
+        // Set audio permissions based on working status.
         return this.isWorker
             ? this.setMuteDeaf(true, true, "Working (Worker)")
             : this.setMuteDeaf(false, false, "Working (Non-Worker)");
