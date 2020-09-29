@@ -86,17 +86,15 @@ class Player {
      */
     async setMuteDeaf(mute, deaf, reason) {
         // Make sure the user is still in the game channel.
-        const { voice } = await this._guildMember.fetch();
+        const member = await this._guildMember.fetch();
+        const { voice } = member;
         if (!voice || voice.channelID !== this.voiceChannelId) return this;
 
-        // Set the reason for the change
-        const finalReason = `Silence Among Us${reason ? `: ${reason}` : ''}`;
-
         // Don't waste rate limits on duplicate requests.
-        const requests = [];
-        if (voice.serverMute !== mute) requests.push(voice.setMute(mute, finalReason));
-        if (voice.serverDeaf !== deaf) requests.push(voice.setDeaf(deaf, finalReason));
-        await Promise.all(requests)
+        if (voice.serverMute === mute && voice.serverDeaf === deaf) return this;
+
+        // Update the member.
+        await member.edit({mute, deaf}, `Silence Among Us${reason ? `: ${reason}` : ''}`);
 
         this.emit(`Set ${mute ? 'mute' : 'unmute'} ${deaf ? 'deaf' : 'undeaf'}`);
         return this;
