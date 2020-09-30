@@ -1,15 +1,16 @@
+const { MessageEmbed } = require('discord.js');
 const Lobby = require('../../classes/Lobby');
 const Room = require('../../classes/Room');
 const { requireLobby, requireTextChannel, requireVoiceChannel } = require('./_helpers');
 
 
 module.exports = async function lobbyCommand(message, arguments) {
-    const [subcommand, code, region] = arguments
+    const [subcommand, code, region] = arguments;
 
     // If there's no subcommand, just post lobby info.
     if (!subcommand) {
         const lobby = await requireLobby(message);
-        await lobby.postLobbyInfo()
+        await lobby.postLobbyInfo();
         return;
     }
 
@@ -21,8 +22,21 @@ module.exports = async function lobbyCommand(message, arguments) {
         // Start a new lobby;
         const lobby = await Lobby.start(voiceChannel, textChannel, parseRoomCode(code, region));
 
+        // Give the user a connect code.
+        const dmChannel = await message.author.createDM();
+        await dmChannel.send(new MessageEmbed()
+            .setTitle("You've created a new game lobby!")
+            .setDescription([
+                `You can automate the lobby using [Among Us Capture](https://github.com/denverquane/amonguscapture/releases/tag/2.0.7)`,
+                'Start the capture client _after_ you start Among Us, and use the connect code below.'
+            ].join('\n'))
+            .addField('Connect Code', `\`${lobby.connectCode}\``, true)
+            .addField('Guild', voiceChannel.guild.name, true)
+            .addField('Voice Channel', voiceChannel.name, true)
+        );
+
         // Send lobby info to the channel.
-        await lobby.postLobbyInfo()
+        await lobby.postLobbyInfo();
 
         // Join the channel, if possible.
         // TODO Move the speaking into the Lobby class.
@@ -32,7 +46,7 @@ module.exports = async function lobbyCommand(message, arguments) {
             // voiceConnection.play(greeting);
         }
         else {
-            await message.reply("I can't speak in your channel, but I'll run a lobby for it anyway.")
+            await message.reply("I can't speak in your channel, but I'll run a lobby for it anyway.");
         }
         return;
     }
@@ -54,7 +68,7 @@ module.exports = async function lobbyCommand(message, arguments) {
         else lobby.room = parseRoomCode(code, region);
 
         // Send lobby info to the channel.
-        await lobby.postLobbyInfo()
+        await lobby.postLobbyInfo();
     }
 };
 

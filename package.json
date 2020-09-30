@@ -36,6 +36,7 @@
     "@apidevtools/json-schema-ref-parser": "^9.0.6",
     "@discordjs/opus": "^0.3.2",
     "ajv": "^6.12.5",
+    "chance": "^1.1.7",
     "deasync": "^0.1.20",
     "discord.js": "^12.3.1",
     "dotenv": "^8.2.0",
@@ -43,6 +44,7 @@
     "ffmpeg-static": "^4.2.7",
     "http-errors": "^1.8.0",
     "morgan": "^1.10.0",
+    "socket.io": "^2.3.0",
     "swagger-ui-express": "^4.1.4",
     "winston": "^3.3.3"
   }

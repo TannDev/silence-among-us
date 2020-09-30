@@ -1,3 +1,4 @@
+const chance = require('chance').Chance();
 const { Permissions, MessageEmbed } = require('discord.js');
 const discordClient = require('../discord-bot/discord-bot');
 const Player = require('./Player');
@@ -7,30 +8,43 @@ const requiredTextPermissionsFlags = [
     'VIEW_CHANNEL',
     'SEND_MESSAGES',
     'MANAGE_MESSAGES'
-]
+];
 const requiredTextPermissions = new Permissions((requiredTextPermissionsFlags));
 const requiredVoicePermissionsFlags = [
     // TODO Confirm that 'CONNECT' and 'SPEAK' aren't required.
     'VIEW_CHANNEL',
     'MUTE_MEMBERS',
     'DEAFEN_MEMBERS'
-]
-const requiredVoicePermissions = new Permissions(requiredVoicePermissionsFlags)
+];
+const requiredVoicePermissions = new Permissions(requiredVoicePermissionsFlags);
 
 /**
  * The valid phases of a lobby.
  */
 const PHASE = {
-    INTERMISSION: 'intermission',
-    WORKING: 'working',
-    MEETING: 'meeting'
+    INTERMISSION: 'Intermission',
+    WORKING: 'Working',
+    MEETING: 'Meeting',
+    MENU: 'Menu'
+};
+
+const AUTOMATION = {
+    WAITING: 'Waiting',
+    CONNECTED: 'Connected',
+    DISCONNECTED: 'Disconnected'
 };
 
 /**
  * Maps voice channel IDs to lobbies.
  * @type {Map<string, Lobby>}
  */
-const lobbies = new Map();
+const lobbiesByVoiceChannel = new Map();
+
+/**
+ * Maps connect codes to lobbies.
+ * @type {Map<string, Lobby>}
+ */
+const lobbiesByConnectCode = new Map();
 
 // TODO Store lobbies somewhere outside of memory.
 
@@ -42,7 +56,6 @@ const lobbies = new Map();
  * @property {Discord.TextChannel} _textChannel - The bound text channel.
  */
 class Lobby {
-    static get PHASE() {return PHASE;}
 
     /**
      * Create a new lobby for a channel.
@@ -63,7 +76,7 @@ class Lobby {
         }
 
         // Don't allow duplicate lobbies.
-        if (await Lobby.find(voiceChannel)) throw new Error("There's already a lobby in that channel.");
+        if (await Lobby.findByVoiceChannel(voiceChannel)) throw new Error("There's already a lobby in that channel.");
 
         // Make sure the discord bot has sufficient permissions.
         if (!voiceChannel.permissionsFor(voiceChannel.guild.me).has(requiredVoicePermissions)) throw new Error([
@@ -78,10 +91,10 @@ class Lobby {
         const voiceChannelId = voiceChannel.id;
         const textChannelId = textChannel.id;
 
-        const lobby = new Lobby({ voiceChannelId, textChannelId, phase: PHASE.INTERMISSION, room});
+        const lobby = new Lobby({ voiceChannelId, textChannelId, phase: PHASE.INTERMISSION, room });
         lobby._voiceChannel = voiceChannel;
         lobby._textChannel = textChannel;
-        lobbies.set(voiceChannelId, lobby);
+        lobbiesByVoiceChannel.set(voiceChannelId, lobby);
 
         // Add players
         // TODO Do this silently.
@@ -101,15 +114,26 @@ class Lobby {
      * @param {string|Discord.VoiceChannel} voiceChannel - Voice channel, or channel ID.
      * @returns {Promise<Lobby>} - Lobby matching the channel, or null
      */
-    static async find(voiceChannel) {
+    static async findByVoiceChannel(voiceChannel) {
         if (typeof voiceChannel === 'string') voiceChannel = await discordClient.channels.fetch(voiceChannel);
         if (!voiceChannel) return null;
 
         // TODO Load from database.
 
-        const lobby = lobbies.get(voiceChannel.id);
+        const lobby = lobbiesByVoiceChannel.get(voiceChannel.id);
         if (lobby) lobby._voiceChannel = voiceChannel;
         return lobby;
+    }
+
+    /**
+     * Find a lobby associated with a connect code.
+     *
+     * @param connectCode
+     * @returns {Promise<Lobby|null>}
+     */
+    static async findByConnectCode(connectCode) {
+        if (!connectCode || typeof connectCode !== 'string') return null;
+        return lobbiesByConnectCode.get(connectCode);
     }
 
     constructor({ voiceChannelId, textChannelId, phase, players, room }) {
@@ -126,6 +150,18 @@ class Lobby {
 
         // TODO Handle the room properly
         if (room) this.room = room;
+
+        // Create a connect code
+
+        // Generate and link a new code.
+        const connectCode = chance.string({ length: 6, casing: 'upper', alpha: true });
+        lobbiesByConnectCode.set(connectCode, this);
+        this._connectCode = connectCode;
+
+        // Update the connection status
+        this.automation = AUTOMATION.WAITING;
+
+        return connectCode;
     }
 
     /**
@@ -148,8 +184,15 @@ class Lobby {
      */
     get transitioning() {return Boolean(this._targetPhase);}
 
+    get connectCode() {return this._connectCode;}
+
     emit(message) {
         console.log(`Lobby ${this.voiceChannelId}: ${message}`);
+    }
+
+    async updateAutomationConnection(connected) {
+        this.automation = connected ? AUTOMATION.CONNECTED : AUTOMATION.DISCONNECTED;
+        await this.postLobbyInfo();
     }
 
     /**
@@ -205,13 +248,13 @@ class Lobby {
                 player.status = Player.STATUS.DYING;
                 return this.updatePlayerState(player);
             }
-        })
+        });
 
         // Wait for all the kill orders to finish processing.
         await Promise.all(killOrders);
 
         // If a meeting is already underway, post updated lobby information.
-        if (this.phase === PHASE.MEETING) await this.postLobbyInfo()
+        if (this.phase === PHASE.MEETING) await this.postLobbyInfo();
     }
 
     /**
@@ -230,13 +273,13 @@ class Lobby {
                 player.status = Player.STATUS.LIVING;
                 return this.updatePlayerState(player);
             }
-        })
+        });
 
         // Wait for all the revival orders to finish processing.
         await Promise.all(reviveOrders);
 
         // If a meeting is already underway, post updated lobby information.
-        if (this.phase === PHASE.MEETING) await this.postLobbyInfo()
+        if (this.phase === PHASE.MEETING) await this.postLobbyInfo();
     }
 
     async updatePlayerState(player) {
@@ -261,9 +304,6 @@ class Lobby {
     async postLobbyInfo(options = {}) {
         const roomInfo = this.room ? `*${this.room.code}* (${this.room.region})` : 'Not Listed';
 
-        const phaseInfo = this.phase[0].toUpperCase() + this.phase.slice(1);
-
-
         const playerInfo = this.players
             .filter(player => player.status !== Player.STATUS.SPECTATING)
             .map(player => {
@@ -280,10 +320,10 @@ class Lobby {
 
         const embed = new MessageEmbed()
             .setTitle(`Among Us - Playing in "${this.voiceChannel.name}"`)
-            .addField('Game Phase', phaseInfo, true)
+            .addField('Game Phase', this.phase, true)
             .addField('Room Code', roomInfo, true)
             .addField('Players', playerInfo)
-            .setFooter(`Channel ID: ${this.voiceChannelId}`);
+            .setFooter(`Capture Status: ${this.automation}`);
 
         // If there's a text channel bound, send the embed to it.
         if (this.textChannel) {
@@ -301,8 +341,9 @@ class Lobby {
     }
 
     async stop() {
-        // Unlink the from the "database".
-        lobbies.delete(this.voiceChannelId);
+        // Unlink the from the "databases".
+        lobbiesByVoiceChannel.delete(this.voiceChannelId);
+        lobbiesByConnectCode.delete(this._connectCode);
 
         // Unmute all players.
         await Promise.all(this.players.map(player => player.setMuteDeaf(false, false, "Lobby Stopped")));
@@ -324,7 +365,7 @@ class Lobby {
      */
     async transition(targetPhase) {
         // Prevent multiple or duplicate transitions.
-        if (this.transitioning) throw new Error("The lobby is already transitioning between phases")
+        if (this.transitioning) throw new Error("The lobby is already transitioning between phases");
         if (this.phase === targetPhase) throw new Error(`The lobby is already in the ${targetPhase} phase`);
         this._targetPhase = targetPhase;
 
@@ -336,6 +377,11 @@ class Lobby {
         // Handle the transition.
         this.emit(`Transitioning to ${targetPhase}`);
         switch (targetPhase) {
+            case PHASE.MENU:
+                // Delete the room data.
+                delete this.room;
+
+            // And perform the same transition as intermission.
             case PHASE.INTERMISSION:
                 await Promise.all(everyone.map(player => player.setForIntermission()));
                 break;
@@ -361,7 +407,7 @@ class Lobby {
         this.emit(`Entered ${targetPhase}`);
 
         // Send out an update.
-        await this.postLobbyInfo()
+        await this.postLobbyInfo();
     }
 
     toJSON() {

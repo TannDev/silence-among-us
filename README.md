@@ -109,3 +109,7 @@ If you're comfortable with Node.js, here's what you need to know:
 
 ## Contributing
 If you'd like to contribute, check out our [Contributing Guidelines](CONTRIBUTING.md).
+
+## Bundled Software
+[Among Us Capture](https://github.com/denverquane/amonguscapture/releases/tag/2.0.7) is included under the terms of
+the [MIT License](https://github.com/denverquane/amonguscapture/blob/2.0.7/LICENSE). Copyright (c) 2020 Denver Quane.

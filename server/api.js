@@ -6,7 +6,7 @@ const Lobby = require('../classes/Lobby');
 const router = Router();
 
 router.param('voiceChannelId', (req, res, next, voiceChannelId) => {
-    Lobby.find(voiceChannelId)
+    Lobby.findByVoiceChannel(voiceChannelId)
         .then(lobby => {
             if (lobby) {
                 req.lobby = lobby;

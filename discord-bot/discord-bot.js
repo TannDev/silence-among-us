@@ -70,8 +70,8 @@ client.on('voiceStateUpdate', async (oldPresence, newPresence) => {
 
     // Determine if a player is joining/leaving a game.
     const [oldLobby, newLobby] = await Promise.all([
-        Lobby.find(oldChannelId),
-        Lobby.find(newChannelId)
+        Lobby.findByVoiceChannel(oldChannelId),
+        Lobby.findByVoiceChannel(newChannelId)
     ]);
 
     // If they're going into a new lobby, add or reconnect them.

@@ -6,3 +6,5 @@ node_modules
 .env
 CONTRIBUTING.md
 README.md
+
+*.exe

@@ -43,7 +43,7 @@ async function requireVoiceChannel(message) {
  */
 async function requireLobby(message) {
     const voiceChannel = await requireVoiceChannel(message);
-    const lobby = await Lobby.find(voiceChannel);
+    const lobby = await Lobby.findByVoiceChannel(voiceChannel);
     if (!lobby) throw new Error("There's not a lobby for your voice channel. Start one with `!sau lobby start`!");
 
     return lobby;
