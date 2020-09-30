@@ -1,9 +1,9 @@
 const STATUS = {
-    LIVING: 'living',
-    DYING: 'dying',
-    DEAD: 'dead',
-    WAITING: 'waiting',
-    SPECTATING: 'spectating'
+    LIVING: 'Living',
+    DYING: 'Dying',
+    DEAD: 'Dead',
+    WAITING: 'Waiting',
+    SPECTATING: 'Spectating'
 };
 
 class Player {

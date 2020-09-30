@@ -14,8 +14,7 @@ const commands = [
     '`working|work|w`: Transition your lobby to the "working" phase.',
     '`meeting|meet|m`: Transition your lobby to the "meeting" phase.',
     '`dead|kill|d|k <@mentions...>`: Mark the at-mentioned players as being dead.',
-    '`revive <@mentions...>`: Mark any at-mentioned players as being alive.',
-    '`capture|c`: Get a connect code for Among Us Capture, to automate the bot.'
+    '`revive <@mentions...>`: Mark any at-mentioned players as being alive.'
 ].map(command => `\t- ${command}`).join('\n');
 
 const examples = [
