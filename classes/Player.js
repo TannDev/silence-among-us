@@ -6,23 +6,31 @@ const STATUS = {
     SPECTATING: 'Spectating'
 };
 
-class Player {
-    static get STATUS() { return STATUS; };
+const playersByDiscordId = new WeakMap()
+const playersByAmongUsName = new WeakMap()
 
-    get STATUS() { return STATUS; };
+class Player {
 
     // TODO Refactor this class to be database-friendly.
 
-    /**
-     *
-     * @param {string} voiceChannelId - ID of the channel the player is playing in.
-     * @param {Discord.GuildMember} guildMember
-     * @param {string} [status]
-     */
-    constructor(voiceChannelId, guildMember, status = STATUS.WAITING) {
-        this.voiceChannelId = voiceChannelId;
-        this._guildMember = guildMember;
-        this.status = status;
+    // TODO Two ways to create a player: Discord or Capture
+
+    constructor(lobby, guildMember, amongUs ) {
+        this.voiceChannelId = lobby.voiceChannel.id;
+        if(guildMember) this.linkGuildMember(guildMember);
+        if (amongUs) this.linkAmongUsPlayer(amongUs);
+        this.status = amongUs ? STATUS.WAITING : STATUS.SPECTATING;
+    }
+
+    linkGuildMember(member) {
+        if (this._guildMember) throw new Error("A Discord user is already linked with this player.");
+
+        this._guildMember = member;
+    }
+
+    linkAmongUsPlayer(amongUs) {
+        // TODO Check that the data is valid.
+        this._amongUs = amongUs;
     }
 
     get member() {
@@ -30,11 +38,19 @@ class Player {
     }
 
     get discordId() {
-        return this.member.id;
+        return this._guildMember && this._guildMember.id;
     }
 
     get discordName() {
-        return this.member.displayName;
+        return this._guildMember && this._guildMember.displayName;
+    }
+
+    get amongUsName() {
+        return this._amongUs && this._amongUs.name;
+    }
+
+    get amongUsColor() {
+        return this._amongUs && this._amongUs.color;
     }
 
     kill() {
@@ -54,6 +70,22 @@ class Player {
         return this.status === STATUS.LIVING || this.status === STATUS.DYING;
     }
 
+    get isKnownDead() {
+        return this.status === STATUS.DEAD;
+    }
+
+    get isWaiting() {
+        return this.status === STATUS.WAITING;
+    }
+
+    /**
+     * Identifies whether this player is spectating.
+     * @returns {boolean}
+     */
+    get isSpectating() {
+        return this.status === STATUS.SPECTATING;
+    }
+
     async setForIntermission() {
         // All non-spectators become living again at intermission.
         if (this.status !== STATUS.SPECTATING) this.status = STATUS.LIVING;
@@ -61,6 +93,9 @@ class Player {
     }
 
     async setForWorking() {
+        // Spectators are muted during the game.
+        if (this.status === STATUS.SPECTATING) return this.setMuteDeaf(true, false, "Spectator")
+
         // Set audio permissions based on working status.
         return this.isWorker
             ? this.setMuteDeaf(true, true, "Working (Worker)")
@@ -68,6 +103,9 @@ class Player {
     }
 
     async setForMeeting() {
+        // Spectators are muted during the game.
+        if (this.status === STATUS.SPECTATING) return this.setMuteDeaf(true, false, "Spectator")
+
         // At the start of meetings, dying players become dead.
         if (this.status === STATUS.DYING) this.status = STATUS.DEAD;
 
@@ -85,6 +123,9 @@ class Player {
      * @returns {Promise<Player>}
      */
     async setMuteDeaf(mute, deaf, reason) {
+        // If there's no connected member, ignore this.
+        if (!this._guildMember) return this;
+
         // Make sure the user is still in the game channel.
         const member = await this._guildMember.fetch();
         const { voice } = member;
@@ -109,6 +150,7 @@ class Player {
         return {
             discordName: this.discordName,
             discordId: this.discordId,
+            amongUsName: this.amongUsName,
             status: this.status
         };
     }

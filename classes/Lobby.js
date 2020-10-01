@@ -24,8 +24,7 @@ const requiredVoicePermissions = new Permissions(requiredVoicePermissionsFlags);
 const PHASE = {
     INTERMISSION: 'Intermission',
     WORKING: 'Working',
-    MEETING: 'Meeting',
-    MENU: 'Menu'
+    MEETING: 'Meeting'
 };
 
 const AUTOMATION = {
@@ -56,6 +55,7 @@ const lobbiesByConnectCode = new Map();
  * @property {Discord.TextChannel} _textChannel - The bound text channel.
  */
 class Lobby {
+    static get PHASE() { return PHASE; }
 
     /**
      * Create a new lobby for a channel.
@@ -97,8 +97,7 @@ class Lobby {
         lobbiesByVoiceChannel.set(voiceChannelId, lobby);
 
         // Add players
-        // TODO Do this silently.
-        await Promise.all(voiceChannel.members.map(member => lobby.connectPlayer(member)));
+        await Promise.all(voiceChannel.members.map(member => lobby.guildMemberConnected(member)));
 
 
         lobby.emit("Created");
@@ -136,7 +135,7 @@ class Lobby {
         return lobbiesByConnectCode.get(connectCode);
     }
 
-    constructor({ voiceChannelId, textChannelId, phase, players, room }) {
+    constructor({ voiceChannelId, textChannelId, phase, room }) {
         if (!voiceChannelId || typeof voiceChannelId !== 'string') throw new Error("Invalid voiceChannelId");
         this.voiceChannelId = voiceChannelId;
         this.textChannelId = textChannelId;
@@ -145,8 +144,12 @@ class Lobby {
         this.phase = phase;
 
         // Create a map to hold the players.
+        /**
+         * Stores players by their Discord user id.
+         * @type {Map<string, Player>}
+         * @private
+         */
         this._players = new Map();
-        // TODO Add initial players from the constructor.
 
         // TODO Handle the room properly
         if (room) this.room = room;
@@ -207,28 +210,67 @@ class Lobby {
 
     /**
      * Connects or reconnects a GuildMember as a player.
-     * @param {Discord.GuildMember} member
-     * @param {string} [status] - Status for the player to start with.
+     * @param {Discord.GuildMember} guildMember
+     * @param {string} [amongUsName] - In-game name.
      * @returns {Promise<Player>} - The player added/updated.
      */
-    async connectPlayer(member, status) {
-        // Reject string-based connections.
-        if (typeof member === 'string') throw new Error("Cannot connect new players via string ID");
-
+    async joinPlayerToGame(guildMember, amongUs) {
         // Ignore bots.
-        if (member.user.bot) return null;
+        if (guildMember.user.bot) return null;
 
-        // Load or create a player.
-        const playerId = member.id;
-        const player = this._players.get(playerId) || new Player(this.voiceChannelId, member, status);
+        // Check if the player is already in this lobby.
+        const playerId = guildMember.id;
+        const player = this._players.get(playerId);
+
+        if (!player) throw new Error(`Guild member (${guildMember.name} isn't in the lobby.`);
+
+        // TODO Consider updating the user's nickname to match their game name.
+
+        const { name } = amongUs;
+        const amongUsPlayer = this.players.find(player => player.amongUsName === name);
+        if (amongUsPlayer) {
+            amongUsPlayer.linkGuildMember(guildMember);
+            this._players.set(playerId, amongUsPlayer);
+            this.emit(`Linked discord user ${amongUsPlayer.discordName} with among us player ${name}`);
+        }
+        else player.linkAmongUsPlayer(amongUs);
+
+
+        await this.updatePlayerVoice(player);
+        await this.postLobbyInfo();
+    }
+
+
+    async guildMemberConnected(guildMember) {
+        // Ignore bots.
+        if (guildMember.user.bot) return null;
+
+        // Fetch the existing player, or create a new spectator.
+        const playerId = guildMember.id;
+        const player = this._players.get(playerId) || new Player(this, guildMember);
         this._players.set(playerId, player);
 
-        // Update the player's state.
-        await this.updatePlayerState(player);
-
-        this.emit(`Connected player ${player.discordName} (${player.discordId})`);
-        return player;
+        // Make sure their voice state matches the current game phase.
+        await this.updatePlayerVoice(player);
+        await this.postLobbyInfo();
     }
+
+    async guildMemberDisconnected(guildMember, skipUnmute) {
+        // Ignore bots.
+        if (guildMember.user.bot) return null;
+
+        const playerId = guildMember.id;
+        const player = this._players.get(playerId);
+        if (!player) throw new Error("Guild member disconnected without ever having connected.");
+
+        // If the player was spectating, remove them.
+        if (player.isSpectating) this._players.delete(playerId);
+
+        // Unless told otherwise, unmute the player.
+        if (!skipUnmute) await player.setMuteDeaf(false, false, 'Left Lobby');
+        await this.postLobbyInfo();
+    }
+
 
     /**
      * Kill the player(s) passed in.
@@ -245,8 +287,8 @@ class Lobby {
             // If the member is a player is in this lobby, mark them as dying and update their state.
             const player = await this.getPlayer(member);
             if (player) {
-                player.status = Player.STATUS.DYING;
-                return this.updatePlayerState(player);
+                player.kill();
+                return this.updatePlayerVoice(player);
             }
         });
 
@@ -270,8 +312,8 @@ class Lobby {
             // If the member is a player is in this lobby, mark them as living and update their state.
             const player = await this.getPlayer(member);
             if (player) {
-                player.status = Player.STATUS.LIVING;
-                return this.updatePlayerState(player);
+                player.revive();
+                return this.updatePlayerVoice(player);
             }
         });
 
@@ -282,7 +324,7 @@ class Lobby {
         if (this.phase === PHASE.MEETING) await this.postLobbyInfo();
     }
 
-    async updatePlayerState(player) {
+    async updatePlayerVoice(player) {
         switch (this.phase) {
             case PHASE.INTERMISSION:
                 return player.setForIntermission();
@@ -305,24 +347,21 @@ class Lobby {
         const roomInfo = this.room ? `*${this.room.code}* (${this.room.region})` : 'Not Listed';
 
         const playerInfo = this.players
-            .filter(player => player.status !== Player.STATUS.SPECTATING)
+            .filter(player => player.isSpectating)
             .map(player => {
                 const showStatus = options.spoil || this.phase !== PHASE.WORKING || !player.isWorker;
-                const status = showStatus ? player.status[0].toUpperCase() + player.status.slice(1) : '_Working_';
-
-                // TODO Load URL from somewhere.
-                // const showLink = this.phase !== PHASE.INTERMISSION && workingPhases.includes(player.status);
-                // const killUrl = `http://localhost:3000/api/lobby/${this.voiceChannelId}/${player.discordId}/kill`;
-                // const killLink = showLink ? ` - [kill](${killUrl})` : '';
-
-                return `<@${player.discordId}> - ${status}`;
-            });
+                const status = showStatus ? player.status : '_Working_';
+                const discordTag = player.discordId ? `<@${player.discordId}>` : 'Nobody';
+                const amongUsTag = player.amongUsName ? ` - ${player.amongUsName}` : '';
+                return `${discordTag}${amongUsTag} - ${status}`;
+            })
+            .join('\n');
 
         const embed = new MessageEmbed()
             .setTitle(`Among Us - Playing in "${this.voiceChannel.name}"`)
             .addField('Game Phase', this.phase, true)
             .addField('Room Code', roomInfo, true)
-            .addField('Players', playerInfo)
+            .addField('Players', playerInfo || "None")
             .setFooter(`Capture Status: ${this.automation}`);
 
         // If there's a text channel bound, send the embed to it.
@@ -377,10 +416,6 @@ class Lobby {
         // Handle the transition.
         this.emit(`Transitioning to ${targetPhase}`);
         switch (targetPhase) {
-            case PHASE.MENU:
-                // Delete the room data.
-                delete this.room;
-
             // And perform the same transition as intermission.
             case PHASE.INTERMISSION:
                 await Promise.all(everyone.map(player => player.setForIntermission()));
@@ -402,12 +437,12 @@ class Lobby {
                 throw new Error("Invalid target phase");
         }
 
+        // Send out an update.
+        await this.postLobbyInfo();
+
         this.phase = targetPhase;
         delete this._targetPhase;
         this.emit(`Entered ${targetPhase}`);
-
-        // Send out an update.
-        await this.postLobbyInfo();
     }
 
     toJSON() {

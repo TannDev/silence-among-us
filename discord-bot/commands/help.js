@@ -5,6 +5,8 @@ const instructionsUrl = 'https://github.com/tanndev/silence-among-us#readme';
 const commands = [
     '`version|v`: Get version information.',
     '`help|h|?`: Get this help.',
+    '`join|j <in-game name>`: Join the lobby as a player.',
+    '`quit|q`: Quit the lobby and stop being a player.',
     '`lobby|l`: Re-post information about your lobby.',
     '`lobby|l start [room code] [na|eu|asia]`: Start a new lobby.',
     '`lobby|l stop`: End your lobby.',

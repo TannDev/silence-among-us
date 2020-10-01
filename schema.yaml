@@ -115,15 +115,15 @@ components:
           type: string
           description: |
             The current phase of the lobby, as one of the following values:
-            - `intermission`: Between games
+            - `Intermission`: Between games
               - Everyone can talk.
               - New players join as living.
-            - `working`: In game, while the crew are performing tasks
+            - `Working`: In game, while the crew are performing tasks
               - Living players are muted and deafened.
               - Dead players are unmuted and can talk to each other.
               - Other players are muted/unmuted according to settings.
               - New players join as waiting.
-            - `meeting`: In game, during a meeting
+            - `Meeting`: In game, during a meeting
               - Living players can talk.
               - Dead layers are muted.
               - Other players are muted/unmuted according to settings.
@@ -146,11 +146,11 @@ components:
           type: string
           description: |
             The current status of the player, with one of the following values:
-            - `living`: Alive in-game, or in intermission.
-            - `dead`: Dead in-game. (Will change to `living` at next intermission.)
-            - `waiting`: Joined while a game was in progress. (Will change to `living` at next intermission.)
-            - `spectating`: Not playing the game, but still in the voice channel.
-          enum: [living, dead, waiting, spectating]
+            - `Living`: Alive in-game, or in intermission.
+            - `Dead`: Dead in-game. (Will change to `living` at next intermission.)
+            - `Waiting`: Joined while a game was in progress. (Will change to `living` at next intermission.)
+            - `Spectating`: Not playing the game, but still in the voice channel.
+          enum: [Living, Dead, Waiting, Spectating]
         discordId:
           type: string
           description: The player's unique ID in Discord

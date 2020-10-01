@@ -22,7 +22,7 @@ module.exports = client;
 // ==== It's now safe to require other modules. ====
 
 const processCommandMessage = require('./commands');
-const Lobby = require('../classes/Lobby')
+const Lobby = require('../classes/Lobby');
 
 client.on('ready', () => {
     console.log(`Discord bot logged in as ${client.user.tag}`);
@@ -62,8 +62,8 @@ client.on('messageUpdate', (oldMessage, newMessage) => {
 client.on('voiceStateUpdate', async (oldPresence, newPresence) => {
     // TODO Find a better file for this to live in.
     // Track players as they move from channel to channel.
-    const {channelID: oldChannelId} = oldPresence;
-    const {channelID: newChannelId, member} = newPresence;
+    const { channelID: oldChannelId } = oldPresence;
+    const { channelID: newChannelId, member } = newPresence;
 
     // Ignore bots and any updates that don't involve changing channels.
     if (member.user.bot || oldChannelId === newChannelId) return;
@@ -74,16 +74,11 @@ client.on('voiceStateUpdate', async (oldPresence, newPresence) => {
         Lobby.findByVoiceChannel(newChannelId)
     ]);
 
-    // If they're going into a new lobby, add or reconnect them.
-    if (newLobby) await newLobby.connectPlayer(member);
+    // If they've left an old lobby, disconnect them from that lobby. (Skip unmute if they're moving to a new one.)
+    if (oldLobby) await oldLobby.guildMemberDisconnected(member, Boolean(newLobby));
 
-    // Otherwise, if they're leaving an old lobby, but are still in a voice channel, unmute them.
-    else if (oldLobby && newChannelId) {
-        const {voice} = member;
-        if (!voice) return;
-        const reason = `Silence Among Us: Left Lobby`
-        await Promise.all([voice.setMute(false, reason), voice.setDeaf(false, reason)]);
-    }
+    // If they're going into a new lobby, connect them to it.
+    if (newLobby) await newLobby.guildMemberConnected(member);
 });
 
 // Connect to Discord.
