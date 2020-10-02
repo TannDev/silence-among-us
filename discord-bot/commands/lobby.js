@@ -33,7 +33,7 @@ module.exports = async function lobbyCommand(message, arguments) {
             .setTitle("You've created a new game lobby!")
             .setDescription([
                 `You can automate the lobby using [Among Us Capture](https://github.com/denverquane/amonguscapture).`,
-                'Note: An unreleased beta version is currently required.'
+                'Note: An [unreleased beta version](https://github.com/tanndev/silence-among-us/raw/main/capture/AmongUsCapture-ipcbeta.exe) is currently required.'
             ].join('\n'))
             .addField('Connect Link', connectLink)
             .addField('Guild', voiceChannel.guild.name, true)
