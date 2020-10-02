@@ -139,9 +139,13 @@ components:
     Player:
       type: object
       description: Information about a player, their current state in game, and their voice channel.
-      required: [status, discordId]
+      required: [status, id]
       additionalProperties: false
       properties:
+        id:
+          type: string
+          description: Unique ID for the player.
+          readOnly: true
         status:
           type: string
           description: |

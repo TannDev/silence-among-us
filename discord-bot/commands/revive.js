@@ -8,5 +8,5 @@ module.exports = async function reviveCommand(message, arguments) {
     const targets = [...message.mentions.members.array()];
     if (arguments.includes('me')) targets.push(message.member);
     // noinspection JSCheckFunctionSignatures
-    await lobby.revivePlayer(...targets);
+    await lobby.guildMemberRevive(...targets);
 };

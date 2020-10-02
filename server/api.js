@@ -18,7 +18,7 @@ router.param('voiceChannelId', (req, res, next, voiceChannelId) => {
 });
 
 router.param('playerId', (req, res, next, playerId) => {
-    req.lobby.getPlayer(playerId)
+    req.lobby.getDiscordPlayer(playerId)
         .then(player => {
             if (player) {
                 req.player = player;
@@ -34,7 +34,7 @@ router.get('/lobby/:voiceChannelId', (req, res) => {
 });
 
 router.get('/lobby/:voiceChannelId/:playerId/kill', (req, res, next) => {
-    req.lobby.killPlayer(req.player.member)
+    req.lobby.guildMemberKill(req.player.guildMember)
         .then(player => res.json(player))
         .catch(error => next(error));
 });

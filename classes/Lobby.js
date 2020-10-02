@@ -9,7 +9,7 @@ const requiredTextPermissionsFlags = [
     'SEND_MESSAGES',
     'MANAGE_MESSAGES'
 ];
-const requiredTextPermissions = new Permissions((requiredTextPermissionsFlags));
+const requiredTextPermissions = new Permissions(requiredTextPermissionsFlags);
 const requiredVoicePermissionsFlags = [
     // TODO Confirm that 'CONNECT' and 'SPEAK' aren't required.
     'VIEW_CHANNEL',
@@ -104,6 +104,8 @@ class Lobby {
 
         // TODO Save to database.
 
+        // Post info.
+        lobby.postLobbyInfo();
         return lobby;
     }
 
@@ -180,6 +182,10 @@ class Lobby {
      */
     get textChannel() { return this._textChannel; }
 
+    /**
+     * Return the players as an array.
+     * @returns {Player[]}
+     */
     get players() { return [...this._players.values()];}
 
     /**
@@ -195,7 +201,7 @@ class Lobby {
 
     async updateAutomationConnection(connected) {
         this.automation = connected ? AUTOMATION.CONNECTED : AUTOMATION.DISCONNECTED;
-        await this.postLobbyInfo();
+        this.postLobbyInfo();
     }
 
     /**
@@ -204,17 +210,103 @@ class Lobby {
      * @param {Discord.GuildMember|string} member
      * @returns {Promise<Player>}
      */
-    async getPlayer(member) {
+    async getDiscordPlayer(member) {
         return this._players.get(member.id || member);
     }
 
     /**
-     * Connects or reconnects a GuildMember as a player.
-     * @param {Discord.GuildMember} guildMember
-     * @param {string} [amongUsName] - In-game name.
-     * @returns {Promise<Player>} - The player added/updated.
+     * Find a player with a matching in-game name.
+     * @param {string} name - In-game name from Among Us.
+     * @returns {Promise<Player>}
      */
-    async joinPlayerToGame(guildMember, amongUs) {
+    async getAmongUsPlayer(name) {
+        // TODO Store a map of these, rather than a slow search.
+        return this.players.find(player => player.matchesAmongUsName(name));
+    }
+
+    async amongUsJoin({ name, color, dead }) {
+        let player = await this.getAmongUsPlayer(name);
+
+        // If there's no player yet, add them.
+        if (!player) {
+            player = new Player(this, null, name);
+            this._players.set(player.id, player);
+            player.joinGame();
+        }
+
+        // Update their color.
+        player.amongUsColor = color;
+
+        // Start them in the appropriate status.
+        dead ? player.kill() : player.revive();
+        await this.setPlayerForCurrentPhase(player);
+
+        // Post info.
+        this.postLobbyInfo();
+    }
+
+    async amongUsLeave({ name }) {
+        let player = await this.getAmongUsPlayer(name);
+        if (!player) throw new Error(`AmongUs name "${name}" left, but isn't a player.`);
+
+        // If the player is on Discord, mark them as as killed since they're out of the round.
+        if (player.guildMember) {
+            if (this.phase !== PHASE.INTERMISSION){
+                player.instantKill();
+                await this.setPlayerForCurrentPhase(player);
+                // TODO Make them a spectator?
+            }
+        }
+
+        // Otherwise, just remove them from the game entirely.
+        else this._players.delete(player.id);
+        // TODO Keep dead players around until the end of the match.
+
+        // TODO Find a better way to identify disconnected players.
+
+        // Post info.
+        this.postLobbyInfo();
+    }
+
+    async amongUsKill({ name, dead }) {
+        if (!dead) throw new Error(`amongUsKill for "${name}", but dead is falsy.`);
+
+        let player = await this.getAmongUsPlayer(name);
+        if (!player) throw new Error(`amongUsKill order for "${name}" but no such player.`);
+
+        // Kill the player.
+        player.kill();
+        await this.setPlayerForCurrentPhase(player);
+
+        // If a meeting is already underway, post updated lobby information.
+        if (this.phase === PHASE.MEETING) this.postLobbyInfo();
+    }
+
+    async amongUsExile({ name, dead }) {
+        if (!dead) throw new Error(`amongUsExile for "${name}", but dead is falsy.`);
+
+        let player = await this.getAmongUsPlayer(name);
+        if (!player) throw new Error(`amongUsKill order for "${name}" but no such player.`);
+
+        // Kill the player.
+        player.instantKill();
+        await this.setPlayerForCurrentPhase(player);
+
+        // Post info
+        this.postLobbyInfo();
+    }
+
+    async amongUsForceUpdate({ name, color, dead, disconnected }) {
+        if (disconnected) {
+            // TODO Handle disconnected players.
+            return;
+        }
+
+        // For everyone else, add/update them
+        await this.amongUsJoin({ name, color, dead, disconnected });
+    }
+
+    async guildMemberJoin(guildMember, amongUsName) {
         // Ignore bots.
         if (guildMember.user.bot) return null;
 
@@ -224,51 +316,67 @@ class Lobby {
 
         if (!player) throw new Error(`Guild member (${guildMember.name} isn't in the lobby.`);
 
+        // TODO Allow guild members to join without a name.
         // TODO Consider updating the user's nickname to match their game name.
+        // TODO Allow guild members to change their name.
 
-        const { name } = amongUs;
-        const amongUsPlayer = this.players.find(player => player.amongUsName === name);
-        if (amongUsPlayer) {
-            amongUsPlayer.linkGuildMember(guildMember);
-            this._players.set(playerId, amongUsPlayer);
-            this.emit(`Linked discord user ${amongUsPlayer.discordName} with among us player ${name}`);
+        // Check for an existing player with that name.
+        const existingPlayer = this.players.find(player => player.matchesAmongUsName(amongUsName));
+        if (existingPlayer) {
+            // Don't allow duplicate names between guild members.
+            if (existingPlayer.guildMember) throw new Error(`The name "${amongUsName}" is already taken.`);
+
+            // Remove the player from the map.
+            this._players.delete(existingPlayer.id);
+
+            // Link the guild member.
+            existingPlayer.guildMember = guildMember;
+
+            // Add the player back into the map.
+            this._players.set(existingPlayer.id, existingPlayer);
+            this.emit(`Linked discord user ${existingPlayer.discordName} with name "${amongUsName}"`);
         }
-        else player.linkAmongUsPlayer(amongUs);
+
+        // Otherwise, set the player's name and add them to the game.
+        else {
+            player.amongUsName = amongUsName;
+            player.joinGame();
+        }
 
 
-        await this.updatePlayerVoice(player);
-        await this.postLobbyInfo();
+        await this.setPlayerForCurrentPhase(player);
+        this.postLobbyInfo();
     }
-
 
     async guildMemberConnected(guildMember) {
         // Ignore bots.
         if (guildMember.user.bot) return null;
 
         // Fetch the existing player, or create a new spectator.
-        const playerId = guildMember.id;
-        const player = this._players.get(playerId) || new Player(this, guildMember);
-        this._players.set(playerId, player);
+        let player = await this.getDiscordPlayer(guildMember);
+        if (!player) {
+            player = new Player(this, guildMember);
+            this._players.set(player.id, player);
+        }
 
         // Make sure their voice state matches the current game phase.
-        await this.updatePlayerVoice(player);
-        await this.postLobbyInfo();
+        await this.setPlayerForCurrentPhase(player);
+        this.postLobbyInfo();
     }
 
     async guildMemberDisconnected(guildMember, skipUnmute) {
         // Ignore bots.
         if (guildMember.user.bot) return null;
 
-        const playerId = guildMember.id;
-        const player = this._players.get(playerId);
+        const player = await this.getDiscordPlayer(guildMember);
         if (!player) throw new Error("Guild member disconnected without ever having connected.");
 
         // If the player was spectating, remove them.
-        if (player.isSpectating) this._players.delete(playerId);
+        if (player.isSpectating) this._players.delete(player.id);
 
         // Unless told otherwise, unmute the player.
-        if (!skipUnmute) await player.setMuteDeaf(false, false, 'Left Lobby');
-        await this.postLobbyInfo();
+        if (!skipUnmute) await player.editGuildMember(false, false, false, 'Left Lobby');
+        this.postLobbyInfo();
     }
 
 
@@ -279,16 +387,16 @@ class Lobby {
      * @param {Discord.GuildMember} members
      * @returns {Promise<void>}
      */
-    async killPlayer(...members) {
+    async guildMemberKill(...members) {
         if (this.phase === PHASE.INTERMISSION) throw new Error("You can't kill people during intermission.");
 
         // Generate kill orders for each member passed in.
         const killOrders = members.map(async member => {
             // If the member is a player is in this lobby, mark them as dying and update their state.
-            const player = await this.getPlayer(member);
+            const player = await this.getDiscordPlayer(member);
             if (player) {
                 player.kill();
-                return this.updatePlayerVoice(player);
+                await this.setPlayerForCurrentPhase(player);
             }
         });
 
@@ -296,7 +404,7 @@ class Lobby {
         await Promise.all(killOrders);
 
         // If a meeting is already underway, post updated lobby information.
-        if (this.phase === PHASE.MEETING) await this.postLobbyInfo();
+        if (this.phase === PHASE.MEETING) this.postLobbyInfo();
     }
 
     /**
@@ -306,14 +414,14 @@ class Lobby {
      * @param {Discord.GuildMember} members
      * @returns {Promise<void>}
      */
-    async revivePlayer(...members) {
+    async guildMemberRevive(...members) {
         // Generate revival orders for each member passed in.
         const reviveOrders = members.map(async member => {
             // If the member is a player is in this lobby, mark them as living and update their state.
-            const player = await this.getPlayer(member);
+            const player = await this.getDiscordPlayer(member);
             if (player) {
                 player.revive();
-                return this.updatePlayerVoice(player);
+                await this.setPlayerForCurrentPhase(player);
             }
         });
 
@@ -321,10 +429,14 @@ class Lobby {
         await Promise.all(reviveOrders);
 
         // If a meeting is already underway, post updated lobby information.
-        if (this.phase === PHASE.MEETING) await this.postLobbyInfo();
+        if (this.phase === PHASE.MEETING) this.postLobbyInfo();
     }
 
-    async updatePlayerVoice(player) {
+    /**
+     * Updates the given player so they match the current phase.
+     * @param {Player} player
+     */
+    async setPlayerForCurrentPhase(player) {
         switch (this.phase) {
             case PHASE.INTERMISSION:
                 return player.setForIntermission();
@@ -346,28 +458,44 @@ class Lobby {
     async postLobbyInfo(options = {}) {
         const roomInfo = this.room ? `*${this.room.code}* (${this.room.region})` : 'Not Listed';
 
-        const playerInfo = this.players
-            .filter(player => player.isSpectating)
-            .map(player => {
-                const showStatus = options.spoil || this.phase !== PHASE.WORKING || !player.isWorker;
-                const status = showStatus ? player.status : '_Working_';
-                const discordTag = player.discordId ? `<@${player.discordId}>` : 'Nobody';
-                const amongUsTag = player.amongUsName ? ` - ${player.amongUsName}` : '';
-                return `${discordTag}${amongUsTag} - ${status}`;
-            })
-            .join('\n');
+        // Get and categorize players.
+        const everyone = this.players; // TODO Put them in some sorted order.
+
+        const players = everyone.filter(player => !player.isSpectating).map(player => {
+            const showStatus = options.spoil || this.phase !== PHASE.WORKING || player.isKnownDead;
+            const status = showStatus ? player.status : '_Working_';
+            const name = player.discordId ? `<@${player.discordId}>` : player.amongUsName;
+            const color = player.amongUsColor || 'Untracked';
+            const emoji = player.isKnownDead ? ':skull:' : ':heartpulse:'
+
+            return `${emoji} ${status}: ${name} (${color})`;
+        }).join('\n')  || 'None';
+
+        const spectators = everyone.filter(player => player.isSpectating)
+            .map(player => `<@${player.discordId}>`).join('\n');
 
         const embed = new MessageEmbed()
             .setTitle(`Among Us - Playing in "${this.voiceChannel.name}"`)
             .addField('Game Phase', this.phase, true)
             .addField('Room Code', roomInfo, true)
-            .addField('Players', playerInfo || "None")
-            .setFooter(`Capture Status: ${this.automation}`);
+            .addField('Players', players)
+            .setFooter(`Capture Status: ${this.automation} (\`${this.connectCode}\`)`); // TODO Remove connect code.
+
+        if (spectators) embed.addField('Spectators', spectators);
 
         // If there's a text channel bound, send the embed to it.
         if (this.textChannel) {
-            await this.deleteLastLobbyInfo();
-            this._lastInfoPosted = await this.textChannel.send(embed);
+            // Reset any existing timeout, to prevent spamming.
+            if (this._nextInfoPostTimeout) {
+                clearTimeout(this._nextInfoPostTimeout);
+                delete this._nextInfoPostTimeout;
+            }
+            // Create a new timeout, to post an update after a short delay.
+            this._nextInfoPostTimeout = setTimeout(async () => {
+                const messageSent = await this.textChannel.send(embed);
+                await this.deleteLastLobbyInfo().catch(error => console.error(error));
+                this._lastInfoPosted = messageSent;
+            }, 500);
         }
 
         return embed;
@@ -375,8 +503,9 @@ class Lobby {
 
     async deleteLastLobbyInfo() {
         // If there was an old message, delete it.
-        if (this._lastInfoPosted && this._lastInfoPosted.deletable) await this._lastInfoPosted.delete();
+        const messageToDelete = this._lastInfoPosted;
         delete this._lastInfoPosted;
+        if (messageToDelete && messageToDelete.deletable) await messageToDelete.delete();
     }
 
     async stop() {
@@ -385,7 +514,7 @@ class Lobby {
         lobbiesByConnectCode.delete(this._connectCode);
 
         // Unmute all players.
-        await Promise.all(this.players.map(player => player.setMuteDeaf(false, false, "Lobby Stopped")));
+        await Promise.all(this.players.map(player => player.editGuildMember(false, false, false, "Lobby Stopped")));
 
         // Delete the last lobby info.
         await this.deleteLastLobbyInfo();
@@ -437,12 +566,12 @@ class Lobby {
                 throw new Error("Invalid target phase");
         }
 
-        // Send out an update.
-        await this.postLobbyInfo();
-
         this.phase = targetPhase;
         delete this._targetPhase;
         this.emit(`Entered ${targetPhase}`);
+
+        // Send out an update.
+        this.postLobbyInfo();
     }
 
     toJSON() {

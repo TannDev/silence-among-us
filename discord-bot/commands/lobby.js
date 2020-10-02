@@ -11,11 +11,10 @@ module.exports = async function lobbyCommand(message, arguments) {
     if (!subcommand) {
         const lobby = await requireLobby(message);
         await lobby.postLobbyInfo();
-        return;
     }
 
     // If the subcommand is 'start', start a new lobby.
-    if (subcommand.match(/^start$/i)) {
+    else if (subcommand.match(/^start$/i)) {
         const textChannel = await requireTextChannel(message);
         const voiceChannel = await requireVoiceChannel(message);
 
@@ -35,9 +34,6 @@ module.exports = async function lobbyCommand(message, arguments) {
             .addField('Voice Channel', voiceChannel.name, true)
         );
 
-        // Send lobby info to the channel.
-        await lobby.postLobbyInfo();
-
         // Join the channel, if possible.
         // TODO Move the speaking into the Lobby class.
         if (voiceChannel.joinable && voiceChannel.speakable) {
@@ -48,29 +44,31 @@ module.exports = async function lobbyCommand(message, arguments) {
         else {
             await message.reply("I can't speak in your channel, but I'll run a lobby for it anyway.");
         }
-        return;
     }
 
     // If the subcommand is 'stop', stop the lobby.
-    if (subcommand.match(/^stop$/i)) {
+    else if (subcommand.match(/^stop$/i)) {
         const lobby = await requireLobby(message);
         await lobby.stop();
         await message.reply("I've ended the lobby in your channel.\nLet's play again soon, okay?");
     }
 
     // If the subcommand is 'room' or 'r', update the room code.
-    if (subcommand.match(/^r(?:oom)?$/i)) {
+    else if (subcommand.match(/^r(?:oom)?$/i)) {
         const lobby = await requireLobby(message);
         // If the "code" is an unlist instruction, delete it and return.
         if (code.match(/^unlist|remove|x$/i)) delete lobby.room;
 
         // Otherwise, parse it.
         else lobby.room = parseRoomCode(code, region);
+        // TODO Handle room updates with a function.
 
         // Send lobby info to the channel.
         await lobby.postLobbyInfo();
     }
-};
+
+    else throw new Error(`Sorry, I don't have a lobby sub-command, \`${subcommand}\``)
+}
 
 /**
  * Parses a room code and region and returns a room.

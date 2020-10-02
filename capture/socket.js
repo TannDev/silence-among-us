@@ -1,11 +1,14 @@
 const io = require('socket.io')();
 const Lobby = require('../classes/Lobby');
 
-const STATES = [
-    'LOBBY',
-    'TASKS',
-    'DISCUSSION',
-    'MENU'
+const ACTIONS = [
+    'JOIN',
+    'LEAVE',
+    'KILL',
+    'COLOR_CHANGE',
+    'FORCE_UPDATE',
+    'DISCONNECT',
+    'EXILE'
 ]
 
 const STATE_MAP = {
@@ -14,6 +17,13 @@ const STATE_MAP = {
     DISCUSSION: Lobby.PHASE.MEETING,
     MENU: Lobby.PHASE.INTERMISSION
 }
+
+const STATES = [
+    'LOBBY',
+    'TASKS',
+    'DISCUSSION',
+    'MENU'
+]
 
 const COLORS = [
     'Red',
@@ -65,19 +75,51 @@ io.on('connection', client => {
     client.on('player', data => {
         // Get the lobby
         const { connectCode } = client;
+        const {Action, Name, IsDead, Disconnected, Color} = JSON.parse(data);
+
+        // Ignore nameless updates.
+        if (!Name) return;
+
         Lobby.findByConnectCode(connectCode)
             .then(async lobby => {
                 if (!lobby) return;
-                console.log(`SocketIO: Player update for ${connectCode}:`, data);
-                const {Name, IsDead, Disconnected, Color} = JSON.parse(data);
+
+                // Post an update.
                 const update = {
+                    action: ACTIONS[Action],
                     name: Name,
                     color: COLORS[Color],
-                    kill: Boolean(IsDead),
-                    disconnect: Boolean(Disconnected)
+                    dead: Boolean(IsDead),
+                    disconnected: Boolean(Disconnected)
                 }
-                // TODO Post the update somewhere.
-                console.log(`Would Update:`, update);
+                console.log(`SocketIO: Player update for ${connectCode}:`, update);
+                
+                // Process the action
+                switch(update.action){
+                    case 'JOIN':
+                    case 'COLOR_CHANGE':
+                        // For a JOIN or COLOR_CHANGE action, add/update the player
+                        await lobby.amongUsJoin(update);
+                        break;
+                    case 'LEAVE':
+                    case 'DISCONNECT':
+                        // For a LEAVE or DISCONNECT, remove the player.
+                        // TODO Handle disconnects differently?
+                        await lobby.amongUsLeave(update);
+                        break;
+                    case 'KILL':
+                        await lobby.amongUsKill(update);
+                        break;
+                    case 'EXILE':
+                        await lobby.amongUsExile(update);
+                        break;
+                    case 'FORCE_UPDATE':
+                        await lobby.amongUsForceUpdate(update);
+                        break
+                    default:
+                        throw new Error(`Unknown Action value: ${Action}`);
+                }
+                
             })
             .catch(error => console.error(error));
     });
