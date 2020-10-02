@@ -37,8 +37,8 @@ module.exports = async function lobbyCommand(message, arguments) {
         // Join the channel, if possible.
         // TODO Move the speaking into the Lobby class.
         if (voiceChannel.joinable && voiceChannel.speakable) {
-            const voiceConnection = await voiceChannel.join();
-            voiceConnection.setSpeaking(0);
+            // const voiceConnection = await voiceChannel.join();
+            // voiceConnection.setSpeaking(0);
             // voiceConnection.play(greeting);
         }
         else {

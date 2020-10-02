@@ -2,30 +2,19 @@ const STATUS = {
     LIVING: 'Living',
     DYING: 'Dying',
     DEAD: 'Dead',
-    WAITING: 'Waiting',
-    SPECTATING: 'Spectating'
+    WAITING: 'Waiting'
 };
+
+const REASON_PREFIX = 'Silence Among Us'
 
 class Player {
 
     // TODO Refactor this class to be database-friendly.
 
 
-    constructor(lobby, guildMember, amongUsName) {
+    constructor(lobby, guildMember) {
         this.voiceChannelId = lobby.voiceChannel.id;
         if (guildMember) this.guildMember = guildMember;
-        if (amongUsName) this.amongUsName = amongUsName;
-        this.status = STATUS.SPECTATING;
-    }
-
-    /**
-     * Gets a unique ID for the player.
-     * If the player is linked to a guild member, the ID is the member's ID.
-     * Otherwise, it's based on the amongUsName.
-     * @returns {string}
-     */
-    get id() {
-        return this._guildMember ? this.discordId : `unlinked-${this.amongUsName}`;
     }
 
     get guildMember() {
@@ -49,19 +38,20 @@ class Player {
         return this._amongUs && this._amongUs.name;
     }
 
-    set amongUsName(name) {
-        if (!this._amongUs) this._amongUs = {};
-        this._amongUs.name = name;
-    }
-
     get amongUsColor() {
         return this._amongUs && this._amongUs.color;
     }
 
     set amongUsColor(color) {
-        if (!this._amongUs) this._amongUs = {};
+        if (!this._amongUs) throw new Error("Can't set the color of a player that isn't playing.");
         if (!color) delete this._amongUs.color;
         else this._amongUs.color = color;
+    }
+
+    matchesGuildMember(targetGuildMember) {
+        if (!this.guildMember) return false;
+        if (typeof targetGuildMember === 'string') return this.guildMember.id === targetGuildMember;
+        return this.guildMember.id === targetGuildMember.id;
     }
 
     matchesAmongUsName(targetName) {
@@ -108,41 +98,48 @@ class Player {
      * @returns {boolean}
      */
     get isSpectating() {
-        return this.status === STATUS.SPECTATING;
+        return !this._amongUs;
     }
 
-    joinGame() {
-        if (this.status !== STATUS.SPECTATING) throw new Error("Player is already participating.");
+    async joinGame(amongUsName) {
+        if (this._amongUs) throw new Error("Player is already participating.");
         this.status = STATUS.WAITING;
+        this._amongUs = {name: amongUsName};
+    }
+
+
+    async leaveGame() {
+        delete this._amongUs;
+        await this.editGuildMember(false, false, "Left Lobby");
     }
 
     async setForIntermission() {
-        // All non-spectators become living again at intermission.
-        if (this.status !== STATUS.SPECTATING) this.status = STATUS.LIVING;
-        await this.editGuildMember(false, false, false, "Intermission");
+        // Everyone is alive again at intermission.
+        this.status = STATUS.LIVING;
+        await this.editGuildMember(false, false, "Intermission");
     }
 
     async setForWorking() {
         // Spectators are muted during the game.
-        if (this.status === STATUS.SPECTATING) return this.editGuildMember(false, true, false, "Spectator");
+        if (this.isSpectating) return this.editGuildMember(true, false, "Spectator");
 
         // Set audio permissions based on working status.
         this.isWorker
-            ? await this.editGuildMember(true, true, true, "Working (Worker)")
-            : await this.editGuildMember(true, false, false, "Working (Non-Worker)");
+            ? await this.editGuildMember(true, true, "Working (Worker)")
+            : await this.editGuildMember(false, false, "Working (Non-Worker)");
     }
 
     async setForMeeting() {
         // Spectators are muted during the game.
-        if (this.status === STATUS.SPECTATING) return this.editGuildMember(false, true, false, "Spectator");
+        if (this.isSpectating) return this.editGuildMember(true, false, "Spectator");
 
         // At the start of meetings, dying players become dead.
         if (this.status === STATUS.DYING) this.status = STATUS.DEAD;
 
         // Set audio permissions based living status
         this.status === STATUS.LIVING
-            ? await this.editGuildMember(true, false, false, "Meeting (Living)")
-            : await this.editGuildMember(true, true, false, "Meeting (Non-Living)");
+            ? await this.editGuildMember(false, false, "Meeting (Living)")
+            : await this.editGuildMember(true, false, "Meeting (Non-Living)");
     }
 
     /**
@@ -150,28 +147,33 @@ class Player {
      * @param {boolean} mute - Whether the player should be allowed to speak
      * @param {boolean} deaf - Whether the player should be allowed to hear
      * @param {string} [reason] - Reason for changing the settings.
-     * @returns {Promise<Player>}
      */
-    async editGuildMember(syncName, mute, deaf, reason) {
-        // If there's no connected member, ignore this.
-        if (!this._guildMember) return this;
+    async editGuildMember(mute, deaf, reason) {
+        // If there's no connected guild member, ignore this.
+        if (!this._guildMember) return;
 
-        // Make sure the user is still in the game channel.
+        // Make sure we have the latest state.
         const member = await this._guildMember.fetch();
         const { voice } = member;
-        if (!voice || voice.channelID !== this.voiceChannelId) return this;
+
+        // Don't adjust voice settings for other channels.
+        const updateVoice = voice && voice.channelID === this.voiceChannelId
+
+        // Decide which nickname to use.
+        const nick = this.isSpectating ? this._originalNickname : this.amongUsName;
+
+        // Build the patch object.
+        const patch = {};
+        if (member.manageable && member.nickname !== nick) patch.nick = nick;
+        if (updateVoice && voice.serverMute !== mute) patch.mute = mute;
+        if (updateVoice && voice.serverDeaf !== deaf) patch.deaf = deaf;
 
         // Don't waste rate limits on duplicate requests.
-        if (voice.serverMute === mute && voice.serverDeaf === deaf) return this;
-
-        // TODO Check permissions to set a nickname.
-        // Set a nickname
-        // const nick = (syncName && this.amongUsName) ? this.amongUsName : this._originalNickname;
+        if (Object.keys(patch).length < 1) return;
 
         // Update the member.
-        await member.edit({ mute, deaf }, `Silence Among Us${reason ? `: ${reason}` : ''}`);
-
-        this.emit(`Set ${mute ? 'mute' : 'unmute'} ${deaf ? 'deaf' : 'undeaf'}`);
+        this.emit(`Set ${JSON.stringify(patch)}`);
+        await member.edit(patch, `${REASON_PREFIX}${reason ? `: ${reason}` : ''}`);
     }
 
     emit(message) {

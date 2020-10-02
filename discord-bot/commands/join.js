@@ -8,7 +8,5 @@ module.exports = async function joinCommand(message, arguments) {
 
     if (!amongUsName.trim()) throw new Error("You must include your in-game name to join.")
 
-    // TODO Accept a color
-
     await lobby.guildMemberJoin(message.member, amongUsName)
 };
