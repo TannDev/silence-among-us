@@ -101,7 +101,7 @@ class Player {
         return !this._amongUs;
     }
 
-    async joinGame(amongUsName) {
+    joinGame(amongUsName) {
         if (this._amongUs) throw new Error("Player is already participating.");
         this.status = STATUS.WAITING;
         this._amongUs = {name: amongUsName};

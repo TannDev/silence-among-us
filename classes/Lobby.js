@@ -209,9 +209,9 @@ class Lobby {
      * Searches for players in the lobby.
      *
      * @param {Discord.GuildMember|string} guildMember
-     * @returns {Promise<Player>}
+     * @returns {Player}
      */
-    async getGuildMemberPlayer(guildMember) {
+    getGuildMemberPlayer(guildMember) {
         // TODO Store a map of these, rather than a slow search.
         return this.players.find(player => player.matchesGuildMember(guildMember));
     }
@@ -219,21 +219,21 @@ class Lobby {
     /**
      * Find a player with a matching in-game name.
      * @param {string} name - In-game name from Among Us.
-     * @returns {Promise<Player>}
+     * @returns {Player}
      */
-    async getAmongUsPlayer(name) {
+    getAmongUsPlayer(name) {
         // TODO Store a map of these, rather than a slow search.
         return this.players.find(player => player.matchesAmongUsName(name));
     }
 
     async amongUsJoin({ name, color, dead }) {
-        let player = await this.getAmongUsPlayer(name);
+        let player = this.getAmongUsPlayer(name);
 
         // If there's no player yet, add them.
         if (!player) {
             player = new Player(this);
             this._players.add(player);
-            await player.joinGame(name);
+            player.joinGame(name);
         }
 
         // Update their color.
@@ -248,7 +248,7 @@ class Lobby {
     }
 
     async amongUsLeave({ name }) {
-        let player = await this.getAmongUsPlayer(name);
+        let player = this.getAmongUsPlayer(name);
         if (!player) throw new Error(`AmongUs name "${name}" left, but isn't a player.`);
 
         // If the player is on Discord, mark them as as killed since they're out of the round.
@@ -278,7 +278,7 @@ class Lobby {
     async amongUsKill({ name, dead }) {
         if (!dead) throw new Error(`amongUsKill for "${name}", but dead is falsy.`);
 
-        let player = await this.getAmongUsPlayer(name);
+        let player = this.getAmongUsPlayer(name);
         if (!player) throw new Error(`amongUsKill order for "${name}" but no such player.`);
 
         // Kill the player.
@@ -292,7 +292,7 @@ class Lobby {
     async amongUsExile({ name, dead }) {
         if (!dead) throw new Error(`amongUsExile for "${name}", but dead is falsy.`);
 
-        let player = await this.getAmongUsPlayer(name);
+        let player = this.getAmongUsPlayer(name);
         if (!player) throw new Error(`amongUsKill order for "${name}" but no such player.`);
 
         // Kill the player.
@@ -318,7 +318,7 @@ class Lobby {
         if (guildMember.user.bot) return null;
 
         // Check if the player is already in this lobby.
-        const player = await this.getGuildMemberPlayer(guildMember);
+        const player = this.getGuildMemberPlayer(guildMember);
         if (!player) throw new Error(`Guild member (${guildMember.name} isn't in the lobby.`);
 
         // Check for an existing player with that name.
@@ -339,7 +339,7 @@ class Lobby {
 
         // Otherwise, set the player's name and add them to the game.
         else {
-            await player.joinGame(amongUsName);
+            player.joinGame(amongUsName);
             await this.setPlayerForCurrentPhase(player);
         }
 
@@ -351,7 +351,7 @@ class Lobby {
         if (guildMember.user.bot) return null;
 
         // Check if the player is already in this lobby.
-        const player = await this.getGuildMemberPlayer(guildMember);
+        const player = this.getGuildMemberPlayer(guildMember);
         if (!player) throw new Error(`Guild member (${guildMember.name} isn't in the lobby.`);
         if (player.isSpectating) throw new Error("You're already a spectator.");
 
@@ -375,7 +375,7 @@ class Lobby {
         if (guildMember.user.bot) return null;
 
         // Fetch the existing player, or create a new spectator.
-        let player = await this.getGuildMemberPlayer(guildMember);
+        let player = this.getGuildMemberPlayer(guildMember);
         if (!player) {
             player = new Player(this, guildMember);
             this._players.add(player);
@@ -390,7 +390,7 @@ class Lobby {
         // Ignore bots.
         if (guildMember.user.bot) return null;
 
-        const player = await this.getGuildMemberPlayer(guildMember);
+        const player = this.getGuildMemberPlayer(guildMember);
         if (!player) throw new Error("Guild member disconnected without ever having connected.");
 
         // If the player was spectating, remove them.
@@ -414,7 +414,7 @@ class Lobby {
         // Generate kill orders for each member passed in.
         const killOrders = members.map(async member => {
             // If the member is a player is in this lobby, mark them as dying and update their state.
-            const player = await this.getGuildMemberPlayer(member);
+            const player = this.getGuildMemberPlayer(member);
             if (player) {
                 player.kill();
                 await this.setPlayerForCurrentPhase(player);
@@ -439,7 +439,7 @@ class Lobby {
         // Generate revival orders for each member passed in.
         const reviveOrders = members.map(async member => {
             // If the member is a player is in this lobby, mark them as living and update their state.
-            const player = await this.getGuildMemberPlayer(member);
+            const player = this.getGuildMemberPlayer(member);
             if (player) {
                 player.revive();
                 await this.setPlayerForCurrentPhase(player);
