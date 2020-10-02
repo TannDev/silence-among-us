@@ -33,7 +33,7 @@ jobs:
           else
             docker build . --file Dockerfile
           fi
-          // TODO Test correctly
+        # TODO Test correctly
 
   # Push image to GitHub Packages.
   # See also https://docs.docker.com/docker-hub/builds/
