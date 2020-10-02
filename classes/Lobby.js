@@ -477,20 +477,21 @@ class Lobby {
      * @returns {module:"discord.js".MessageEmbed}
      */
     async postLobbyInfo(options = {}) {
-        const roomInfo = this.room ? `*${this.room.code}* (${this.room.region})` : 'Not Listed';
+        const roomInfo = this.room ? `**${this.room.code}** (${this.room.region})` : 'Not Listed';
 
         // Get and categorize players.
         const everyone = this.players; // TODO Put them in some sorted order.
 
         const players = everyone.filter(player => !player.isSpectating).map(player => {
-            const showStatus = options.spoil || this.phase !== PHASE.WORKING || player.isKnownDead;
+            const showStatus = options.spoil || this.phase !== PHASE.WORKING || player.isWaiting || player.isKnownDead;
             const status = showStatus ? player.status : '_Working_';
             const name = player.discordId ? `<@${player.discordId}>` : player.amongUsName;
 
             const hasNameMismatch = player.discordName && player.discordName !== player.amongUsName;
             const mismatchDisplay = hasNameMismatch ? ` (${player.amongUsName})` : '';
             const color = player.amongUsColor || 'Untracked';
-            const emoji = player.isKnownDead ? ':skull:' : ':heartpulse:';
+
+            const emoji = player.isWaiting ? ':stopwatch:' : (player.isKnownDead ? ':skull:' : ':heartpulse:');
 
             return `${emoji} ${status}: ${name}${mismatchDisplay} (${color})`;
         }).join('\n') || 'None';
@@ -505,11 +506,9 @@ class Lobby {
             .addField('Players', players)
             .setFooter(`Capture Status: ${this.automation}`);
 
-        if (spectators) embed.addField('Spectators', spectators);
-
-        // TODO Remove connect code.
-        if (this.automation === AUTOMATION.WAITING) {
-            embed.addField('CaptureAmongUs', `Connect with \`${this.connectCode}\``);
+        if (spectators) {
+            embed.addField('Spectators', spectators);
+            embed.addField('Join the Game!', 'Use `!sau join <In-Game Name>` to join!')
         }
 
         // If there's a text channel bound, send the embed to it.

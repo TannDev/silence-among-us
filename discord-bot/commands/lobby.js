@@ -4,7 +4,7 @@ const Room = require('../../classes/Room');
 const { requireLobby, requireTextChannel, requireVoiceChannel } = require('./_helpers');
 
 const socketHost = process.env.SOCKET_HOST || 'localhost:8123';
-const socketSecure = Boolean(process.env.SOCKET_SECURE) || false;
+const socketSecure = process.env.SOCKET_SECURE === 'true';
 
 
 module.exports = async function lobbyCommand(message, arguments) {
