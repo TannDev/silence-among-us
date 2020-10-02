@@ -608,6 +608,23 @@ class Lobby {
         this.postLobbyInfo();
     }
 
+    async resetToMenu(){
+        // Delete the room code.
+        delete this.room;
+
+        // Disconnect automation players.
+        this.players.forEach(player => {
+            // If there's no associated guild member, just remove the player.
+            if (!player.guildMember) return this._players.delete(player)
+
+            // Otherwise, unset the color.
+            player.amongUsColor = null;
+        })
+
+        // Return to intermission.
+        await this.transition(PHASE.INTERMISSION)
+    }
+
     toJSON() {
         const { players, room, ...document } = this;
         Object.keys(document)

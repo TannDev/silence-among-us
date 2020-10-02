@@ -107,7 +107,6 @@ class Player {
         this._amongUs = {name: amongUsName};
     }
 
-
     async leaveGame() {
         delete this._amongUs;
         await this.editGuildMember(false, false, "Left Lobby");

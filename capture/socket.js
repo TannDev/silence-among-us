@@ -64,8 +64,9 @@ io.on('connection', client => {
                 console.log(`SocketIO: State update for ${connectCode}:`, state);
 
                 // Handle the menu state differently, by deleting the room.
-                if (state === 'MENU') delete lobby.room;
+                if (state === 'MENU') return lobby.resetToMenu();
 
+                // Otherwise, transition to the target phase.
                 if (lobby.phase === targetPhase) return;
                 await lobby.transition(targetPhase);
             })
