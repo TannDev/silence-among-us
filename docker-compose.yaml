@@ -2,11 +2,15 @@ version: '3.5'
 
 services:
   app:
+    container_name: sau-bot
     image: jftanner/silence-among-us
     build: .
     env_file: .env
     environment:
+      - SOCKET_HOST=localhost:8123
+      - SOCKET_SECURE=false
       - PORT=8080
     ports:
+      - 127.0.0.1:8123:8123
       - 127.0.0.1:8080:8080
 
