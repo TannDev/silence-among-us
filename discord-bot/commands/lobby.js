@@ -3,6 +3,9 @@ const Lobby = require('../../classes/Lobby');
 const Room = require('../../classes/Room');
 const { requireLobby, requireTextChannel, requireVoiceChannel } = require('./_helpers');
 
+const socketHost = process.env.SOCKET_HOST || 'localhost:8123';
+const socketSecure = Boolean(process.env.SOCKET_SECURE) || false;
+
 
 module.exports = async function lobbyCommand(message, arguments) {
     const [subcommand, code, region] = arguments;
@@ -21,15 +24,18 @@ module.exports = async function lobbyCommand(message, arguments) {
         // Start a new lobby;
         const lobby = await Lobby.start(voiceChannel, textChannel, parseRoomCode(code, region));
 
+        // Generate a connect link.
+        const connectLink = `<aucapture://${socketHost}/${lobby.connectCode}${socketSecure ? '' : '?insecure'}>`;
+
         // Give the user a connect code.
         const dmChannel = await message.author.createDM();
         await dmChannel.send(new MessageEmbed()
             .setTitle("You've created a new game lobby!")
             .setDescription([
-                `You can automate the lobby using [Among Us Capture](https://github.com/denverquane/amonguscapture/releases/tag/2.0.7)`,
-                'Start the capture client _after_ you start Among Us, and use the connect code below.'
+                `You can automate the lobby using [Among Us Capture](https://github.com/denverquane/amonguscapture).`,
+                'Note: An unreleased beta version is currently required.'
             ].join('\n'))
-            .addField('Connect Code', `\`${lobby.connectCode}\``, true)
+            .addField('Connect Link', connectLink)
             .addField('Guild', voiceChannel.guild.name, true)
             .addField('Voice Channel', voiceChannel.name, true)
         );
@@ -67,8 +73,8 @@ module.exports = async function lobbyCommand(message, arguments) {
         await lobby.postLobbyInfo();
     }
 
-    else throw new Error(`Sorry, I don't have a lobby sub-command, \`${subcommand}\``)
-}
+    else throw new Error(`Sorry, I don't have a lobby sub-command, \`${subcommand}\``);
+};
 
 /**
  * Parses a room code and region and returns a room.
