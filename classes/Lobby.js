@@ -367,7 +367,6 @@ class Lobby {
         if (color) await this.amongUsJoin({ name, color, dead });
 
         this.postLobbyInfo();
-
     }
 
     async guildMemberConnected(guildMember) {
@@ -386,7 +385,7 @@ class Lobby {
         this.postLobbyInfo();
     }
 
-    async guildMemberDisconnected(guildMember, skipUnmute) {
+    async guildMemberDisconnected(guildMember) {
         // Ignore bots.
         if (guildMember.user.bot) return null;
 
@@ -396,7 +395,7 @@ class Lobby {
         // If the player was spectating, remove them.
         if (player.isSpectating) this._players.delete(player);
 
-        // Unless told otherwise, unmute the player.
+        // Post Info
         this.postLobbyInfo();
     }
 
@@ -618,7 +617,7 @@ class Lobby {
             if (!player.guildMember) return this._players.delete(player)
 
             // Otherwise, unset the color.
-            player.amongUsColor = null;
+            if (player.amongUsColor) player.amongUsColor = null;
         })
 
         // Return to intermission.

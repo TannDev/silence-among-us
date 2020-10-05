@@ -137,7 +137,7 @@ io.on('connection', client => {
     });
 });
 
-// TODO Make port configurable
-io.listen(8123);
+// Listen
+io.listen(process.env.SOCKET_PORT || '8123');
 
 module.exports = io;
