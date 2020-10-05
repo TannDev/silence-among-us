@@ -1,5 +1,5 @@
 module.exports = {
     discord: require('./discord-bot/discord-bot'),
-    server: require('./server/server'),
+    server: require('./api-server/app'),
     capture: require('./capture/socket')
 }

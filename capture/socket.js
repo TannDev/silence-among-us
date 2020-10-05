@@ -1,4 +1,5 @@
-const io = require('socket.io')();
+const server = require('../lib/server');
+const io = require('socket.io')(server);
 const Lobby = require('../classes/Lobby');
 
 const ACTIONS = [
@@ -136,8 +137,5 @@ io.on('connection', client => {
             .catch(error => console.error(error));
     });
 });
-
-// Listen
-io.listen(process.env.SOCKET_PORT || '8123');
 
 module.exports = io;

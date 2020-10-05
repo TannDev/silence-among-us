@@ -1,8 +1,9 @@
+
 const createError = require('http-errors');
 const express = require('express');
 const swaggerUI = require('swagger-ui-express');
 
-// Initialize the server
+// Initialize the app
 const app = express();
 
 // Serve swagger UI/
@@ -17,8 +18,6 @@ app.use((req, res, next) => {
     next(createError(404));
 })
 
-// Listen
-const server = app.listen(process.env.PORT || 3000, (error) => {
-    const { port } = server.address();
-    console.log(`Listening on http://localhost:${port}`);
-});
+// Mount on the server.
+const server = require('../lib/server');
+server.on('request', app);

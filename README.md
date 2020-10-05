@@ -8,7 +8,7 @@ This bot turns your Discord voice channels into game lobbies for playing Among U
 
 It's got a few features, so far:
 - Tracks the status of players in the lobby, via simple commands.
-- Automatically controls the server-mute and server-deafen settings for players in the voice channel.
+- Automatically controls the app-mute and app-deafen settings for players in the voice channel.
 - Provides lobby updates via text channels, including the room code.
 - Keeps the text channel clean, by removing commands and old lobby updates.
 - Supports multiple concurrent games, in different voice channels, at the same time.
@@ -25,7 +25,7 @@ In leu of more detailed documentation, here's some basics to keep in mind:
 - When you start a lobby (`!sau lobby start`), that lobby will bind to the text channel where you issued the command. All lobby updates will go to that text channel, until the lobby ends. (Though you can still use other channels to issue commands, if you wish.)
 
 ### Commands
-When added to your server, the discord bot will automatically listen to every text channel it has access to.
+When added to your app, the discord bot will automatically listen to every text channel it has access to.
 To issue it commands, use `!sau <command>` or `!s<command>`.
 Try starting with `!sau help` or `!s?`, to get a list of all the commands currently available.
 
@@ -78,7 +78,7 @@ _Instructions not yet available._
 
 #### Environment Variables
 The bot uses a couple environment variables:
-- `PORT`: Which port the API server should listen on. (Default: 3000)
+- `PORT`: Which port the API app should listen on. (Default: 3000)
 - `DISCORD_TOKEN`: The bot token for your Discord application
 
 The easiest way to store these is to create `.env` file in the standard `VAR=value` format:
@@ -93,7 +93,7 @@ _Note:_ Unfortunately, we can't provide support for users that are unfamiliar wi
 If you're comfortable with Docker, here's what you need to know:
 - The docker image is `jftanner/silence-among-us`
 - Make sure to add the environment variables via `-e DISCORD_TOKEN=your-token` or with the `.env` file.
-- If you want to use the API server, you'll need to expose or publish whichever port you selected.
+- If you want to use the API app, you'll need to expose or publish whichever port you selected.
 
 Here's a quick and dirty example, if you're running locally:
 `docker run -it --rm -p 3000:3000 --env-file=.env jftanner/silence-among-us`

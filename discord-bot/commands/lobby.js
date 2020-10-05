@@ -3,7 +3,7 @@ const Lobby = require('../../classes/Lobby');
 const Room = require('../../classes/Room');
 const { requireLobby, requireTextChannel, requireVoiceChannel } = require('./_helpers');
 
-const socketHost = process.env.SOCKET_HOST || 'localhost:8123';
+const socketHost = process.env.SOCKET_HOST || 'localhost:8080';
 const socketSecure = process.env.SOCKET_SECURE === 'true';
 
 
