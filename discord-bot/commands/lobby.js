@@ -32,10 +32,9 @@ module.exports = async function lobbyCommand(message, arguments) {
             .setTitle("You've created a new game lobby!")
             .setDescription([
                 `You can automate the lobby using [Among Us Capture](https://github.com/denverquane/amonguscapture).`,
-                '',
                 `If you don't already have it, you can [download a compatible version](${url}/api/capture/download).`
             ].join('\n'))
-            .addField('Auto-connect Link', connectLink)
+            .addField('Connect Capture App', connectLink)
             .addField('Guild', voiceChannel.guild.name, true)
             .addField('Voice Channel', voiceChannel.name, true)
         );
