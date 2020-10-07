@@ -21,10 +21,29 @@ tags:
   - name: Player
 
 paths:
+  /capture/download:
+    get:
+      operationId: downloadCaptureApp
+      summary: Download a compatible version of AmongUsCapture
+      description: |
+        Download a compatible version of [AmongUsCapture](https://github.com/denverquane/amonguscapture)
+
+        The provided version may or may not be a standard release version, as Silence Among Us is developed in
+        cooperation with AmongUsCapture and may leverage unpublished features from time to time.
+      responses:
+        '200':
+          description: An `AmongUsCapture.exe` executable.
+          content:
+            text/plain:
+              schema:
+                type: string
+                format: binary
+
   /lobby/{voiceChannelId}:
     parameters:
       - $ref: "#/components/parameters/voiceChannelId"
     get:
+      deprecated: true
       operationId: getLobbyInformation
       summary: Get information about a lobby.
       tags: [Lobby]
@@ -49,6 +68,7 @@ paths:
       - $ref: "#/components/parameters/voiceChannelId"
       - $ref: "#/components/parameters/playerId"
     get:
+      deprecated: true
       operationId: killLobbyPlayer
       summary: Kill a player in the lobby
       tags: [Lobby, Player]

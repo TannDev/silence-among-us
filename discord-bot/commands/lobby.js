@@ -34,7 +34,8 @@ module.exports = async function lobbyCommand(message, arguments) {
                 `You can automate the lobby using [Among Us Capture](https://github.com/denverquane/amonguscapture).`,
                 'Note: An [unreleased beta version](https://github.com/tanndev/silence-among-us/raw/main/capture/AmongUsCapture-ipcbeta.exe) is currently required.'
             ].join('\n'))
-            .addField('Connect Link', connectLink)
+            .addField('Connect AmongUsCapture', connectLink)
+            .addField('Download AmongUsCapture', `[Download a compatible version](${url}/api/capture/download)`)
             .addField('Guild', voiceChannel.guild.name, true)
             .addField('Voice Channel', voiceChannel.name, true)
         );

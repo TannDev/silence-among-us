@@ -39,6 +39,12 @@ router.get('/lobby/:voiceChannelId/:playerId/kill', (req, res, next) => {
         .catch(error => next(error));
 });
 
+router.get('/capture/download', (req, res) => {
+    const filepath = `${__dirname}/../capture/AmongUsCapture-ipcbeta.exe`;
+    const filename = `AmongUsCapture-SAU.exe`;
+    res.download(filepath, filename);
+})
+
 router.use((req, res, next) => {
     next(createError(404, "No such API endpoint."));
 });
