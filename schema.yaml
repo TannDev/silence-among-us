@@ -17,6 +17,7 @@ servers:
     url: /api
 
 tags:
+  - name: Capture
   - name: Lobby
   - name: Player
 
@@ -25,6 +26,7 @@ paths:
     get:
       operationId: downloadCaptureApp
       summary: Download a compatible version of AmongUsCapture
+      tags: [Capture]
       description: |
         Download a compatible version of [AmongUsCapture](https://github.com/denverquane/amonguscapture)
 
