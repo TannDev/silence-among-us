@@ -19,5 +19,5 @@ app.use((req, res, next) => {
 })
 
 // Mount on the server.
-const server = require('../lib/server');
+const { server } = require('../lib/server');
 server.on('request', app);

@@ -3,9 +3,8 @@ const Lobby = require('../../classes/Lobby');
 const Room = require('../../classes/Room');
 const { requireLobby, requireTextChannel, requireVoiceChannel } = require('./_helpers');
 
-const socketHost = process.env.SOCKET_HOST || 'localhost:8080';
-const socketSecure = process.env.SOCKET_SECURE === 'true';
-
+// Get server information.
+const { uri, secure } = require('../../lib/server');
 
 module.exports = async function lobbyCommand(message, arguments) {
     const [subcommand, code, region] = arguments;
@@ -25,7 +24,7 @@ module.exports = async function lobbyCommand(message, arguments) {
         const lobby = await Lobby.start(voiceChannel, textChannel, parseRoomCode(code, region));
 
         // Generate a connect link.
-        const connectLink = `<aucapture://${socketHost}/${lobby.connectCode}${socketSecure ? '' : '?insecure'}>`;
+        const connectLink = `<aucapture://${uri}/${lobby.connectCode}${secure ? '' : '?insecure'}>`;
 
         // Give the user a connect code.
         const dmChannel = await message.author.createDM();

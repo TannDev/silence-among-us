@@ -1,4 +1,4 @@
-const server = require('../lib/server');
+const { server } = require('../lib/server');
 const io = require('socket.io')(server);
 const Lobby = require('../classes/Lobby');
 
