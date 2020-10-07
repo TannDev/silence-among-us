@@ -79,17 +79,22 @@ _Instructions not yet available._
 #### Environment Variables
 The bot uses a couple environment variables:
 - `DISCORD_TOKEN`: The bot token for your Discord application
-- `SAU_HOST`: The hostname where the server is listening. (Default: localhost)
-- `SAU_PORT`: Which port the API app should listen on. (Default: 443 or 80)
-- `SAU_SECURE`: Whether the bot is available via HTTPS. (Default: false)
+- `PORT`: Which port the API app should listen on. (Default: '8080')
+- `HOST`: The hostname where the server is listening. (Default: 'localhost:${PORT}')
+- `SECURE`: Whether the bot is available via HTTPS. (Default: 'false')
+
 
 The easiest way to store these is to create `.env` file in the standard `VAR=value` format:
 ```
 DISCORD_TOKEN=your-token-goes-here
-SAU_HOST=sau.my-example-domain.com
-SAU_PORT=8443
-SAU_SECURE=true
+HOST=sau.my-example-domain.com
+PORT=8443
+SECURE=true
 ```
+
+_Note:_ The server doesn't include SSL natively, but can be placed behind an appropriate proxy such as nginx.
+In this case, set `PORT` to the _actual_ port used by the server, but set `HOST` and `SECURE` to their
+externally-accessible values.
 
 #### Run via Docker
 _Note:_ Unfortunately, we can't provide support for users that are unfamiliar with Docker. 

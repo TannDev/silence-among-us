@@ -6,6 +6,10 @@ services:
     image: jftanner/silence-among-us
     build: .
     env_file: .env
+    environment:
+      HOST: localhost
+      PORT: 8080
+      SECURE: 'false'
     ports:
       - 127.0.0.1:8080:8080
 

@@ -4,7 +4,7 @@ const Room = require('../../classes/Room');
 const { requireLobby, requireTextChannel, requireVoiceChannel } = require('./_helpers');
 
 // Get server information.
-const { uri, secure } = require('../../lib/server');
+const { url, host, secure } = require('../../lib/server');
 
 module.exports = async function lobbyCommand(message, arguments) {
     const [subcommand, code, region] = arguments;
@@ -24,7 +24,7 @@ module.exports = async function lobbyCommand(message, arguments) {
         const lobby = await Lobby.start(voiceChannel, textChannel, parseRoomCode(code, region));
 
         // Generate a connect link.
-        const connectLink = `<aucapture://${uri}/${lobby.connectCode}${secure ? '' : '?insecure'}>`;
+        const connectLink = `<aucapture://${host}/${lobby.connectCode}${secure ? '' : '?insecure'}>`;
 
         // Give the user a connect code.
         const dmChannel = await message.author.createDM();
