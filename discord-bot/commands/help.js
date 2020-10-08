@@ -7,6 +7,7 @@ const commands = [
     '`help|h|?`: Get this help.',
     '`join|j <in-game name>`: Join the lobby as a player.',
     '`quit|q`: Quit the lobby and stop being a player.',
+    '`eject|e`: Eject the at-mentioned players from the lobby, as if they quit.',
     '`lobby|l`: Re-post information about your lobby.',
     '`lobby|l start [room code] [na|eu|asia]`: Start a new lobby.',
     '`lobby|l stop`: End your lobby.',

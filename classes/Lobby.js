@@ -362,9 +362,32 @@ class Lobby {
 
         // Mark the player as having left.
         await player.leaveGame();
+        await this.setPlayerForCurrentPhase(player);
 
         // If the player was being tracked by automation, create a new one.
         if (color) await this.amongUsJoin({ name, color, dead });
+
+        this.postLobbyInfo();
+    }
+
+
+    async guildMemberEject(...members) {
+        // Process all submitted members.
+        await Promise.all(members
+            .filter(member => !member.user.bot)
+            .map(async member => {
+                // Get the player.
+                const player = this.getGuildMemberPlayer(member);
+
+                // Ignore spectators.
+                if (player.isSpectating) return;
+
+                // Update the player as though they quit.
+                await this.guildMemberQuit(member);
+
+                // Remove the player if they've already left the channel.
+                if (!this.voiceChannel.members.has(member.id)) this._players.delete(player);
+            }));
 
         this.postLobbyInfo();
     }
@@ -396,9 +419,9 @@ class Lobby {
         if (player.isSpectating) this._players.delete(player);
 
         // End the lobby if there are no more connected players.
-        if (this.players.every(player => !player.guildMember)){
+        if (this.players.every(player => !player.guildMember)) {
             await this.stop();
-            this.textChannel.send("Everyone left, so I ended the lobby.");
+            this.textChannel.send("Everyone in Discord left, so I ended the lobby.");
         }
         else this.postLobbyInfo();
     }
@@ -511,7 +534,7 @@ class Lobby {
 
         if (spectators) {
             embed.addField('Spectators', spectators);
-            embed.addField('Join the Game!', 'Use `!sau join <In-Game Name>` to join!')
+            embed.addField('Join the Game!', 'Use `!sau join <In-Game Name>` to join!');
         }
 
         // If there's a text channel bound, send the embed to it.
@@ -611,21 +634,21 @@ class Lobby {
         this.postLobbyInfo();
     }
 
-    async resetToMenu(){
+    async resetToMenu() {
         // Delete the room code.
         delete this.room;
 
         // Disconnect automation players.
         this.players.forEach(player => {
             // If there's no associated guild member, just remove the player.
-            if (!player.guildMember) return this._players.delete(player)
+            if (!player.guildMember) return this._players.delete(player);
 
             // Otherwise, unset the color.
             if (player.amongUsColor) player.amongUsColor = null;
-        })
+        });
 
         // Return to intermission.
-        await this.transition(PHASE.INTERMISSION)
+        await this.transition(PHASE.INTERMISSION);
     }
 
     toJSON() {

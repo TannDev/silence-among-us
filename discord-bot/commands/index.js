@@ -7,6 +7,7 @@ const commands = [
     { aliases: ['hello', 'hi', 'hey'], handler: (message) => message.reply('Hello!') },
     { aliases: ['join', 'j'], handler: require('./join') },
     { aliases: ['quit', 'q'], handler: require('./quit') },
+    { aliases: ['eject', 'e'], handler: require('./eject') },
     { aliases: ['lobby', 'l'], handler: require('./lobby') },
     { aliases: ['intermission', 'i'], handler: require('./intermission') },
     { aliases: ['working', 'work', 'w'], handler: require('./work') },
