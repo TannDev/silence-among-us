@@ -34,7 +34,8 @@ module.exports = async function lobbyCommand(message, arguments) {
         await dmChannel.send(new MessageEmbed()
             .setTitle("You've started a new game lobby!")
             .setDescription([
-                `You've created a new lobby using the **${voiceChannel.name}** channel in **${voiceChannel.guild.name}**.\n`,
+                `You've created a new lobby using the **${voiceChannel.name}** channel in **${voiceChannel.guild.name}**.`,
+                `Lobby status and updates will be posted in <#${textChannel.id}>.\n`,
                 `You can automate the lobby using [Among Us Capture](https://github.com/denverquane/amonguscapture).`,
                 `If you don't already have the right version, download it securely from the link below.`
             ].join('\n'))
