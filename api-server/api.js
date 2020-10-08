@@ -1,6 +1,7 @@
 const createError = require('http-errors');
 const { Router } = require('express');
 const Lobby = require('../classes/Lobby');
+const captureDownload = require('../downloads/capture');
 
 // Initialize the server
 const router = Router();
@@ -40,9 +41,7 @@ router.get('/lobby/:voiceChannelId/:playerId/kill', (req, res, next) => {
 });
 
 router.get('/capture/download', (req, res) => {
-    const filepath = `${__dirname}/../capture/AmongUsCapture-ipcbeta.exe`;
-    const filename = `AmongUsCapture-SAU.exe`;
-    res.download(filepath, filename);
+    res.download(captureDownload.filepath, captureDownload.filename);
 })
 
 router.use((req, res, next) => {

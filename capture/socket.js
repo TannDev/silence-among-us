@@ -1,6 +1,7 @@
 const { server } = require('../lib/server');
 const io = require('socket.io')(server);
 const Lobby = require('../classes/Lobby');
+const Room = require('../classes/Room');
 
 const ACTIONS = [
     'JOIN',
@@ -41,6 +42,12 @@ const COLORS = [
     'Lime'
 ]
 
+const REGIONS = [
+    'North America',
+    'Asia',
+    'Europe'
+]
+
 io.on('connection', client => {
     client.on('connect', connectCode => {{
         Lobby.findByConnectCode(connectCode)
@@ -52,6 +59,27 @@ io.on('connection', client => {
             })
             .catch(error => console.error(error));
     }});
+
+    client.on('lobby', data => {
+        // Get the lobby
+        const { connectCode } = client;
+        const {LobbyCode: roomCode, Region} = JSON.parse(data);
+        const region = REGIONS[Region];
+
+        Lobby.findByConnectCode(connectCode)
+            .then(async lobby => {
+                if (!lobby) return;
+                console.log(`SocketIO: Lobby update for ${connectCode}:`, roomCode);
+
+                // Update the room code.
+                if (roomCode) lobby.room = new Room(roomCode, region);
+                else delete lobby.room;
+
+                // Update the info-post.
+                lobby.postLobbyInfo();
+            })
+            .catch(error => console.error(error));
+    })
 
     client.on('state', index => {
         const state = STATES[index]

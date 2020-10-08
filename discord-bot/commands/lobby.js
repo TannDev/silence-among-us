@@ -5,6 +5,7 @@ const { requireLobby, requireTextChannel, requireVoiceChannel } = require('./_he
 
 // Get server information.
 const { url, host, secure } = require('../../lib/server');
+const capture = require('../../downloads/capture');
 
 module.exports = async function lobbyCommand(message, arguments) {
     const [subcommand, code, region] = arguments;
@@ -23,20 +24,22 @@ module.exports = async function lobbyCommand(message, arguments) {
         // Start a new lobby;
         const lobby = await Lobby.start(voiceChannel, textChannel, parseRoomCode(code, region));
 
-        // Generate a connect link.
-        const connectLink = `<aucapture://${host}/${lobby.connectCode}${secure ? '' : '?insecure'}>`;
+        // Generate capture information.
+        const captureLink = `<aucapture://${host}/${lobby.connectCode}${secure ? '' : '?insecure'}>`;
+        const captureVersion = capture.publicRelease ? `v${capture.version}` : `${capture.version} Prerelease`;
+        const versionLink = `${captureVersion} ([Download](${url}/api/capture/download))`;
 
         // Give the user a connect code.
         const dmChannel = await message.author.createDM();
         await dmChannel.send(new MessageEmbed()
-            .setTitle("You've created a new game lobby!")
+            .setTitle("You've started a new game lobby!")
             .setDescription([
+                `You've created a new lobby using the **${voiceChannel.name}** channel in **${voiceChannel.guild.name}**.\n`,
                 `You can automate the lobby using [Among Us Capture](https://github.com/denverquane/amonguscapture).`,
-                `If you don't already have it, you can [download a compatible version](${url}/api/capture/download).`
+                `If you don't already have the right version, download it securely from the link below.`
             ].join('\n'))
-            .addField('Connect Capture App', connectLink)
-            .addField('Guild', voiceChannel.guild.name, true)
-            .addField('Voice Channel', voiceChannel.name, true)
+            .addField('Connect Capture App', captureLink, true)
+            .addField('Compatible Version', versionLink, true)
         );
 
         // Join the channel, if possible.
