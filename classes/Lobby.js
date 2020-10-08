@@ -395,8 +395,12 @@ class Lobby {
         // If the player was spectating, remove them.
         if (player.isSpectating) this._players.delete(player);
 
-        // Post Info
-        this.postLobbyInfo();
+        // End the lobby if there are no more connected players.
+        if (this.players.every(player => !player.guildMember)){
+            await this.stop();
+            this.textChannel.send("Everyone left, so I ended the lobby.");
+        }
+        else this.postLobbyInfo();
     }
 
 
