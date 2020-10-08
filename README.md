@@ -1,24 +1,28 @@
 # Silence Among Us
-This is a work-in-progress still under active development.
+A Discord bot designed to turn your server's voice channels into lobby for playing Among Us!
 
-**If you're looking for something you can use right now**, try [amongusdiscord](https://github.com/denverquane/amongusdiscord) instead.
+This project was inspired by Denver Quane's excellent [AmongUsDiscord](https://github.com/denverquane/amongusdiscord)
+and leverages the same [AmongUsCapture](https://github.com/denverquane/amonguscapture) component to provide automation.
+
+In fact, there's a great deal of cooperation between the developers of Silence Among Us and AmongUsDiscord!
+If one bot doesn't suit your needs, check out the other one.
 
 ## Features
 This bot turns your Discord voice channels into game lobbies for playing Among Us.
 
 It's got a few features, so far:
-- Tracks the status of players in the lobby, via simple commands.
-- Automatically controls the app-mute and app-deafen settings for players in the voice channel.
+- Tracks the status of players in the lobby, automatically or via simple commands.
+- Automatically controls the server-mute and server-deafen settings for players in the voice channel.
+- Automatically updates discord nicknames to match in-game names, when possible.
 - Provides lobby updates via text channels, including the room code.
 - Keeps the text channel clean, by removing commands and old lobby updates.
 - Supports multiple concurrent games, in different voice channels, at the same time.
-- Automatically adds players to a lobby as they join the channel.
 
 ## How It Works
 The bot keeps track of multiple game "lobbies" at once, and controls the audio of each player in the lobby.
 
-In leu of more detailed documentation, here's some basics to keep in mind:
-- When you make any other commands, the bot will use your current voice channel to find your lobby.
+In lieu of more detailed documentation, here's some basics to keep in mind:
+- When you give the bot a command, it will use your current voice channel to find your lobby.
 - Each game lobby connects to exactly one voice channel and exactly one text channel.
 - A voice channel can only be used for one lobby at a time.
 - A text channel can be used for multiple lobbies at the same time.
@@ -28,35 +32,44 @@ In leu of more detailed documentation, here's some basics to keep in mind:
 When added to your app, the discord bot will automatically listen to every text channel it has access to.
 To issue it commands, use `!sau <command>` or `!s<command>`.
 Try starting with `!sau help` or `!s?`, to get a list of all the commands currently available.
+Or use `!sau lobby start` (`!sl start`) to start a new lobby in your current channels.
 
 ### Lobby Phases
 A lobby can be in one of three phases at any given time: "intermission", "working", and "meeting".
 The bot will enforce different rules depending on the current phase of the lobby.
 
 #### Intermission
-You should put your lobby into the "intermission" phase (use `!sau intermission` or `!si`) whenever you're in the drop ship, between games. (This is also where the lobby starts when first created.)
+The lobby enters the intermission phase whenever you're in the drop ship, between games. (This is also where the lobby starts when first created.)
 - All players are marked as "Living"
 - Everyone can both talk and hear.
 - New players can join.
 
+Start this phase manually with use `!sau intermission` or `!si`.
+
+
 #### Working
-You should put your lobby into the "working" phase (use `!sau work` or `!sw`) whenever you start a new game or end a meeting.
+The lobby enters the working phase whenever you start a new game or end a meeting.
 - Players in the "living" or "dying" states are muted and deafened.
 - Everyone else can talk freely, so the dead can communicate without needing the in-game chat.
 - When a new player joins the lobby, they're set to "waiting" and unmuted accordingly.
 - If a player is killed during this phase, they're marked as "dying" and stay muted and deafened. (To avoid spoilers via Discord.)
 
+Start this phase manually with `!sau work` or `!sw`.
+
 #### Meeting
-You should put your lobby into the "meeting" phase (use `!sau meet` or `!sm`) whenever you start a new meeting.
+The lobby enters the meeting phase whenever you start a new meeting.
 - Any "dying" players immediately become "dead".
 - "Living" players are unmuted and undeafened, so they can talk to each other.
 - Everyone else is muted, but can still hear the discussion.
 - If a player is killed during this phase, they're immediately set to "dead" and muted.
 
-### Game Integration
-Unfortunately, there's no direct connection to the game at the moment. So you'll need to use discord commands (or the API) to change the game phase, kill players, etc.
+Start this phase manually with `!sau meet` or `!sm`.
 
-... for now!
+### Game Integration
+The bot supports [AmongUsCapture](https://github.com/denverquane/amonguscapture) for automating your lobbies!
+
+When you start a new lobby, the bot will DM you a link to connect the capture app automatically.
+It'll also provide a link for downloading a compatible version, if you need it. 
 
 ## Running the Bot
 If you want to use the bot, it'll need to be running somewhere.
@@ -95,6 +108,27 @@ SECURE=true
 _Note:_ The server doesn't include SSL natively, but can be placed behind an appropriate proxy such as nginx.
 In this case, set `PORT` to the _actual_ port used by the server, but set `HOST` and `SECURE` to their
 externally-accessible values.
+
+#### Run via Docker-Compose
+If you have Docker-Compose, you can run the bot with a simple `docker-compose.yaml` file.
+
+_Note:_ Unfortunately, we can't provide support for users that are unfamiliar with Docker or Docker Compose. 
+
+```YAML
+services:
+  sau:
+    container_name: sau-bot
+    image: jftanner/silence-among-us
+    environment:
+        - DISCORD_TOKEN=YOUR TOKEN HERE
+        - HOST=sau.EXAMPLEHOST.com
+        - PORT=8080
+        - SECURE=true
+    ports:
+      - 8080:8080
+```
+
+(See the [environment variables](#environment-variables) section above for details on setting the environment.)
 
 #### Run via Docker
 _Note:_ Unfortunately, we can't provide support for users that are unfamiliar with Docker. 
