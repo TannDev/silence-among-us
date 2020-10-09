@@ -2,16 +2,9 @@ name: Build and Publish
 
 on:
   push:
-    # Publish `main` as Docker `latest` image.
     branches:
       - main
-
-    # Publish `v1.2.3` tags as releases.
-    tags:
-      - v*
-
-  # Run tests for any PRs.
-  pull_request:
+      - beta
 
 env:
   IMAGE_NAME: silence-among-us
@@ -83,7 +76,7 @@ jobs:
           docker push $IMAGE_ID:$CHANNEL
 
   deploy:
-    needs: push
+    needs: release
     runs-on: ubuntu-latest
     if: github.ref == 'main'
     steps:
