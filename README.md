@@ -91,7 +91,28 @@ Either way, though, you'll need to create a new Discord application for authoriz
 You'll also need to provide some environment variable.
 
 #### Create a Discord Application
-_Instructions not yet available._
+Before you can run your own bot, you'll need to create a Discord application.
+1. Go the [Discord Developer Portal](https://discord.com/developers/applications)
+1. Create an account, if you don't have one already.
+1. Click "New Application", pick a suitable name, and click "create".
+1. Click "Bot" on the left side, next to the puzzle piece icon.
+1. Click "Add Bot"
+1. Copy the bot's token and save it **securely**. This is your `DISCORD_TOKEN` for later.
+1. Under "Privileged Gateway Intents", enable the "Server Members Intent"
+1. Click "OAuth2" on the left side, next to the wrench icon.
+1. Under "Scopes", check "bot" and then the following bot permissions:
+  - General Permissions: Manage Nicknames
+  - General Permissions: View Channels
+  - Text Permissions: Send Messages
+  - Text Permissions: Manage Messages
+  - Text Permissions: Embed Links
+  - Voice Permissions: Connect
+  - Voice Permissions: Speak
+  - Voice Permissions: Mute Members
+  - Voice Permissions: Deafen Members
+1. Click "Copy" next to the URL generated under "Scopes".
+1. Paste the link into the address bar of a new tab, to authorize your app for your server.
+1. Take the bot token you generated earlier and configure your bot with the instructions below.
 
 #### Environment Variables
 The bot uses a couple environment variables:
@@ -100,18 +121,17 @@ The bot uses a couple environment variables:
 - `HOST`: The hostname where the server is listening. (Default: 'localhost:${PORT}')
 - `SECURE`: Whether the bot is available via HTTPS. (Default: 'false')
 
+_Note:_ The server doesn't include SSL natively, but can be placed behind an appropriate proxy such as nginx.
+In this case, set `PORT` to the _actual_ port used by the server, but set `HOST` and `SECURE` to their
+externally-accessible values.
 
-The easiest way to store these is to create `.env` file in the standard `VAR=value` format:
+An easy way to provide this to the app is to create an `.env` file in the standard `VAR=value` format:
 ```
 DISCORD_TOKEN=your-token-goes-here
 HOST=sau.my-example-domain.com
 PORT=8443
 SECURE=true
 ```
-
-_Note:_ The server doesn't include SSL natively, but can be placed behind an appropriate proxy such as nginx.
-In this case, set `PORT` to the _actual_ port used by the server, but set `HOST` and `SECURE` to their
-externally-accessible values.
 
 #### Run via Docker-Compose
 If you have Docker-Compose, you can run the bot with a simple `docker-compose.yaml` file.
@@ -139,10 +159,10 @@ _Note:_ Unfortunately, we can't provide support for users that are unfamiliar wi
 
 If you're comfortable with Docker, here's what you need to know:
 - The docker image is `jftanner/silence-among-us`
-- Make sure to add the environment variables via `-e DISCORD_TOKEN=your-token` or with the `.env` file.
-- If you want to use the API app, you'll need to expose or publish whichever port you selected.
+- Make sure to add the environment variables you need via the `-e` or `--env-file` parameters.
+- If you want to use the API server or capture, you'll need to expose/publish whichever port you selected.
 
-Here's a quick and dirty example, if you're running locally:
+Here's a quick and dirty example, if you're running locally, and have a `.env` file:
 `docker run -it --rm -p 3000:3000 --env-file=.env jftanner/silence-among-us`
 
 #### Run via Node.js
