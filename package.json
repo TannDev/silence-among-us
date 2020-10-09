@@ -1,6 +1,6 @@
 {
   "name": "silence-among-us",
-  "version": "1.0.0-alpha.1",
+  "private": true,
   "description": "Discord channel manager for Among Us",
   "main": "index.js",
   "scripts": {
@@ -10,10 +10,7 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "spectral": "spectral lint schema.yaml"
   },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/tanndev/silence-among-us.git"
-  },
+  "repository": "tanndev/silence-among-us",
   "keywords": [
     "discord",
     "bot",

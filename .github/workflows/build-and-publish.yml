@@ -35,45 +35,52 @@ jobs:
           fi
         # TODO Test correctly
 
-  # Push image to GitHub Packages.
-  # See also https://docs.docker.com/docker-hub/builds/
-  push:
-    # Ensure test job passes before pushing image.
+  release:
     needs: test
-
     runs-on: ubuntu-latest
-    if: github.event_name == 'push'
-
     steps:
-      - uses: actions/checkout@v2
+      - name: Checkout
+        uses: actions/checkout@v2
 
-      - name: Build image
-        run: docker build . --file Dockerfile --tag $IMAGE_NAME
+      - name: Semantic Release
+        uses: cycjimmy/semantic-release-action@v2
+        id: semantic
+        with:
+          semantic_version: 17.1.2
+          dry_run: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.RELEASE_GH_TOKEN }}
 
-      - name: Log into GitHub Container Registry
-        run: echo "${{ secrets.PACKAGE_WRITE_TOKEN }}" | docker login https://ghcr.io -u ${{ github.actor }} --password-stdin
-
-      - name: Push image to GitHub Container Registry
+      - name: Publish image
+        if: steps.semantic.outputs.new_release_published == 'true'
         run: |
+          # Build the image
+          docker build . --tag $IMAGE_NAME
+
+          # Log into container registry
+          echo "${{ secrets.PACKAGE_WRITE_TOKEN }}" | docker login https://ghcr.io -u ${{ github.actor }} --password-stdin
+
+          # Determine the fully-qualified image id, with the repository
           IMAGE_ID=ghcr.io/${{ github.repository_owner }}/$IMAGE_NAME
 
-          # Change all uppercase to lowercase
-          IMAGE_ID=$(echo $IMAGE_ID | tr '[A-Z]' '[a-z]')
+          # Get the version.
+          VERSION=${{ steps.semantic.outputs.new_release_version }}
 
-          # Strip git ref prefix from version
-          VERSION=$(echo "${{ github.ref }}" | sed -e 's,.*/\(.*\),\1,')
-
-          # Strip "v" prefix from tag name
-          [[ "${{ github.ref }}" == "refs/tags/"* ]] && VERSION=$(echo $VERSION | sed -e 's/^v//')
-
-          # Use Docker `latest` tag convention
-          [ "$VERSION" == "main" ] && VERSION=latest
+          # Get the channel
+          CHANNEL=${{ steps.semantic.outputs.new_release_channel }}
+          [ -z "$CHANNEL" ] && CHANNEL=latest
 
           echo IMAGE_ID=$IMAGE_ID
+          echo CHANNEL=$CHANNEL
           echo VERSION=$VERSION
 
+          # Release the specific version
           docker tag $IMAGE_NAME $IMAGE_ID:$VERSION
           docker push $IMAGE_ID:$VERSION
+
+          # Release the channel tag
+          docker tag $IMAGE_NAME $IMAGE_ID:$CHANNEL
+          docker push $IMAGE_ID:$CHANNEL
 
   deploy:
     needs: push
