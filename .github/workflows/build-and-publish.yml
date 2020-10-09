@@ -40,7 +40,6 @@ jobs:
         id: semantic
         with:
           semantic_version: 17.1.2
-          dry_run: true
           extra_plugins: |
             conventional-changelog-eslint
         env:
@@ -80,7 +79,6 @@ jobs:
   deploy:
     needs: release
     runs-on: ubuntu-latest
-    if: github.ref == 'main'
     steps:
       - name: Redeploy Bot
         uses: JimCronqvist/action-ssh@0.1.1
