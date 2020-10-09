@@ -78,7 +78,7 @@ jobs:
   deploy:
     needs: push
     runs-on: ubuntu-latest
-    if: github.ref == 'ref/heads/main'
+    if: github.ref == 'main'
     steps:
       - name: Redeploy Bot
         uses: JimCronqvist/action-ssh@0.1.1
