@@ -48,14 +48,16 @@ jobs:
       - name: Publish image
         if: steps.semantic.outputs.new_release_published == 'true'
         run: |
-          # Build the image
-          docker build . --tag $IMAGE_NAME
-
-          # Log into container registry
-          echo "${{ secrets.PACKAGE_WRITE_TOKEN }}" | docker login https://ghcr.io -u ${{ github.actor }} --password-stdin
 
           # Determine the fully-qualified image id, with the repository
           IMAGE_ID=ghcr.io/${{ github.repository_owner }}/$IMAGE_NAME
+
+          # Build the image
+          docker pull $IMAGE_ID
+          docker build . --tag $IMAGE_NAME --cache-from $IMAGE_ID
+
+          # Log into container registry
+          echo "${{ secrets.PACKAGE_WRITE_TOKEN }}" | docker login https://ghcr.io -u ${{ github.actor }} --password-stdin
 
           # Get the version.
           VERSION=${{ steps.semantic.outputs.new_release_version }}
