@@ -46,7 +46,6 @@ The lobby enters the intermission phase whenever you're in the drop ship, betwee
 
 Start this phase manually with use `!sau intermission` or `!si`.
 
-
 #### Working
 The lobby enters the working phase whenever you start a new game or end a meeting.
 - Players in the "living" or "dying" states are muted and deafened.
@@ -76,8 +75,13 @@ If you want to use the bot, it'll need to be running somewhere.
 
 Here's a few ways to make that happen...
 
-### Using the TannDev-Hosted Bot
-Unfortunately, we don't have the CPU or bandwidth to provide the bot to everybody and have to be very stingy with access to the deployment we use for testing. If you know someone from TannDev personally, you can reach out to them directly. Otherwise, you'll need to host your own or wait for a larger launch.
+### Request Access to the TannDev-Hosted Bot
+We're working on rolling out a hosted bot that everyone can use!
+
+It's still in early-access and available by invitation only.
+If you want to use it, [please open an issue](https://github.com/tanndev/silence-among-us/issues/new).
+
+You can also [host your own](#hosting-your-own)!
 
 ### Hosting Your Own
 If you can't get access to an already-running bot, you can host your own.
