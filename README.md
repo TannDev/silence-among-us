@@ -142,7 +142,7 @@ _Note:_ Unfortunately, we can't provide support for users that are unfamiliar wi
 services:
   sau:
     container_name: sau-bot
-    image: jftanner/silence-among-us
+    image: ghcr.io/tanndev/silence-among-us:latest
     environment:
         - DISCORD_TOKEN=YOUR TOKEN HERE
         - HOST=sau.EXAMPLEHOST.com
@@ -158,12 +158,12 @@ services:
 _Note:_ Unfortunately, we can't provide support for users that are unfamiliar with Docker. 
 
 If you're comfortable with Docker, here's what you need to know:
-- The docker image is `jftanner/silence-among-us`
+- The docker image is `ghcr.io/tanndev/silence-among-us:latest`
 - Make sure to add the environment variables you need via the `-e` or `--env-file` parameters.
 - If you want to use the API server or capture, you'll need to expose/publish whichever port you selected.
 
 Here's a quick and dirty example, if you're running locally, and have a `.env` file:
-`docker run -it --rm -p 3000:3000 --env-file=.env jftanner/silence-among-us`
+`docker run -it --rm -p 3000:3000 --env-file=.env ghcr.io/tanndev/silence-among-us:latest`
 
 #### Run via Node.js
 _Note:_ Unfortunately, we can't provide support for users that are unfamiliar with running Node.js apps. 

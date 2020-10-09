@@ -1,4 +1,4 @@
-name: Docker
+name: Build and Publish
 
 on:
   push:
@@ -77,6 +77,8 @@ jobs:
 
   deploy:
     needs: push
+    runs-on: ubuntu-latest
+    if: github.ref == 'ref/heads/main'
     steps:
       - name: Redeploy Bot
         uses: JimCronqvist/action-ssh@0.1.1

@@ -3,7 +3,7 @@ version: '3.5'
 services:
   app:
     container_name: sau-bot
-    image: jftanner/silence-among-us
+    image: ghcr.io/tanndev/silence-among-us:latest
     build: .
     env_file: .env
     environment:
