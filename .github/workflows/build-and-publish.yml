@@ -41,6 +41,8 @@ jobs:
         with:
           semantic_version: 17.1.2
           dry_run: true
+          extra_plugins: |
+            conventional-changelog-eslint
         env:
           GITHUB_TOKEN: ${{ secrets.RELEASE_GH_TOKEN }}
 
