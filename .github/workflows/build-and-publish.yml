@@ -10,26 +10,7 @@ env:
   IMAGE_NAME: silence-among-us
 
 jobs:
-  # Run tests.
-  # See also https://docs.docker.com/docker-hub/builds/automated-testing/
-  test:
-    runs-on: ubuntu-latest
-
-    steps:
-      - uses: actions/checkout@v2
-
-      - name: Run tests
-        run: |
-          if [ -f docker-compose.test.yml ]; then
-            docker-compose --file docker-compose.test.yml build
-            docker-compose --file docker-compose.test.yml run sut
-          else
-            docker build . --file Dockerfile
-          fi
-        # TODO Test correctly
-
   release:
-    needs: test
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -78,11 +59,8 @@ jobs:
           docker tag $IMAGE_NAME $IMAGE_ID:$CHANNEL
           docker push $IMAGE_ID:$CHANNEL
 
-  deploy:
-    needs: release
-    runs-on: ubuntu-latest
-    steps:
       - name: Redeploy Bot
+        if: steps.semantic.outputs.new_release_published == 'true'
         uses: JimCronqvist/action-ssh@0.1.1
         with:
           hosts: amongus.tanndev.com
