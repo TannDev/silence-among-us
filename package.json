@@ -26,15 +26,10 @@
   "engines": {
     "node": ">=12.0.0"
   },
-  "devDependencies": {
-    "@stoplight/spectral": "^5.5.0"
-  },
   "dependencies": {
-    "@apidevtools/json-schema-ref-parser": "^9.0.6",
     "@discordjs/opus": "^0.3.2",
     "ajv": "^6.12.5",
     "chance": "^1.1.7",
-    "deasync": "^0.1.20",
     "discord.js": "^12.3.1",
     "dotenv": "^8.2.0",
     "express": "^4.17.1",
@@ -44,6 +39,10 @@
     "nano": "^8.2.2",
     "socket.io": "^2.3.0",
     "swagger-ui-express": "^4.1.4",
-    "winston": "^3.3.3"
+    "winston": "^3.3.3",
+    "yamljs": "^0.3.0"
+  },
+  "devDependencies": {
+    "@stoplight/spectral": "^5.5.0"
   }
 }

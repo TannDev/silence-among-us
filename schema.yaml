@@ -1,8 +1,7 @@
 openapi: 3.0.0
 
 info:
-  version:
-    $ref: "package.json#/version"
+  version: Unreleased
   title: Silence Among Us
   description: |
     Discord channel manager for Among Us.
