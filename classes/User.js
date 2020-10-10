@@ -1,17 +1,10 @@
-const Nano = require('nano');
-
-const nano = Nano(process.env.SAU_DB_URL || 'http://sau-bot:local-development@localhost:5984');
-const db = nano.db.use('users');
-
-// TODO Create databases automatically.
+const Database = require('./Database');
+const database = new Database('users');
 
 class User {
     static async load(userId) {
-        const document = await db.get(userId).catch(error => {
-            if (error.reason !== 'missing') console.error(error);
-            return {_id: userId};
-        });
-        return new User(document);
+        const document = await database.get(userId).catch(error => console.error(error));
+        return new User(document || { _id: userId });
     }
 
     constructor(document) {
@@ -31,10 +24,8 @@ class User {
     // TODO Apply settings.
 
     async save() {
-        const {rev, ...rest} = db.insert(this._document).catch(error => {
-            this._document._rev = rev;
-            console.log(rest);
-        });
+        const updates = await database.set(this._document).catch(error => console.error(error));
+        if (updates) this._document._rev = updates.rev;
     }
 }
 
