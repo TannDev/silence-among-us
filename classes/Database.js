@@ -1,9 +1,11 @@
+require("dotenv").config();
 const Nano = require('nano');
 
-// TODO Load DB credentials better.
-const nano = Nano(process.env.SAU_DB_URL || 'http://sau-bot:local-development@localhost:5984');
-
-
+// Connect to the database.
+const databaseUsername = process.env.DATABASE_USERNAME;
+const databasePassword = process.env.DATABASE_PASSWORD;
+const defaultDatabaseUrl = `http://${databaseUsername}:${databasePassword}@localhost:5984`;
+const nano = Nano(process.env.DATABASE_URL || defaultDatabaseUrl);
 
 class Database {
     constructor(databaseName){

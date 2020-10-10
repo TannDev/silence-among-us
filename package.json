@@ -6,7 +6,8 @@
   "scripts": {
     "start": "node .",
     "bot": "node discord-bot/discord-bot.js",
-    "sever": "node api-server/app.js",
+    "server": "node api-server/app.js",
+    "database": "docker-compose up -d couch",
     "test": "echo \"Error: no test specified\" && exit 1",
     "spectral": "spectral lint schema.yaml"
   },
