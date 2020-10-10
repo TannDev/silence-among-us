@@ -418,6 +418,9 @@ class Lobby {
         // If the player was spectating, remove them.
         if (player.isSpectating) this._players.delete(player);
 
+        // Update the player's voice state, for having left the channel.
+        await player.leaveVoiceChannel();
+
         // End the lobby if there are no more connected players.
         if (this.players.every(player => !player.guildMember)) {
             await this.stop();

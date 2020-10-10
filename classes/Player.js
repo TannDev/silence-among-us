@@ -112,6 +112,10 @@ class Player {
         await this.editGuildMember(false, false, "Left Lobby");
     }
 
+    async leaveVoiceChannel() {
+        await this.editGuildMember(false, false, "Left Voice Channel", true);
+    }
+
     async setForIntermission() {
         // Everyone is alive again at intermission.
         this.status = STATUS.LIVING;
@@ -146,8 +150,9 @@ class Player {
      * @param {boolean} mute - Whether the player should be allowed to speak
      * @param {boolean} deaf - Whether the player should be allowed to hear
      * @param {string} [reason] - Reason for changing the settings.
+     * @param {boolean} [anyChannel] - Update the voice state regardless of the channel the user is in.
      */
-    async editGuildMember(mute, deaf, reason) {
+    async editGuildMember(mute, deaf, reason, anyChannel = false) {
         // If there's no connected guild member, ignore this.
         if (!this._guildMember) return;
 
@@ -156,7 +161,7 @@ class Player {
         const { voice } = member;
 
         // Don't adjust voice settings for other channels.
-        const updateVoice = voice && voice.channelID === this.voiceChannelId
+        const updateVoice = anyChannel || (voice && voice.channelID === this.voiceChannelId);
 
         // Decide which nickname to use.
         const nick = this.isSpectating ? this._originalNickname : this.amongUsName;
