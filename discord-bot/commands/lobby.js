@@ -13,7 +13,7 @@ module.exports = async function lobbyCommand(message, arguments) {
     // If there's no subcommand, just post lobby info.
     if (!subcommand) {
         const lobby = await requireLobby(message);
-        await lobby.postLobbyInfo();
+        await lobby.postLobbyInfo({force: true});
     }
 
     // If the subcommand is 'start', start a new lobby.
