@@ -1,7 +1,7 @@
 const createError = require('http-errors');
 const { Router } = require('express');
 const Lobby = require('../classes/Lobby');
-const captureDownload = require('../downloads/capture');
+const { capture } = require('../downloads');
 
 // Initialize the server
 const router = Router();
@@ -41,7 +41,7 @@ router.get('/lobby/:voiceChannelId/:playerId/kill', (req, res, next) => {
 });
 
 router.get('/capture/download', (req, res) => {
-    res.download(captureDownload.filepath, captureDownload.filename);
+    res.download(capture.filepath, capture.filename);
 })
 
 router.use((req, res, next) => {
