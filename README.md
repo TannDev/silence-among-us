@@ -101,7 +101,6 @@ Before you can run your own bot, you'll need to create a Discord application.
 1. Click "Bot" on the left side, next to the puzzle piece icon.
 1. Click "Add Bot"
 1. Copy the bot's token and save it **securely**. This is your `DISCORD_TOKEN` for later.
-1. Under "Privileged Gateway Intents", enable the "Server Members Intent"
 1. Click "OAuth2" on the left side, next to the wrench icon.
 1. Under "Scopes", check "bot" and then the following bot permissions:
   - General Permissions: Manage Nicknames
