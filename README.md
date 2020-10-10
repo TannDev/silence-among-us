@@ -14,19 +14,42 @@ It's got a few features, so far:
 - Tracks the status of players in the lobby, automatically or via simple commands.
 - Automatically controls the server-mute and server-deafen settings for players in the voice channel.
 - Automatically updates discord nicknames to match in-game names, when possible.
-- Provides lobby updates via text channels, including the room code.
+- Provides lobby updates via text channels, including the room code and the status of all players.
 - Keeps the text channel clean, by removing commands and old lobby updates.
-- Supports multiple concurrent games, in different voice channels, at the same time.
+
+If there's another feature you'd really want, you can [request it](https://github.com/tanndev/silence-among-us/issues/new)!
+Or, if you're a developer, maybe you can even [help us add it](CONTRIBUTING.md).
+
+## Quickstart Guide
+If you want to just jump in and get started, you can use our early-access hosted bot!
+
+[Invite our Bot](https://discord.com/api/oauth2/authorize?client_id=757007603149832203&permissions=150039808&scope=bot) to your discord server and get started right away! The OAuth link contains all the necessary permissions, though you may need to add the bot to any private channels you want to use for your games.
+
+Once you've added the bot to your server, just type `!sau help` in any text channel to get started.
+
+Being in early-access does come with some rough edges, so there're some things we'd like you to keep in mind:
+- The bot might be a bit unstable, unreliable, or buggy. Help us improve it by [reporting issues](https://github.com/tanndev/silence-among-us/issues/new).
+- Our hosted instance might go offline unexpectedly and without warning when we do upgrades or maintenance. We're working on [fixing this](https://github.com/tanndev/silence-among-us/issues/1).
+- Discord rate-limits bots on a per-guild basis. So if you try to run more than one game at a time in your server, the bot might be slow to respond. If you've got a server where you run lots of games, [let us know](https://github.com/tanndev/silence-among-us/issues/new).
+
+Of course, you can always [host your own instance of the bot](#host-your-own-bot) if you prefer.
 
 ## How It Works
 The bot keeps track of multiple game "lobbies" at once, and controls the audio of each player in the lobby.
 
-In lieu of more detailed documentation, here's some basics to keep in mind:
+We're still working on more detailed documentation, but here's some basics to keep in mind:
 - When you give the bot a command, it will use your current voice channel to find your lobby.
 - Each game lobby connects to exactly one voice channel and exactly one text channel.
 - A voice channel can only be used for one lobby at a time.
 - A text channel can be used for multiple lobbies at the same time.
 - When you start a lobby (`!sau lobby start`), that lobby will bind to the text channel where you issued the command. All lobby updates will go to that text channel, until the lobby ends. (Though you can still use other channels to issue commands, if you wish.)
+
+### Game Integration
+The bot supports [AmongUsCapture](https://github.com/denverquane/amonguscapture) for automating your lobbies!
+
+When you start a new lobby, the bot will DM you a link to connect the capture app automatically.
+
+It'll also provide a link for downloading a compatible version directly from the bot's server, if you need it. You can also find the exe in the [downloads](/downloads) folder, if you prefer. (You can get it directly from [the official releases](https://github.com/denverquane/amonguscapture/releases) as well, but we can't guarantee compatibility with other versions.) 
 
 ### Commands
 When added to your app, the discord bot will automatically listen to every text channel it has access to.
@@ -64,33 +87,13 @@ The lobby enters the meeting phase whenever you start a new meeting.
 
 Start this phase manually with `!sau meet` or `!sm`.
 
-### Game Integration
-The bot supports [AmongUsCapture](https://github.com/denverquane/amonguscapture) for automating your lobbies!
+## Host Your Own Bot
+If you'd like to run your own dedicated bot, rather than rely on ours, you can easily host your own!
 
-When you start a new lobby, the bot will DM you a link to connect the capture app automatically.
-It'll also provide a link for downloading a compatible version, if you need it. 
+The bot runs via docker-compose and includes everything it needs in order to run.
+First, though, you'll need to create a new Discord application and set up some environment variables.
 
-## Running the Bot
-If you want to use the bot, it'll need to be running somewhere.
-
-Here's a few ways to make that happen...
-
-### Request Access to the TannDev-Hosted Bot
-We're working on rolling out a hosted bot that everyone can use!
-
-It's still in early-access and available by invitation only.
-If you want to use it, [please open an issue](https://github.com/tanndev/silence-among-us/issues/new).
-
-You can also [host your own](#hosting-your-own)!
-
-### Hosting Your Own
-If you can't get access to an already-running bot, you can host your own.
-You can do this via docker, or natively with Node.js.
-
-Either way, though, you'll need to create a new Discord application for authorization.
-You'll also need to provide some environment variable.
-
-#### Create a Discord Application
+### Create a Discord Application
 Before you can run your own bot, you'll need to create a Discord application.
 1. Go the [Discord Developer Portal](https://discord.com/developers/applications)
 1. Create an account, if you don't have one already.
@@ -114,7 +117,7 @@ Before you can run your own bot, you'll need to create a Discord application.
 1. Paste the link into the address bar of a new tab, to authorize your app for your server.
 1. Take the bot token you generated earlier and configure your bot with the instructions below.
 
-#### Environment Variables
+### Environment Variables
 The bot uses a couple environment variables:
 - `DISCORD_TOKEN`: The bot token for your Discord application
 - `PORT`: Which port the API app should listen on. (Default: '8080')
@@ -133,7 +136,7 @@ PORT=8443
 SECURE=true
 ```
 
-#### Run via Docker-Compose
+### Run via Docker-Compose
 If you have Docker-Compose, you can run the bot with a simple `docker-compose.yaml` file.
 
 _Note:_ Unfortunately, we can't provide support for users that are unfamiliar with Docker or Docker Compose. 
@@ -154,25 +157,10 @@ services:
 
 (See the [environment variables](#environment-variables) section above for details on setting the environment.)
 
-#### Run via Docker
-_Note:_ Unfortunately, we can't provide support for users that are unfamiliar with Docker. 
+### Where to Host
+The easiest way to run the bot is by using Docker Desktop on your computer and connecting the capture app via localhost.
 
-If you're comfortable with Docker, here's what you need to know:
-- The docker image is `ghcr.io/tanndev/silence-among-us:latest`
-- Make sure to add the environment variables you need via the `-e` or `--env-file` parameters.
-- If you want to use the API server or capture, you'll need to expose/publish whichever port you selected.
-
-Here's a quick and dirty example, if you're running locally, and have a `.env` file:
-`docker run -it --rm -p 3000:3000 --env-file=.env ghcr.io/tanndev/silence-among-us:latest`
-
-#### Run via Node.js
-_Note:_ Unfortunately, we can't provide support for users that are unfamiliar with running Node.js apps. 
-
-If you're comfortable with Node.js, here's what you need to know:
-- You'll need Node.js v12 or higher
-- Clone or download the repo.
-- Make sure the `.env` file is at the root of the project, next to `package.json`
-- Start everything with `npm start`, or run the bot without the API with `npm run bot`
+However, if you want an always-on solution -- or to allow other people to connect the capture app, then you'll need to host it somewhere else. We use a DigitalOcean droplet for the [early-access bot](https://sau.tanndev.com) and will include some helpful setup guides for that later.
 
 ## Contributing
 If you'd like to contribute, check out our [Contributing Guidelines](CONTRIBUTING.md).
