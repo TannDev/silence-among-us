@@ -23,7 +23,7 @@ Or, if you're a developer, maybe you can even [help us add it](CONTRIBUTING.md).
 ## Quickstart Guide
 If you want to just jump in and get started, you can use our early-access hosted bot!
 
-[Invite our Bot](https://discord.com/api/oauth2/authorize?client_id=757007603149832203&permissions=150039808&scope=bot) to your discord server and get started right away! The OAuth link contains all the necessary permissions, though you may need to add the bot to any private channels you want to use for your games.
+[Invite our bot](https://discord.com/api/oauth2/authorize?client_id=757007603149832203&permissions=150039808&scope=bot) to your discord server and get started right away! That authorization link contains all permissions that the bot needs (and some we expect it might need soon), though you may need to add the bot to any private channels you want to use for your games.
 
 Once you've added the bot to your server, just type `!sau help` in any text channel to get started.
 
