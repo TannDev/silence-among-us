@@ -38,7 +38,7 @@ jobs:
           docker build . --tag $IMAGE_NAME --cache-from $IMAGE_ID
 
           # Log into container registry
-          echo "${{ secrets.PACKAGE_WRITE_TOKEN }}" | docker login https://ghcr.io -u ${{ github.actor }} --password-stdin
+          echo "${{ secrets.RELEASE_GH_TOKEN }}" | docker login https://ghcr.io -u ${{ github.actor }} --password-stdin
 
           # Get the version.
           VERSION=${{ steps.semantic.outputs.new_release_version }}
@@ -64,10 +64,10 @@ jobs:
         uses: JimCronqvist/action-ssh@0.1.1
         with:
           hosts: amongus.tanndev.com
-          privateKey: ${{ secrets.DEPLOYMENT_SSH_KEY }}
+          privateKey: ${{ secrets.DEPLOY_SSH_KEY }}
           command: |
             cd /sau
-            echo "${{ secrets.PACKAGE_READ_TOKEN }}" | docker login https://ghcr.io -u ${{ github.actor }} --password-stdin
+            echo "${{ secrets.DEPLOY_GH_TOKEN }}" | docker login https://ghcr.io -u ${{ github.actor }} --password-stdin
             docker-compose pull
             docker-compose up -d
             # TODO Reconfigure the deployment, rather than assuming it's there and working.
