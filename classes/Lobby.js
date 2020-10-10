@@ -418,8 +418,8 @@ class Lobby {
         // If the player was spectating, remove them.
         if (player.isSpectating) this._players.delete(player);
 
-        // Update the player's voice state, for having left the channel.
-        await player.leaveVoiceChannel();
+        // Unmute the player, for having left the channel.
+        await player.editGuildMember(false, false, "Left Voice Channel", true);
 
         // End the lobby if there are no more connected players.
         if (this.players.every(player => !player.guildMember)) {
@@ -549,6 +549,7 @@ class Lobby {
             }
             // Create a new timeout, to post an update after a short delay.
             this._nextInfoPostTimeout = setTimeout(async () => {
+                delete this._nextInfoPostTimeout;
                 const messageSent = await this.textChannel.send(embed);
                 await this.deleteLastLobbyInfo().catch(error => console.error(error));
                 this._lastInfoPosted = messageSent;

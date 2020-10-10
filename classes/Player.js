@@ -112,10 +112,6 @@ class Player {
         await this.editGuildMember(false, false, "Left Lobby");
     }
 
-    async leaveVoiceChannel() {
-        await this.editGuildMember(false, false, "Left Voice Channel", true);
-    }
-
     async setForIntermission() {
         // Everyone is alive again at intermission.
         this.status = STATUS.LIVING;
@@ -146,7 +142,11 @@ class Player {
     }
 
     /**
-     * Sets the player's ability to speak and hear
+     * Sets the player's ability to speak and hear.
+     *
+     * The actual API call will be made after a short delay, and cancelled if another request is made within that
+     * timeout. This prevents unnecessary API calls if the user is edited repeatedly in a short timeframe.
+     *
      * @param {boolean} mute - Whether the player should be allowed to speak
      * @param {boolean} deaf - Whether the player should be allowed to hear
      * @param {string} [reason] - Reason for changing the settings.
@@ -175,9 +175,20 @@ class Player {
         // Don't waste rate limits on duplicate requests.
         if (Object.keys(patch).length < 1) return;
 
-        // Update the member.
-        this.emit(`Set ${JSON.stringify(patch)}`);
-        await member.edit(patch, `${REASON_PREFIX}${reason ? `: ${reason}` : ''}`);
+        // Reset any existing timeout, to prevent spamming.
+        if (this._nextGuildMemberEditTimeout) {
+            clearTimeout(this._nextGuildMemberEditTimeout);
+            delete this._nextGuildMemberEditTimeout;
+        }
+
+        // Create a new timeout, to post an update after a short delay.
+        this._nextGuildMemberEditTimeout = setTimeout(async () => {
+            delete this._nextGuildMemberEditTimeout;
+
+            // Update the member.
+            this.emit(`Set ${JSON.stringify(patch)}`);
+            await member.edit(patch, `${REASON_PREFIX}${reason ? `: ${reason}` : ''}`);
+        }, 500);
     }
 
     emit(message) {
