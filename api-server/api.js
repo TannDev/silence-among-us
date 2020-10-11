@@ -1,7 +1,7 @@
 const createError = require('http-errors');
 const { Router } = require('express');
 const Lobby = require('../classes/Lobby');
-const discordClient = require('../discord-bot/discord-bot');
+const { getGuildCount, getGuildList } = require('../discord-bot/discord-bot');
 const { capture } = require('../downloads');
 const { version = 'Unreleased' } = require('../package.json');
 
@@ -9,12 +9,18 @@ const { version = 'Unreleased' } = require('../package.json');
 const router = Router();
 
 router.get('/', (req, res, next) => {
-    Promise.all([discordClient.getGuildCount(), Lobby.getLobbyCount()])
+    Promise.all([getGuildCount(), Lobby.getLobbyCount()])
         .then(([guildsSupported, lobbiesInProgress]) => {
             res.json({ version, guildsSupported, lobbiesInProgress })
         })
         .catch(error => next(error));
 });
+
+router.get('/guilds', (req, res, next) => {
+    getGuildList()
+        .then(list => res.json(list))
+        .catch(error => next(error));
+})
 
 router.param('voiceChannelId', (req, res, next, voiceChannelId) => {
     Lobby.findByVoiceChannel(voiceChannelId)

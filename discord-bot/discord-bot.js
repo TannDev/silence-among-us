@@ -25,7 +25,7 @@ const client = new Client({
         }
     }
 });
-module.exports = client;
+module.exports = { client, getGuildCount, getGuildList };
 
 // ==== It's now safe to require other modules. ====
 
@@ -89,9 +89,20 @@ client.on('voiceStateUpdate', async (oldPresence, newPresence) => {
     if (newLobby) await newLobby.guildMemberConnected(member);
 });
 
-// Attach a new function to the client.
-client.getGuildCount = async () => {
+/**
+ * Get a count of all the guilds supported by the bot.
+ * @returns {Promise<number>}
+ */
+async function getGuildCount() {
     return client.guilds.cache.size;
+}
+
+/**
+ * Get a list of all the guilds supported by the bot.
+ * @returns {Promise<string[]>}
+ */
+async function getGuildList() {
+    return client.guilds.cache.array().map(guild => guild.name).sort();
 }
 
 // Connect to Discord.

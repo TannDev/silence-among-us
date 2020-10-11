@@ -47,6 +47,27 @@ paths:
                     type: number
                     description: Number of lobbies currently in progress across all guilds.
 
+  /guilds:
+    get:
+      operationId: getGuildList
+      summary: See all the guilds supported by this server.
+      tags: [Info]
+      description: |
+        Get a list of all the guilds supported by this server.
+
+        The returned list will only include the guild names, not their IDs or any other information.
+      responses:
+        '200':
+          description: List of supported guilds
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+                  description: Name of a guild
+                  example: Tanndev
+
   /capture/download:
     get:
       operationId: downloadCaptureApp
