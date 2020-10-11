@@ -13,9 +13,6 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v2
 
-      - name: Check ref
-        run: echo ${{ github.ref }}
-
       - name: Release
         uses: cycjimmy/semantic-release-action@v2
         id: semantic
@@ -30,7 +27,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.RELEASE_GH_TOKEN }}
 
       - name: Redeploy Bot
-        if: steps.semantic.outputs.new_release_published == 'true' && github.ref == 'main'
+        if: steps.semantic.outputs.new_release_published == 'true' && github.ref == 'refs/heads/main'
         uses: JimCronqvist/action-ssh@0.1.1
         with:
           hosts: amongus.tanndev.com
