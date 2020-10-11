@@ -72,9 +72,10 @@ We use a [DigitalOcean](https://www.digitalocean.com/) droplet for the [early-ac
 
 ## Securing Your Bot
 By default, the bot doesn't use any form of encryption, and communicates openly via HTTP.
-This isn't ideal if you're hosting your bot on the internet somewhere. You **definitely** don't want your database exposed.
+This isn't ideal if you're hosting your bot on the internet somewhere. You _definitely_ don't want your database exposed.
 
 We **strongly** recommend running your bot behind a secure proxy, such as NGINX.
+
 Check out DigitalOcean's excellent [tutorial on the subject](https://www.digitalocean.com/community/tutorials/how-to-secure-nginx-with-let-s-encrypt-on-ubuntu-20-04).
 
 There're several steps required to get this working (again, you should read that tutorial), but here's the configuration we wound up with.
