@@ -4,7 +4,6 @@
 ![GitHub Release Date](https://img.shields.io/github/release-date/tanndev/silence-among-us)
 ![GitHub Workflow Status](https://img.shields.io/github/workflow/status/tanndev/silence-among-us/Release/main?logo=github)
 ![Github Vulnerabilities](https://img.shields.io/snyk/vulnerabilities/github/tanndev/silence-among-us)
-![Libraries.io dependency status for GitHub repo](https://img.shields.io/librariesio/github/tanndev/silence-among-us)
 
 A Discord bot designed to turn your server's voice channels into lobby for playing Among Us!
 
