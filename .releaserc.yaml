@@ -9,7 +9,7 @@ plugins:
     - preset: eslint
   - - '@semantic-release/npm'
   - - "@semantic-release/exec"
-    - verifyConditionsCmd: ./.release-scripts/verify-conditions.sh
+    - verifyConditionsCmd: "chmod+x ./.release-scripts/*.sh && ./.release-scripts/verify-conditions.sh"
       prepareCmd: "VERSION=${nextRelease.version} ./.release-scripts/prepare.sh"
       publishCmd: "VERSION=${nextRelease.version} CHANNEL=${nextRelease.channel} ./.release-scripts/publish.sh"
   - - '@semantic-release/github'
