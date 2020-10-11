@@ -5,11 +5,10 @@ info:
   title: Silence Among Us
   description: |
     Discord channel manager for Among Us.
-    See the [README](https://github.com/tanndev/silence-among-us#silence-among-us) for more information.
 
   contact:
-    name: James Tanner
-    url: https://github.com/tanndev/silence-among-us
+    name: Github Repository
+    url: https://github.com/tanndev/silence-among-us#silence-among-us
 
 servers:
   - description: Current
