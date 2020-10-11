@@ -14,15 +14,15 @@ Before you can run your own bot, you'll need to create a Discord application.
 1. Copy the bot's token and save it **securely**. This is your `DISCORD_TOKEN` for later.
 1. Click "OAuth2" on the left side, next to the wrench icon.
 1. Under "Scopes", check "bot" and then the following bot permissions:
-  - General Permissions: Manage Nicknames
-  - General Permissions: View Channels
-  - Text Permissions: Send Messages
-  - Text Permissions: Manage Messages
-  - Text Permissions: Embed Links
-  - Voice Permissions: Connect
-  - Voice Permissions: Speak
-  - Voice Permissions: Mute Members
-  - Voice Permissions: Deafen Members
+    - General Permissions: Manage Nicknames
+    - General Permissions: View Channels
+    - Text Permissions: Send Messages
+    - Text Permissions: Manage Messages
+    - Text Permissions: Embed Links
+    - Voice Permissions: Connect
+    - Voice Permissions: Speak
+    - Voice Permissions: Mute Members
+    - Voice Permissions: Deafen Members
 1. Click "Copy" next to the URL generated under "Scopes".
 1. Paste the link into the address bar of a new tab, to authorize your app for your server.
 1. Take the bot token you generated earlier and configure your bot with the instructions below.
@@ -79,7 +79,7 @@ Check out DigitalOcean's excellent [tutorial on the subject](https://www.digital
 
 There're several steps required to get this working (again, you should read that tutorial), but here's the configuration we wound up with.
 
-`/etc/nginx/sites-enabled/sau`:
+NGINX Site:
 ```
 # API/Capture Server
 server {
@@ -131,7 +131,7 @@ server {
 }
 ```
 
-`ufw status verbose`:
+UFW config:
 ```
 Status: active
 Logging: on (low)
