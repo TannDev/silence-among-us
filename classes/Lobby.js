@@ -1,7 +1,7 @@
 const chance = require('chance').Chance();
 const deepEqual = require('deep-equal')
 const { Permissions, MessageEmbed } = require('discord.js');
-const discordClient = require('../discord-bot/discord-bot');
+const { client } = require('../discord-bot/discord-bot');
 const Player = require('./Player');
 const Room = require('./Room');
 
@@ -122,7 +122,7 @@ class Lobby {
      * @returns {Promise<Lobby>} - Lobby matching the channel, or null
      */
     static async findByVoiceChannel(voiceChannel) {
-        if (typeof voiceChannel === 'string') voiceChannel = await discordClient.channels.fetch(voiceChannel);
+        if (typeof voiceChannel === 'string') voiceChannel = await client.channels.fetch(voiceChannel);
         if (!voiceChannel) return null;
 
         // TODO Load from database.
@@ -165,7 +165,7 @@ class Lobby {
         // Create a connect code
 
         // Generate and link a new code.
-        const connectCode = chance.string({ length: 6, casing: 'upper', alpha: true });
+        const connectCode = chance.string({ length: 8, casing: 'upper', alpha: true });
         lobbiesByConnectCode.set(connectCode, this);
         this._connectCode = connectCode;
 
