@@ -8,7 +8,7 @@ const { version = 'Unreleased' } = require('../package.json');
 // Initialize the server
 const router = Router();
 
-router.get('/', (req, res, next) => {
+router.get(['/', '/server'], (req, res, next) => {
     Promise.all([getGuildCount(), Lobby.getLobbyCount()])
         .then(([guildsSupported, lobbiesInProgress]) => {
             res.json({ version, guildsSupported, lobbiesInProgress })
@@ -16,13 +16,13 @@ router.get('/', (req, res, next) => {
         .catch(error => next(error));
 });
 
-router.get('/guilds', (req, res, next) => {
+router.get('/server/guilds', (req, res, next) => {
     getGuildList()
         .then(list => res.json(list))
         .catch(error => next(error));
 })
 
-router.get('/lobbies', (req, res, next) => {
+router.get('/server/lobbies', (req, res, next) => {
     Lobby.getLobbyList()
         .then(list => res.json(list))
         .catch(error => next(error));
