@@ -43,6 +43,9 @@ paths:
                   guildsSupported:
                     type: number
                     description: How many guilds are currently supported by the server.
+                  lobbiesInProgress:
+                    type: number
+                    description: Number of lobbies currently in progress across all guilds.
 
   /capture/download:
     get:

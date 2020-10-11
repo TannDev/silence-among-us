@@ -8,9 +8,13 @@ const { version = 'Unreleased' } = require('../package.json');
 // Initialize the server
 const router = Router();
 
-router.get('/', (req, res) => {
-    discordClient.getGuildCount().then(guildsSupported => res.json({ version, guildsSupported }));
-})
+router.get('/', (req, res, next) => {
+    Promise.all([discordClient.getGuildCount(), Lobby.getLobbyCount()])
+        .then(([guildsSupported, lobbiesInProgress]) => {
+            res.json({ version, guildsSupported, lobbiesInProgress })
+        })
+        .catch(error => next(error));
+});
 
 router.param('voiceChannelId', (req, res, next, voiceChannelId) => {
     Lobby.findByVoiceChannel(voiceChannelId)
@@ -48,7 +52,7 @@ router.get('/lobby/:voiceChannelId/:playerId/kill', (req, res, next) => {
 
 router.get('/capture/download', (req, res) => {
     res.download(capture.filepath, capture.filename);
-})
+});
 
 router.use((req, res, next) => {
     next(createError(404, "No such API endpoint."));

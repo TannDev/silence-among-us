@@ -59,6 +59,10 @@ const lobbiesByConnectCode = new Map();
 class Lobby {
     static get PHASE() { return PHASE; }
 
+    static async getLobbyCount(){
+        return lobbiesByVoiceChannel.size;
+    }
+
     /**
      * Create a new lobby for a channel.
      *
