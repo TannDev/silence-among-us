@@ -1,7 +1,5 @@
 const { MessageEmbed } = require('discord.js');
 
-const instructionsUrl = 'https://github.com/tanndev/silence-among-us#readme';
-
 const importantCommands = [
     '`lobby|l start `: Start a new lobby.',
     '`join|j [in-game name]`: Join the lobby as a player.',
@@ -20,7 +18,7 @@ const moreCommands = [
     '`help|h|?`: Get this help.',
     '`eject|e`: Eject the at-mentioned players from the lobby, as if they quit.',
     '`lobby|l`: Re-post the info about your lobby.',
-    '`bot|version|v`: Get information about the bot, including the deployed version.'
+    '`stats|version|v`: Get stats about the server running this bot.'
 ].map(command => `\t- ${command}`).join('\n');
 
 const manualCommands = [
@@ -45,7 +43,7 @@ const moreExamples = [
 module.exports = async function helpCommand(message, arguments) {
     const embed = new MessageEmbed()
         .setTitle("Silence Among Us - Help")
-        .setURL(instructionsUrl)
+        .setURL('https://github.com/tanndev/silence-among-us#silence-among-us')
         .setDescription("Use `!sau <command>` or `!s<command>` to tell me what to do.\nI'll use your current voice channel to find your lobby.")
         .addField('Important Commands', importantCommands)
 

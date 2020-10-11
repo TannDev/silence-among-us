@@ -2,7 +2,7 @@
  * All registered commands, with their aliases and handlers.
  */
 const commands = [
-    { aliases: ['version', 'v'], handler: require('./version') },
+    { aliases: ['stats', 'version', 'v'], handler: require('./stats') },
     { aliases: ['help', 'h', '?'], handler: require('./help') },
     { aliases: ['hello', 'hi', 'hey'], handler: (message) => message.reply('Hello!') },
     { aliases: ['join', 'j'], handler: require('./join') },
