@@ -1,5 +1,7 @@
-const { info: { version } } = require('../../lib/loadSchema');
+const { version = 'Unreleased' } = require('../../package.json');
+const { getGuildCount } = require('../discord-bot');
 
 module.exports = async function versionCommand(message) {
-    return message.reply(`I'm on version ${version}`);
+    const guildCount = await getGuildCount();
+    return message.reply(`I'm on version ${version} and support ${guildCount} guilds.`);
 };
