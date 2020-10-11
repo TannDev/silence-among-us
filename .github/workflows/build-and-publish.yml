@@ -5,13 +5,16 @@ on:
     branches:
       - main
       - beta
-      -
+
 jobs:
   release:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v2
+
+      - name: Check ref
+        run: echo ${{ github.ref }}
 
       - name: Release
         uses: cycjimmy/semantic-release-action@v2
