@@ -1,5 +1,5 @@
 require("dotenv").config();
-const Discord = require('discord.js');
+const { Client, Intents } = require('discord.js');
 /*
  * NOTE: To avoid circular references causing null imports, other classes should be required AFTER
  * the client is configured and exported. This way, those classes will be able to require this
@@ -7,9 +7,17 @@ const Discord = require('discord.js');
  */
 
 // Configure and export client.
-const client = new Discord.Client({
+const client = new Client({
     token: process.env.DISCORD_TOKEN,
     retryLimit: 3,
+    ws: {
+        intents: new Intents([
+            'GUILDS',
+            'GUILD_VOICE_STATES',
+            'GUILD_MESSAGES',
+            'DIRECT_MESSAGES'
+        ])
+    },
     presence: {
         activity: {
             name: '`!sau help`',
@@ -80,6 +88,11 @@ client.on('voiceStateUpdate', async (oldPresence, newPresence) => {
     // If they're going into a new lobby, connect them to it.
     if (newLobby) await newLobby.guildMemberConnected(member);
 });
+
+// Attach a new function to the client.
+client.getGuildCount = async () => {
+    return client.guilds.cache.size;
+}
 
 // Connect to Discord.
 console.log('Launching Discord bot...');

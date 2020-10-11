@@ -49,7 +49,7 @@ const REGIONS = [
 ]
 
 io.on('connection', client => {
-    client.on('connect', connectCode => {{
+    client.on('connectCode', connectCode => {{
         Lobby.findByConnectCode(connectCode)
             .then(async lobby => {
                 if (!lobby) throw new Error(`No matching lobby for connect code: ${connectCode}`)

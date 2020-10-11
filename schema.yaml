@@ -16,11 +16,34 @@ servers:
     url: /api
 
 tags:
+  - name: Info
   - name: Capture
   - name: Lobby
   - name: Player
 
 paths:
+  /:
+    get:
+      operationId: getInfo
+      summary: Get info about this server
+      tags: [Info]
+      description: Get information about this server
+      responses:
+        '200':
+          description: Details about the server.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  version:
+                    type: string
+                    description: Version of the app.
+                    example: 1.0.0
+                  guildsSupported:
+                    type: number
+                    description: How many guilds are currently supported by the server.
+
   /capture/download:
     get:
       operationId: downloadCaptureApp

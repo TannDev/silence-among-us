@@ -1,4 +1,5 @@
 const chance = require('chance').Chance();
+const deepEqual = require('deep-equal')
 const { Permissions, MessageEmbed } = require('discord.js');
 const discordClient = require('../discord-bot/discord-bot');
 const Player = require('./Player');
@@ -418,6 +419,9 @@ class Lobby {
         // If the player was spectating, remove them.
         if (player.isSpectating) this._players.delete(player);
 
+        // Unmute the player, for having left the channel.
+        await player.editGuildMember(false, false, "Left Voice Channel", true);
+
         // End the lobby if there are no more connected players.
         if (this.players.every(player => !player.guildMember)) {
             await this.stop();
@@ -500,6 +504,7 @@ class Lobby {
      * Post information about the lobby to the text channel.
      * @param {object} [options]
      * @param {boolean} [options.spoil] - Display Living and Dying players during the working phase.
+     * @param {boolean} [options.force] - Post a new update, even if it's identical to the last one.
      * @returns {module:"discord.js".MessageEmbed}
      */
     async postLobbyInfo(options = {}) {
@@ -546,6 +551,13 @@ class Lobby {
             }
             // Create a new timeout, to post an update after a short delay.
             this._nextInfoPostTimeout = setTimeout(async () => {
+                delete this._nextInfoPostTimeout;
+                // Skip the post if it's the same as the last one.
+                if (this._lastInfoPosted && !options.force){
+                    const [ lastEmbed ] = this._lastInfoPosted.embeds;
+                    if (deepEqual(lastEmbed.toJSON(), embed.toJSON())) return;
+                }
+                // Post a new message.
                 const messageSent = await this.textChannel.send(embed);
                 await this.deleteLastLobbyInfo().catch(error => console.error(error));
                 this._lastInfoPosted = messageSent;

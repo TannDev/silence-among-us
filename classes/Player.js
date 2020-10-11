@@ -142,12 +142,17 @@ class Player {
     }
 
     /**
-     * Sets the player's ability to speak and hear
+     * Sets the player's ability to speak and hear.
+     *
+     * The actual API call will be made after a short delay, and cancelled if another request is made within that
+     * timeout. This prevents unnecessary API calls if the user is edited repeatedly in a short timeframe.
+     *
      * @param {boolean} mute - Whether the player should be allowed to speak
      * @param {boolean} deaf - Whether the player should be allowed to hear
      * @param {string} [reason] - Reason for changing the settings.
+     * @param {boolean} [anyChannel] - Update the voice state regardless of the channel the user is in.
      */
-    async editGuildMember(mute, deaf, reason) {
+    async editGuildMember(mute, deaf, reason, anyChannel = false) {
         // If there's no connected guild member, ignore this.
         if (!this._guildMember) return;
 
@@ -156,7 +161,7 @@ class Player {
         const { voice } = member;
 
         // Don't adjust voice settings for other channels.
-        const updateVoice = voice && voice.channelID === this.voiceChannelId
+        const updateVoice = anyChannel || (voice && voice.channelID === this.voiceChannelId);
 
         // Decide which nickname to use.
         const nick = this.isSpectating ? this._originalNickname : this.amongUsName;
@@ -170,9 +175,20 @@ class Player {
         // Don't waste rate limits on duplicate requests.
         if (Object.keys(patch).length < 1) return;
 
-        // Update the member.
-        this.emit(`Set ${JSON.stringify(patch)}`);
-        await member.edit(patch, `${REASON_PREFIX}${reason ? `: ${reason}` : ''}`);
+        // Reset any existing timeout, to prevent spamming.
+        if (this._nextGuildMemberEditTimeout) {
+            clearTimeout(this._nextGuildMemberEditTimeout);
+            delete this._nextGuildMemberEditTimeout;
+        }
+
+        // Create a new timeout, to post an update after a short delay.
+        this._nextGuildMemberEditTimeout = setTimeout(async () => {
+            delete this._nextGuildMemberEditTimeout;
+
+            // Update the member.
+            this.emit(`Set ${JSON.stringify(patch)}`);
+            await member.edit(patch, `${REASON_PREFIX}${reason ? `: ${reason}` : ''}`);
+        }, 500);
     }
 
     emit(message) {

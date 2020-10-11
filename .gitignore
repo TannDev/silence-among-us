@@ -1,6 +1,7 @@
 # Logs
 *.log
 npm-debug.log*
+CaptureLog.txt
 
 # Secrets
 .env

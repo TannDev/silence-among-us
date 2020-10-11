@@ -1,10 +1,16 @@
 const createError = require('http-errors');
 const { Router } = require('express');
 const Lobby = require('../classes/Lobby');
-const captureDownload = require('../downloads/capture');
+const discordClient = require('../discord-bot/discord-bot');
+const { capture } = require('../downloads');
+const { version = 'Unreleased' } = require('../package.json');
 
 // Initialize the server
 const router = Router();
+
+router.get('/', (req, res) => {
+    discordClient.getGuildCount().then(guildsSupported => res.json({ version, guildsSupported }));
+})
 
 router.param('voiceChannelId', (req, res, next, voiceChannelId) => {
     Lobby.findByVoiceChannel(voiceChannelId)
@@ -41,7 +47,7 @@ router.get('/lobby/:voiceChannelId/:playerId/kill', (req, res, next) => {
 });
 
 router.get('/capture/download', (req, res) => {
-    res.download(captureDownload.filepath, captureDownload.filename);
+    res.download(capture.filepath, capture.filename);
 })
 
 router.use((req, res, next) => {

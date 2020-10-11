@@ -5,11 +5,12 @@ services:
     container_name: sau-bot
     image: ghcr.io/tanndev/silence-among-us:latest
     build: .
-    env_file: .env
     environment:
-      HOST: localhost
-      PORT: 8080
-      SECURE: 'false'
+      - DISCORD_TOKEN
+      - HOST
+      - PORT
+      - SECURE
+      - DATABASE_URL=http://${DATABASE_USERNAME}:${DATABASE_PASSWORD}@couch:5984
     ports:
       - 127.0.0.1:8080:8080
 
@@ -19,8 +20,8 @@ services:
     volumes:
       - couchdb-data:/opt/couchdb/data
     environment:
-      - COUCHDB_USER=sau-bot
-      - COUCHDB_PASSWORD=local-development
+      - COUCHDB_USER=${DATABASE_USERNAME}
+      - COUCHDB_PASSWORD=${DATABASE_PASSWORD}
     ports:
       - 127.0.0.1:5984:5984
     expose:

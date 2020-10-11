@@ -32,7 +32,7 @@ Being in early-access does come with some rough edges, so there're some things w
 - Our hosted instance might go offline unexpectedly and without warning when we do upgrades or maintenance. We're working on [fixing this](https://github.com/tanndev/silence-among-us/issues/1).
 - Discord rate-limits bots on a per-guild basis. So if you try to run more than one game at a time in your server, the bot might be slow to respond. If you've got a server where you run lots of games, [let us know](https://github.com/tanndev/silence-among-us/issues/new).
 
-Of course, you can always [host your own instance of the bot](#host-your-own-bot) if you prefer.
+Of course, you can always [host your own instance of the bot](/docs/host-your-own-bot.md) if you prefer.
 
 ## How It Works
 The bot keeps track of multiple game "lobbies" at once, and controls the audio of each player in the lobby.
@@ -86,81 +86,6 @@ The lobby enters the meeting phase whenever you start a new meeting.
 - If a player is killed during this phase, they're immediately set to "dead" and muted.
 
 Start this phase manually with `!sau meet` or `!sm`.
-
-## Host Your Own Bot
-If you'd like to run your own dedicated bot, rather than rely on ours, you can easily host your own!
-
-The bot runs via docker-compose and includes everything it needs in order to run.
-First, though, you'll need to create a new Discord application and set up some environment variables.
-
-### Create a Discord Application
-Before you can run your own bot, you'll need to create a Discord application.
-1. Go the [Discord Developer Portal](https://discord.com/developers/applications)
-1. Create an account, if you don't have one already.
-1. Click "New Application", pick a suitable name, and click "create".
-1. Click "Bot" on the left side, next to the puzzle piece icon.
-1. Click "Add Bot"
-1. Copy the bot's token and save it **securely**. This is your `DISCORD_TOKEN` for later.
-1. Under "Privileged Gateway Intents", enable the "Server Members Intent"
-1. Click "OAuth2" on the left side, next to the wrench icon.
-1. Under "Scopes", check "bot" and then the following bot permissions:
-  - General Permissions: Manage Nicknames
-  - General Permissions: View Channels
-  - Text Permissions: Send Messages
-  - Text Permissions: Manage Messages
-  - Text Permissions: Embed Links
-  - Voice Permissions: Connect
-  - Voice Permissions: Speak
-  - Voice Permissions: Mute Members
-  - Voice Permissions: Deafen Members
-1. Click "Copy" next to the URL generated under "Scopes".
-1. Paste the link into the address bar of a new tab, to authorize your app for your server.
-1. Take the bot token you generated earlier and configure your bot with the instructions below.
-
-### Environment Variables
-The bot uses a couple environment variables:
-- `DISCORD_TOKEN`: The bot token for your Discord application
-- `PORT`: Which port the API app should listen on. (Default: '8080')
-- `HOST`: The hostname where the server is listening. (Default: 'localhost:${PORT}')
-- `SECURE`: Whether the bot is available via HTTPS. (Default: 'false')
-
-_Note:_ The server doesn't include SSL natively, but can be placed behind an appropriate proxy such as nginx.
-In this case, set `PORT` to the _actual_ port used by the server, but set `HOST` and `SECURE` to their
-externally-accessible values.
-
-An easy way to provide this to the app is to create an `.env` file in the standard `VAR=value` format:
-```
-DISCORD_TOKEN=your-token-goes-here
-HOST=sau.my-example-domain.com
-PORT=8443
-SECURE=true
-```
-
-### Run via Docker-Compose
-If you have Docker-Compose, you can run the bot with a simple `docker-compose.yaml` file.
-
-_Note:_ Unfortunately, we can't provide support for users that are unfamiliar with Docker or Docker Compose. 
-
-```YAML
-services:
-  sau:
-    container_name: sau-bot
-    image: ghcr.io/tanndev/silence-among-us:latest
-    environment:
-        - DISCORD_TOKEN=YOUR TOKEN HERE
-        - HOST=sau.EXAMPLEHOST.com
-        - PORT=8080
-        - SECURE=true
-    ports:
-      - 8080:8080
-```
-
-(See the [environment variables](#environment-variables) section above for details on setting the environment.)
-
-### Where to Host
-The easiest way to run the bot is by using Docker Desktop on your computer and connecting the capture app via localhost.
-
-However, if you want an always-on solution -- or to allow other people to connect the capture app, then you'll need to host it somewhere else. We use a DigitalOcean droplet for the [early-access bot](https://sau.tanndev.com) and will include some helpful setup guides for that later.
 
 ## Contributing
 If you'd like to contribute, check out our [Contributing Guidelines](CONTRIBUTING.md).
