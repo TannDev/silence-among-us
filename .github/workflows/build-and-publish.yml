@@ -16,48 +16,17 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v2
 
-      - name: Semantic Release
+      - name: Release
         uses: cycjimmy/semantic-release-action@v2
         id: semantic
         with:
           semantic_version: 17.1.2
           extra_plugins: |
+            @semantic-release/exec
             conventional-changelog-eslint
         env:
+          IMAGE_ID: ghcr.io/${{ github.repository_owner }}/$IMAGE_NAME
           GITHUB_TOKEN: ${{ secrets.RELEASE_GH_TOKEN }}
-
-      - name: Publish image
-        if: steps.semantic.outputs.new_release_published == 'true'
-        run: |
-
-          # Determine the fully-qualified image id, with the repository
-          IMAGE_ID=ghcr.io/${{ github.repository_owner }}/$IMAGE_NAME
-
-          # Build the image
-          docker pull $IMAGE_ID
-          docker build . --tag $IMAGE_NAME --cache-from $IMAGE_ID
-
-          # Log into container registry
-          echo "${{ secrets.RELEASE_GH_TOKEN }}" | docker login https://ghcr.io -u ${{ github.actor }} --password-stdin
-
-          # Get the version.
-          VERSION=${{ steps.semantic.outputs.new_release_version }}
-
-          # Get the channel
-          CHANNEL=${{ steps.semantic.outputs.new_release_channel }}
-          [ -z "$CHANNEL" ] && CHANNEL=latest
-
-          echo IMAGE_ID=$IMAGE_ID
-          echo CHANNEL=$CHANNEL
-          echo VERSION=$VERSION
-
-          # Release the specific version
-          docker tag $IMAGE_NAME $IMAGE_ID:$VERSION
-          docker push $IMAGE_ID:$VERSION
-
-          # Release the channel tag
-          docker tag $IMAGE_NAME $IMAGE_ID:$CHANNEL
-          docker push $IMAGE_ID:$CHANNEL
 
       - name: Redeploy Bot
         if: steps.semantic.outputs.new_release_published == 'true' && github.ref == 'main'

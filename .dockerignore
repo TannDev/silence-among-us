@@ -1,10 +1,11 @@
 *secret*
+.github
 .idea
+.release-scripts
 node_modules
 .dockerignore
-.gitignore
 .env
-CONTRIBUTING.md
-README.md
-
-*.exe
+.gitignore
+.releaserc.yaml
+/*.md
+Dockerfile
