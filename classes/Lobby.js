@@ -668,8 +668,8 @@ class Lobby {
             if (player.amongUsColor) player.amongUsColor = null;
         });
 
-        // Return to intermission.
-        await this.transition(PHASE.INTERMISSION);
+        // Return to intermission, unless already there.
+        if (this.phase !== PHASE.INTERMISSION) await this.transition(PHASE.INTERMISSION);
     }
 
     toJSON() {
