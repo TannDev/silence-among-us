@@ -89,6 +89,11 @@ client.on('voiceStateUpdate', async (oldPresence, newPresence) => {
     if (newLobby) await newLobby.guildMemberConnected(member);
 });
 
+// Attach a new function to the client.
+client.getGuildCount = async () => {
+    return client.guilds.cache.size;
+}
+
 // Connect to Discord.
 console.log('Launching Discord bot...');
 client.login().catch(error => {

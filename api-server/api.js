@@ -1,10 +1,16 @@
 const createError = require('http-errors');
 const { Router } = require('express');
 const Lobby = require('../classes/Lobby');
+const discordClient = require('../discord-bot/discord-bot');
 const { capture } = require('../downloads');
+const { version = 'Unreleased' } = require('../package.json');
 
 // Initialize the server
 const router = Router();
+
+router.get('/', (req, res) => {
+    discordClient.getGuildCount().then(guildsSupported => res.json({ version, guildsSupported }));
+})
 
 router.param('voiceChannelId', (req, res, next, voiceChannelId) => {
     Lobby.findByVoiceChannel(voiceChannelId)
