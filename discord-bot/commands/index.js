@@ -1,3 +1,5 @@
+const Guild = require('../../classes/Guild');
+
 /**
  * All registered commands, with their aliases and handlers.
  */
@@ -23,21 +25,40 @@ async function unknownCommand(message, arguments, command) {
 }
 
 module.exports = async function processCommandMessage(message) {
+    // Get the command pattern for this guild.
+    const { commandPrefixes } = await Guild.load(message.guild.id);
+
+    // Help users who don't know the command.
+    if (message.content.match(/^!sau\s*command/i)) {
+        const prefixList = commandPrefixes.map(prefix => `\`${prefix}\``);
+        if (prefixList.length > 1) prefixList[prefixList.length - 1] = `or ${prefixList[prefixList.length - 1]}`;
+        return message.reply([
+            `I'm listening for ${prefixList.join(prefixList.length > 2 ? ', ' : ' ')}`,
+            `Try using \`${commandPrefixes[0]} help\` for more information.`
+        ].join('\n'));
+    }
+
     // Look for commands.
-    const commandPattern = /^!s(?:au\s+)?(?<instruction>.+)$/i;
+    const prefix = commandPrefixes.map(prefix => prefix.replace(/[.?*+()\[\]]/g, '\\$&')).join('|');
+    const commandPattern = new RegExp(`^(?:${prefix})\\s+(?<rawCommand>\\w+)(?:\\s+(?<rawArguments>.+))?$`, 'i');
     const parsed = message.content.match(commandPattern);
+
+    // If there was no command, return.
     if (!parsed) return;
-    const arguments = parsed.groups.instruction.split(/\s+/);
-    const command = arguments.shift().toLowerCase();
 
     // Erase commands to keep the channel clean.
     if (message.deletable) await message.delete();
 
-    // Find the appropriate command.
+    // Parse the raw results into a useful command and arguments.
+    const { rawCommand, rawArguments } = parsed.groups;
+    const command = rawCommand.trim().toLowerCase();
+    const arguments = rawArguments ? rawArguments.trim() : '';
+
+    // Find the appropriate command handler.
     const { handler } = commands.find(({ aliases, handler }) => {
         return aliases.some(alias => typeof alias === 'string' ? command === alias : command.match(alias));
     }) || { handler: unknownCommand };
 
     // Run the handler
     await handler(message, arguments, command);
-}
+};

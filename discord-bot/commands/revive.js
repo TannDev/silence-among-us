@@ -6,7 +6,7 @@ module.exports = async function reviveCommand(message, arguments) {
 
     // Find and revive all the targets. (At-mentions, and 'me')
     const targets = [...message.mentions.members.array()];
-    if (arguments.includes('me')) targets.push(message.member);
+    if (arguments.match(/\bme\b/i)) targets.push(message.member);
     // noinspection JSCheckFunctionSignatures
     await lobby.guildMemberRevive(...targets);
 };

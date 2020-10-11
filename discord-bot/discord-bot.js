@@ -20,7 +20,7 @@ const client = new Client({
     },
     presence: {
         activity: {
-            name: '`!sau help`',
+            name: '`!sau command`',
             type: 'LISTENING'
         }
     }
@@ -57,6 +57,9 @@ client.on('rateLimit', (rateLimitInfo) => {
 });
 
 client.on('message', (message) => {
+    // Ignore bots.
+    if (message.author.bot) return;
+
     processCommandMessage(message).catch(async error => {
         console.error(error);
         await message.reply(error.message || "Something went wrong.");

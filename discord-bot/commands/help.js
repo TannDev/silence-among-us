@@ -39,15 +39,15 @@ const moreExamples = [
     '`!sk me @tanner`: Mark yourself and @tanner as dead. (Must be a real at-mention)'
 ].map(command => `\t- ${command}`).join('\n');
 
-
 module.exports = async function helpCommand(message, arguments) {
+    // TODO Use the guild's commands instead.
     const embed = new MessageEmbed()
         .setTitle("Silence Among Us - Help")
         .setURL('https://github.com/tanndev/silence-among-us#silence-among-us')
         .setDescription("Use `!sau <command>` or `!s<command>` to tell me what to do.\nI'll use your current voice channel to find your lobby.")
         .addField('Important Commands', importantCommands)
 
-    if (arguments[0] === 'more') embed
+    if (arguments.includes('more')) embed
         .addField('Other Useful Commands', moreCommands)
         .addField('Manually Controlling Games', manualCommands)
         .addField('Examples', moreExamples)

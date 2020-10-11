@@ -6,7 +6,7 @@ module.exports = async function killCommand(message, arguments) {
 
     // Find and kill all the targets. (At-mentions, and 'me')
     const targets = [...message.mentions.members.array()];
-    if (arguments.includes('me')) targets.push(message.member);
+    if (arguments.match(/\bme\b/i)) targets.push(message.member);
     // noinspection JSCheckFunctionSignatures
     await lobby.guildMemberKill(...targets);
 };

@@ -8,7 +8,7 @@ const { url, host, secure } = require('../../lib/server');
 const { capture } = require('../../downloads');
 
 module.exports = async function lobbyCommand(message, arguments) {
-    const [subcommand, code, region] = arguments;
+    const [subcommand, code, region] = arguments.split(/\s+/g);
 
     // If there's no subcommand, just post lobby info.
     if (!subcommand) {

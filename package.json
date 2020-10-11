@@ -39,6 +39,7 @@
     "http-errors": "^1.8.0",
     "morgan": "^1.10.0",
     "nano": "^8.2.2",
+    "node-cache": "^5.1.2",
     "socket.io": "^2.3.0",
     "swagger-ui-express": "^4.1.4",
     "winston": "^3.3.3",
