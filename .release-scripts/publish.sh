@@ -11,7 +11,7 @@ docker tag release-image "${VERSION_TAG}" > /dev/null
 docker push "${VERSION_TAG}" > /dev/null
 
 # Release the channel tag.
-CHANNEL_TAG="${IMAGE_ID}:${CHANNEL}"
+CHANNEL_TAG="${IMAGE}:${CHANNEL}"
 docker tag release-image "${CHANNEL_TAG}" > /dev/null
 docker push "${CHANNEL_TAG}" > /dev/null
 
