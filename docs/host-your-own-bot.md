@@ -78,9 +78,9 @@ We **strongly** recommend running your bot behind a secure proxy, such as NGINX.
 
 Check out DigitalOcean's excellent [tutorial on the subject](https://www.digitalocean.com/community/tutorials/how-to-secure-nginx-with-let-s-encrypt-on-ubuntu-20-04).
 
-There're several steps required to get this working (again, you should read that tutorial), but here's the configuration we wound up with.
+There're several steps required to get this working (again, you should read that tutorial), but here's our configuration to serve as an example.
 
-NGINX Site:
+### NGINX Site
 ```
 # API/Capture Server
 server {
@@ -132,7 +132,7 @@ server {
 }
 ```
 
-UFW config:
+### UFW config
 ```
 Status: active
 Logging: on (low)
