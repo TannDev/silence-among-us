@@ -22,6 +22,12 @@ router.get('/guilds', (req, res, next) => {
         .catch(error => next(error));
 })
 
+router.get('/lobbies', (req, res, next) => {
+    Lobby.getLobbyList()
+        .then(list => res.json(list))
+        .catch(error => next(error));
+})
+
 router.param('voiceChannelId', (req, res, next, voiceChannelId) => {
     Lobby.findByVoiceChannel(voiceChannelId)
         .then(lobby => {

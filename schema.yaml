@@ -49,7 +49,7 @@ paths:
 
   /guilds:
     get:
-      operationId: getGuildList
+      operationId: getGuildsList
       summary: See all the guilds supported by this server.
       tags: [Info]
       description: |
@@ -67,6 +67,27 @@ paths:
                   type: string
                   description: Name of a guild
                   example: Tanndev
+
+  /lobbies:
+    get:
+      operationId: getLobbiesList
+      summary: See all the lobbies currently in progress.
+      tags: [Info]
+      description: |
+        Get a list of all the lobbies currently in progress.
+
+        The returned list will only include the guild and voice channel names.
+      responses:
+        '200':
+          description: List of supported guilds
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+                  description: Name of a guild and the channel
+                  example: Tanndev - Among Us
 
   /capture/download:
     get:

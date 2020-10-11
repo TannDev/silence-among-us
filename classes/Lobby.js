@@ -63,6 +63,11 @@ class Lobby {
         return lobbiesByVoiceChannel.size;
     }
 
+    static async getLobbyList(){
+        return [...lobbiesByVoiceChannel.values()]
+            .map(lobby => `${lobby.voiceChannel.guild.name} - ${lobby.voiceChannel.name}`);
+    }
+
     /**
      * Create a new lobby for a channel.
      *
