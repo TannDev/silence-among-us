@@ -25,7 +25,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.RELEASE_GH_TOKEN }}
 
       - name: Redeploy Bot
-        if: steps.semantic.outputs.new_release_published == 'true' && github.ref == 'refs/heads/main'
+        if: steps.semantic.outputs.new_release_published == 'true'
         uses: JimCronqvist/action-ssh@0.1.1
         with:
           hosts: sau.tanndev.com
@@ -33,6 +33,6 @@ jobs:
           command: |
             cd /sau
             echo "${{ secrets.DEPLOY_GH_TOKEN }}" | docker login https://ghcr.io -u ${{ github.actor }} --password-stdin
-            docker-compose pull
-            docker-compose up -d
+            docker-compose pull ${{ steps.semantic.outputs.new_release_channel }}
+            docker-compose up -d ${{ steps.semantic.outputs.new_release_channel }}
             # TODO Reconfigure the deployment, rather than assuming it's there and working.
