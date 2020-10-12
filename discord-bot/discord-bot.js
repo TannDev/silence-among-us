@@ -25,16 +25,21 @@ const client = new Client({
         }
     }
 });
-module.exports = { client, getGuildCount, getGuildList };
+
+// Set up a promise to return when the client is ready.
+const clientReady = new Promise(resolve => {
+    client.on('ready', () => {
+        console.log(`Discord bot logged in as ${client.user.tag}`);
+        resolve();
+    });
+})
+
+module.exports = { client, clientReady, getGuildCount, getGuildList };
 
 // ==== It's now safe to require other modules. ====
 
 const processCommandMessage = require('./commands');
 const Lobby = require('../classes/Lobby');
-
-client.on('ready', () => {
-    console.log(`Discord bot logged in as ${client.user.tag}`);
-});
 
 client.on('error', (error) => {
     // TODO Use a better logger.

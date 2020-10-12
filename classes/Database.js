@@ -54,6 +54,12 @@ class Database {
         });
     }
 
+    async getAll(){
+        await this.ready;
+        const results = await this._db.list({include_docs: true});
+        return results.rows.map(row => row.doc);
+    }
+
     /**
      * Set a document in the database.
      *
@@ -65,6 +71,17 @@ class Database {
     async set(document){
         await this.ready;
         return this._db.insert(document);
+    }
+
+    /**
+     *
+     * @param {string} _id - ID of the document.
+     * @param {string} _rev - Revision of the document.
+     * @returns {Promise<{ok: boolean}>}
+     */
+    async delete({_id, _rev}){
+        await this.ready;
+        return this._db.destroy(_id, _rev);
     }
 }
 

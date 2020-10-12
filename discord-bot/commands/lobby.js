@@ -13,7 +13,7 @@ module.exports = async function lobbyCommand(message, arguments) {
     // If there's no subcommand, just post lobby info.
     if (!subcommand) {
         const lobby = await requireLobby(message);
-        await lobby.postLobbyInfo({force: true});
+        await lobby.scheduleInfoPost({force: true});
     }
 
     // If the subcommand is 'start', start a new lobby.
@@ -73,7 +73,7 @@ module.exports = async function lobbyCommand(message, arguments) {
         // TODO Handle room updates with a function.
 
         // Send lobby info to the channel.
-        await lobby.postLobbyInfo();
+        await lobby.scheduleInfoPost();
     }
 
     else throw new Error(`Sorry, I don't have a lobby sub-command, \`${subcommand}\``);
@@ -88,5 +88,5 @@ module.exports = async function lobbyCommand(message, arguments) {
  */
 function parseRoomCode(code, region) {
     if (!code) return null;
-    return new Room(code, region);
+    return new Room({ code, region });
 }
