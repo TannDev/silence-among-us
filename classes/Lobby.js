@@ -285,6 +285,7 @@ class Lobby {
     set room(room) {
         if (!room) delete this._document.room;
         else this._document.room = new Room(room);
+        this.scheduleInfoPost();
         this.scheduleSave();
     }
 

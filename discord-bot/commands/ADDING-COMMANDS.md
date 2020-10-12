@@ -1,6 +1,17 @@
 # How to Add New Commands
 The bot will automatically load all commands from the [commands directory](/discord-bot/commands) directory on startup. So adding new commands is as simple as adding a new file to the directory, with the appropriate structure.
 
+## Naming Convention
+Each command should live in a dedicated file. The name of this file should follow the existing pattern:
+`<sorting number>-<first alias>.js`.
+
+The `sorting number` is used to order the file in the directory, and in the help text.
+- Numbers `0xx` are reserved for meta commands. `help`, `stats`, etc.
+- Numbers `1xx` are reserved for commands in the `core` category.
+- Numbers `2xx` are reserved for commands in the `more` category.
+- Numbers `3xx` are reserved for commands in the `manual` category.
+- Numbers `9xx` are reserved for unpublished commands.
+
 ## Example
 Here's an example of what a command file might look like:
 ```Javascript
@@ -24,7 +35,7 @@ When creating a command, there are several properties to define:
 - `{Function(message, arguments): Promise<void>} handler` - (Required) The function which will execute the command. 
 - `{String} options` - A description of any arguments to be expected. (Use the standard `<required> [optional]` format for these.)
 - `{String} description` - A description to show users in the help text. If omitted, the command won't be included in help listings.
-- `{String} category` - Which section of the help to list the command. Should be one of `core`, `more`, `manual`. If omitted, the command won't be included in the help listings.
+- `{String} category` - Which section of the help to list the command. Should be one of `meta`, `core`, `more`, `manual`. If omitted, the command won't be included in the help listings.
 
 ## The Handler
 The handler function does the actual work. Here're some tips:

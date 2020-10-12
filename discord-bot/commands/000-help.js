@@ -5,13 +5,13 @@ const importantCommands = [
     '`start`: Start a new lobby.',
     '`join|j [in-game name]`: Join the lobby as a player.',
     '`leave|l`: Quit the lobby and stop being a player.',
-    '`stop`: End your lobby.',
+    '`stop`: End your lobby.'
 ].map(command => `\t- ${command}`).join('\n');
 
 const importantExamples = [
     '`!sau start`: Start a new lobby.',
     '`!sau join`: Join the current lobby using your previously-saved in-game name.',
-    '`!sau join Alice`: Set your in-game name to "Alice" and join the current lobby.',
+    '`!sau join Alice`: Set your in-game name to "Alice" and join the current lobby.'
 ].map(command => `\t- ${command}`).join('\n');
 
 const moreCommands = [
@@ -38,21 +38,24 @@ const moreExamples = [
     '`!sau kill me @tanner`: Mark yourself and @tanner as dead. (Must be a real at-mention)'
 ].map(command => `\t- ${command}`).join('\n');
 
-module.exports = new Command(['help', 'h', '?'], async (message, arguments) => {
-    // TODO Use the guild's commands instead.
-    const embed = new MessageEmbed()
-        .setTitle("Silence Among Us - Help")
-        .setURL('https://github.com/tanndev/silence-among-us#silence-among-us')
-        .setDescription("Use `!sau <command>` or `!s<command>` to tell me what to do.\nI'll use your current voice channel to find your lobby.")
-        .addField('Important Commands', importantCommands)
+module.exports = new Command({
+    aliases: ['help', 'h', '?'],
+    handler: async (message, arguments) => {
+        // TODO Use the guild's commands instead.
+        const embed = new MessageEmbed()
+            .setTitle("Silence Among Us - Help")
+            .setURL('https://github.com/tanndev/silence-among-us#silence-among-us')
+            .setDescription("Use `!sau <command>` or `!s<command>` to tell me what to do.\nI'll use your current voice channel to find your lobby.")
+            .addField('Important Commands', importantCommands);
 
-    if (arguments.includes('more')) embed
-        .addField('Other Useful Commands', moreCommands)
-        .addField('Manually Controlling Games', manualCommands)
-        .addField('Examples', moreExamples)
-    else embed
-        .addField('Examples', importantExamples)
-        .addField('Get More Help', 'Use `!sau help more` for all the commands,\nincluding how to run games manually.')
+        if (arguments.includes('more')) embed
+            .addField('Other Useful Commands', moreCommands)
+            .addField('Manually Controlling Games', manualCommands)
+            .addField('Examples', moreExamples);
+        else embed
+            .addField('Examples', importantExamples)
+            .addField('Get More Help', 'Use `!sau help more` for all the commands,\nincluding how to run games manually.');
 
-    return message.channel.send(embed);
+        return message.channel.send(embed);
+    }
 });

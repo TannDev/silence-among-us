@@ -56,9 +56,14 @@ class Command {
         return command.handler(message, args ? args.trim() : '');
     }
 
-    constructor(aliases, handler) {
+    constructor({aliases, handler, options, description, category}) {
         // Store all the aliases in lowercase.
         this.aliases = aliases.map(alias => alias.toLowerCase());
+
+        // Store the help information.
+        this.options = options;
+        this.description = description;
+        this.category = category
 
         // Map all aliases, forbidding duplicates.
         this.aliases.forEach(alias => {
@@ -115,7 +120,8 @@ async function requireVoiceChannel(message) {
 async function requireLobby(message) {
     const voiceChannel = await requireVoiceChannel(message);
     const lobby = await Lobby.findByVoiceChannel(voiceChannel);
-    if (!lobby) throw new Error("There's not a lobby for your voice channel. Start one with `!sau lobby start`!");
+    // TODO Get the right command prefix.
+    if (!lobby) throw new Error("There's not a lobby for your voice channel. Start one with `!sau start`!");
 
     return lobby;
 }
@@ -134,23 +140,3 @@ require('fs')
     .readdirSync(__dirname)
     .filter(filename => filename.match(/^[^_].+\.js$/i) && filename !== 'index.js')
     .forEach(filename => require(`./${filename}`));
-
-/**
- * All registered commands, with their aliases and handlers.
- */
-const commands = [
-    // { aliases: ['stats', 'version', 'v'], handler: require('./stats') },
-    // { aliases: ['help', 'h', '?'], handler: require('./help') },
-    // { aliases: ['hello', 'hi', 'hey'], handler: (message) => message.reply('Hello!') },
-    // { aliases: ['join', 'j'], handler: require('./join') },
-    // { aliases: ['quit', 'q'], handler: require('./leave') },
-    // { aliases: ['eject', 'e'], handler: require('./eject') },
-    { aliases: ['lobby', 'l'], handler: require('./lobby') },
-    // { aliases: ['intermission', 'i'], handler: require('./intermission') },
-    // { aliases: ['working', 'work', 'w'], handler: require('./work') },
-    // { aliases: ['meeting', 'meet', 'm'], handler: require('./meet') },
-    // { aliases: ['dead', 'kill', 'd', 'k'], handler: require('./kill') },
-    // { aliases: ['revive'], handler: require('./revive') },
-    // { aliases: ['spoil'], handler: require('./spoil') },
-    // { aliases: ['test', 't'], handler: require('./test') }
-];
