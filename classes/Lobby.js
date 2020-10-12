@@ -58,7 +58,7 @@ const ready = clientReady
     .then(async documents => {
         // Resume all loaded lobbies.
         await Promise.all(documents.map(async document => {
-            const { voiceChannelId, textChannelId } = document;
+            const { voiceChannelId, textChannelId, players } = document;
 
             // Get the voice and text channels.
             const [voiceChannel, textChannel] = await Promise.all([
@@ -66,19 +66,37 @@ const ready = clientReady
                 client.channels.fetch(textChannelId)
             ]);
 
+            // Alert users about the restart.
+            textChannel.send("Uh oh! It looks like I may have restarted. Give me a few seconds to catch up.");
+
             // Recreate the lobby.
             try {
                 const lobby = new Lobby(voiceChannel, textChannel, document);
 
-                // TODO Handle the players from the document.
+                // Restore all the players.
+                /** @type {Player[]} */
+                const restoredPlayers = await Promise.all(players.map(async player => {
+                    // Get the guild member, if there is one.
+                    const guildMember = player.discordId && await lobby.guild.members.fetch(player.discordId);
+                    return new Player(lobby, guildMember, player);
+                }));
 
-                // Alert users to the restart.
-                textChannel.send("Uh oh! It looks like I may have restarted. Give me a few seconds to catch up.");
+                // Add all the restored players to the lobby.
+                restoredPlayers.forEach(player => lobby._players.add(player));
+
+                // Handle everyone still in the channel.
+                await Promise.all(voiceChannel.members.map(member => lobby.guildMemberConnected(member)));
+
+                // Handle everyone who has left.
+                await Promise.all(restoredPlayers
+                    .filter(player => player.discordId && !voiceChannel.members.has(player.discordId))
+                    .map(player => lobby.guildMemberDisconnected(player.guildMember)))
 
                 // Post an update.
                 lobby.scheduleInfoPost();
-            }
-            catch(error){
+                lobby.scheduleSave()
+
+            } catch (error) {
                 console.error('Error resuming lobby:', error);
                 // TODO Consider deleting the document.
             }
@@ -155,6 +173,7 @@ class Lobby {
 
         // Build a new base document.
         const document = {
+            _id: voiceChannel.id,
             voiceChannelId: voiceChannel.id,
             textChannelId: textChannel.id,
             phase: PHASE.INTERMISSION,
@@ -216,7 +235,6 @@ class Lobby {
 
         // Store the room.
         if (room) this.room = room;
-        // TODO Make sure room is instantiated properly.
 
 
         // Update the connection status
@@ -227,6 +245,12 @@ class Lobby {
         lobbiesByVoiceChannel.set(voiceChannel.id, this);
         lobbiesByConnectCode.set(this.connectCode, this);
     }
+
+    /**
+     * Get the guild for the lobby.
+     * @returns {Discord.Guild}
+     */
+    get guild() { return this._voiceChannel.guild; }
 
     /**
      * Get the underlying voice channel for the lobby.
@@ -265,7 +289,7 @@ class Lobby {
     }
 
     emit(message) {
-        console.log(`Lobby ${this.voiceChannelId}: ${message}`);
+        console.log(`Lobby ${this.voiceChannel.id}: ${message}`);
     }
 
     async updateAutomationConnection(connected) {
@@ -397,10 +421,10 @@ class Lobby {
         const existingPlayer = this.players.find(player => player.matchesAmongUsName(amongUsName));
         if (existingPlayer) {
             // Don't allow duplicate names between guild members.
-            if (existingPlayer.guildMember) throw new Error(`The name "${amongUsName}" is already taken.`);
+            if (existingPlayer.discordId) throw new Error(`The name "${amongUsName}" is already taken.`);
 
             // Link the guild member to the existing player.
-            existingPlayer.guildMember = guildMember;
+            existingPlayer.linkGuildMember(guildMember);
             await this.setPlayerForCurrentPhase(existingPlayer);
 
             // Remove the spectating guild member.

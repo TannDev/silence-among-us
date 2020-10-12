@@ -230,10 +230,6 @@ components:
       required: [status, id]
       additionalProperties: false
       properties:
-        id:
-          type: string
-          description: Unique ID for the player.
-          readOnly: true
         status:
           type: string
           description: |
@@ -246,9 +242,9 @@ components:
         discordId:
           type: string
           description: The player's unique ID in Discord
-        discordName:
+        originalNickname:
           type: string
-          description: The player's display name in Discord
+          description: The player's original nickname in discord, before they joined the lobby.
         amongUsName:
           type: string
           description: (Optional) The player's name in-game.
