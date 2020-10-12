@@ -26,8 +26,12 @@ class Command {
         return commandsByAlias.get(alias.toLowerCase());
     }
 
+    /**
+     * Get a list of all commands.
+     * @returns {Command[]}
+     */
     static all() {
-        return commands;
+        return [...commands];
     }
 
     static async processMessage(message) {
@@ -67,14 +71,14 @@ class Command {
         return command.handler.bind(context)();
     }
 
-    constructor({aliases, handler, options, description, category}) {
+    constructor({ aliases, handler, options, description, category }) {
         // Store all the aliases in lowercase.
         this.aliases = aliases.map(alias => alias.toLowerCase());
 
         // Store the help information.
         this.options = options;
         this.description = description;
-        this.category = category
+        this.category = category;
 
         // Map all aliases, forbidding duplicates.
         this.aliases.forEach(alias => {
@@ -84,6 +88,13 @@ class Command {
 
         // Store the handler.
         this.handler = handler;
+    }
+
+    toHelpText() {
+        const { aliases, description, options = '' } = this;
+        if (!description) return;
+        const usage = `${aliases.join('|')} ${options}`.trim();
+        return `\`${usage}\`: ${description}`;
     }
 }
 
@@ -108,7 +119,7 @@ class CommandContext {
         const { member } = this.message;
         if (!member) throw new Error("I can't do that via direct-message. Try using a text channel.");
 
-        return member ;
+        return member;
     }
 
     /**
@@ -118,7 +129,7 @@ class CommandContext {
      * @returns {Promise<Discord.TextChannel>}
      */
     async requireTextChannel() {
-        const { channel: textChannel, guild } = this.message
+        const { channel: textChannel, guild } = this.message;
         if (!guild) throw new Error("I can't do that via direct-message. Try using a text channel.");
         return textChannel;
     }
