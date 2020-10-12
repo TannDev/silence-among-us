@@ -1,30 +1,30 @@
+const { Command } = require('.');
 const { MessageEmbed } = require('discord.js');
 
 const importantCommands = [
-    '`lobby|l start `: Start a new lobby.',
+    '`start`: Start a new lobby.',
     '`join|j [in-game name]`: Join the lobby as a player.',
-    '`quit|q`: Quit the lobby and stop being a player.',
-    '`lobby|l stop`: End your lobby.',
+    '`leave|l`: Quit the lobby and stop being a player.',
+    '`stop`: End your lobby.',
 ].map(command => `\t- ${command}`).join('\n');
 
 const importantExamples = [
-    '`!sau lobby start`: Start a new lobby.',
+    '`!sau start`: Start a new lobby.',
     '`!sau join`: Join the current lobby using your previously-saved in-game name.',
     '`!sau join Alice`: Set your in-game name to "Alice" and join the current lobby.',
-    '`!sj Alice`: Same thing, but shorter.'
 ].map(command => `\t- ${command}`).join('\n');
 
 const moreCommands = [
     '`help|h|?`: Get this help.',
     '`eject|e`: Eject the at-mentioned players from the lobby, as if they quit.',
-    '`lobby|l`: Re-post the info about your lobby.',
+    '`lobby`: Re-post the info about your lobby.',
     '`stats|version|v`: Get stats about the server running this bot.'
 ].map(command => `\t- ${command}`).join('\n');
 
 const manualCommands = [
-    '`lobby|l start [room code] [na|eu|asia]`: Start a new lobby with a room code.',
-    '`lobby|l room|r <room code> [na|eu|asia]`: Update the room information of your lobby.',
-    '`lobby|l room|r unlist|remove|x`: Remove the room code for your lobby.',
+    '`start [room code] [na|eu|asia]`: Start a new lobby with a room code.',
+    '`room|r <room code> [na|eu|asia]`: Update the room information of your lobby.',
+    '`room|r unlist|remove|x`: Remove the room code for your lobby.',
     '`intermission|i`: Transition your lobby to the "intermission" phase.',
     '`working|work|w`: Transition your lobby to the "working" phase.',
     '`meeting|meet|m`: Transition your lobby to the "meeting" phase.',
@@ -33,13 +33,12 @@ const manualCommands = [
 ].map(command => `\t- ${command}`).join('\n');
 
 const moreExamples = [
-    '`!sl start abcdef eu`: Start a new lobby with a room code.',
+    '`!sau start abcdef eu`: Start a new lobby with a room code.',
     '`!sau work`: Start a new game, from intermission, or end a meeting.',
-    '`!sw`: Same thing as `!sau work`, but shorter.',
-    '`!sk me @tanner`: Mark yourself and @tanner as dead. (Must be a real at-mention)'
+    '`!sau kill me @tanner`: Mark yourself and @tanner as dead. (Must be a real at-mention)'
 ].map(command => `\t- ${command}`).join('\n');
 
-module.exports = async function helpCommand(message, arguments) {
+module.exports = new Command(['help', 'h', '?'], async (message, arguments) => {
     // TODO Use the guild's commands instead.
     const embed = new MessageEmbed()
         .setTitle("Silence Among Us - Help")
@@ -56,4 +55,4 @@ module.exports = async function helpCommand(message, arguments) {
         .addField('Get More Help', 'Use `!sau help more` for all the commands,\nincluding how to run games manually.')
 
     return message.channel.send(embed);
-};
+});

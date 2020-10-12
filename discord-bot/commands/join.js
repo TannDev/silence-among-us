@@ -1,7 +1,7 @@
-const { requireLobby } = require('./_helpers');
+const { Command, requireLobby } = require('.');
 const User = require('../../classes/User');
 
-module.exports = async function joinCommand(message, arguments) {
+module.exports = new Command(['join', 'j'], async (message, arguments) => {
     const lobby = await requireLobby(message);
 
     const user = await User.load(message.author.id);
@@ -9,4 +9,4 @@ module.exports = async function joinCommand(message, arguments) {
     if (!user.amongUsName) throw new Error("I don't know your in-game name yet, so you need to provide it to join.")
 
     await lobby.guildMemberJoin(message.member, user.amongUsName)
-};
+});

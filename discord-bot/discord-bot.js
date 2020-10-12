@@ -38,7 +38,7 @@ module.exports = { client, clientReady, getGuildCount, getGuildList };
 
 // ==== It's now safe to require other modules. ====
 
-const processCommandMessage = require('./commands');
+const { Command } = require('./commands');
 const Lobby = require('../classes/Lobby');
 
 client.on('error', (error) => {
@@ -65,7 +65,7 @@ client.on('message', (message) => {
     // Ignore bots.
     if (message.author.bot) return;
 
-    processCommandMessage(message).catch(async error => {
+    Command.processMessage(message).catch(async error => {
         console.error(error);
         await message.reply(error.message || "Something went wrong.");
     });

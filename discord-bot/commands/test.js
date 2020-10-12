@@ -1,3 +1,6 @@
-module.exports = async function testCommand(message) {
-    await message.reply("There's no test set up right now.")
-};
+const { Command, requireTextChannel } = require('.');
+
+module.exports = new Command(['test', 't'], async(message) => {
+    const textChannel = await requireTextChannel(message)
+    textChannel.send("I understood the test command!");
+})

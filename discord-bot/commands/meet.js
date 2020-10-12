@@ -1,7 +1,6 @@
-const { requireLobby } = require('./_helpers');
+const { Command, requireLobby } = require('.');
 
-
-module.exports = async function meetingCommand(message) {
+module.exports = new Command(['meet', 'meeting', 'm'], async (message) => {
     const lobby = await requireLobby(message);
     await lobby.transition('Meeting')
-};
+});

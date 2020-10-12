@@ -1,7 +1,6 @@
-const { requireLobby } = require('./_helpers');
+const { Command, requireLobby } = require('.');
 
-
-module.exports = async function killCommand(message, arguments) {
+module.exports = new Command(['kill', 'k', 'dead',  'd'], async (message, arguments) => {
     const lobby = await requireLobby(message);
 
     // Find and kill all the targets. (At-mentions, and 'me')
@@ -9,4 +8,4 @@ module.exports = async function killCommand(message, arguments) {
     if (arguments.match(/\bme\b/i)) targets.push(message.member);
     // noinspection JSCheckFunctionSignatures
     await lobby.guildMemberKill(...targets);
-};
+});
