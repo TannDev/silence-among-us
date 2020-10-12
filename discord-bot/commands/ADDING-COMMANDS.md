@@ -63,7 +63,8 @@ The command context also includes a number of methods to handle expectations tha
 Each helper will enforce the specified condition (throwing a friendly error if it's not met) and return the specified object.
 
 Here's the complete list:
+- `this.requireGuild()`: Requires that message comes from a guild text channel. Returns the guild as a `Discord.Guild`.
 - `this.requireGuildMember()`: Requires that message comes from a guild text channel. Returns the author as a `Discord.GuildMember`.
-- `this.requireTextChannel()`: Requires that the message was sent via a guild's text channel. Returns the channel as a `Discord.TextChannel`.
+- `this.requireTextChannel()`: Requires that the message comes from a guild's text channel. Returns the channel as a `Discord.TextChannel`.
 - `this.requireVoiceChannel()`: Requires that the message author is in a voice channel in the same guild as the message. Returns the channel as a `Discord.VoiceChannel`.
 - `this.requireLobby()`: Requires that the message author have a lobby associated with their current voice channel. Returns that lobby as a `Lobby`.
