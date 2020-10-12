@@ -1,4 +1,4 @@
-const { Command } = require('.');
+const Command = require('.');
 const { MessageEmbed } = require('discord.js');
 const { getGuildCount } = require('../discord-bot');
 const { version = 'is unreleased' } = require('../../package.json');
@@ -9,7 +9,9 @@ module.exports = new Command({
     aliases: ['stats', 'version', 'v'],
     description: "Get stats about the server running this bot.",
     category: 'meta',
-    handler: async (message) => {
+    handler: async function() {
+        // Load properties from the command context.
+        const { message } = this;
         const [guildsSupported, lobbiesInProgress] = await Promise.all([getGuildCount(), Lobby.getLobbyCount()]);
 
         const embed = new MessageEmbed()

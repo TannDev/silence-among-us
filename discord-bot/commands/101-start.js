@@ -1,4 +1,4 @@
-const { Command, requireTextChannel, requireVoiceChannel } = require('.');
+const Command = require('.');
 const { MessageEmbed } = require('discord.js');
 const Lobby = require('../../classes/Lobby');
 const Room = require('../../classes/Room');
@@ -12,9 +12,11 @@ module.exports = new Command({
     options: '[room code] [na|eu|asia]',
     description: 'Start a new lobby.',
     category: 'core',
-    handler: async (message, arguments) => {
-        const textChannel = await requireTextChannel(message);
-        const voiceChannel = await requireVoiceChannel(message);
+    handler: async function() {
+        // Load properties from the command context.
+        const { message, arguments } = this;
+        const textChannel = await this.requireTextChannel();
+        const voiceChannel = await this.requireVoiceChannel();
 
         // Get the room, if any.
         const [code, region] = arguments.split(/\s+/g);

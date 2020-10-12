@@ -38,7 +38,7 @@ module.exports = { client, clientReady, getGuildCount, getGuildList };
 
 // ==== It's now safe to require other modules. ====
 
-const { Command } = require('./commands');
+const Command = require('./commands');
 const Lobby = require('../classes/Lobby');
 
 client.on('error', (error) => {

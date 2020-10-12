@@ -1,11 +1,13 @@
-const { Command, requireLobby } = require('.');
+const Command = require('.');
 
 module.exports = new Command({
     aliases: ['revive'],
     options: '[me] [@mentions...]',
     description: 'Mark players as being alive.',
-    handler: async (message, arguments) => {
-        const lobby = await requireLobby(message);
+    handler: async function() {
+        // Load properties from the command context.
+        const { message, arguments } = this;
+        const lobby = await this.requireLobby();
 
         // Find and revive all the targets. (At-mentions, and 'me')
         const targets = [...message.mentions.members.array()];

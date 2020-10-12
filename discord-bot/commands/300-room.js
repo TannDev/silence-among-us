@@ -1,4 +1,4 @@
-const { Command, requireLobby } = require('.');
+const Command = require('.');
 const Room = require('../../classes/Room');
 
 module.exports = new Command({
@@ -6,8 +6,10 @@ module.exports = new Command({
     options: '< unlist | <code> [na|eu|asia] >',
     description: 'Update or remove the room code',
     category: 'manual',
-    handler: async (message, arguments) => {
-        const lobby = await requireLobby(message);
+    handler: async function() {
+        // Load properties from the command context.
+        const { arguments } = this;
+        const lobby = await this.requireLobby();
 
         // Get the room code.
         const [code, region] = arguments.split(/\s+/g);

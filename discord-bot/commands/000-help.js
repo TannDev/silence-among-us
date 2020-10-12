@@ -1,4 +1,4 @@
-const { Command } = require('.');
+const Command = require('.');
 const { MessageEmbed } = require('discord.js');
 
 const importantCommands = [
@@ -40,11 +40,15 @@ const moreExamples = [
 
 module.exports = new Command({
     aliases: ['help', 'h', '?'],
-    handler: async (message, arguments) => {
-        // TODO Use the guild's commands instead.
+    handler: async function() {
+        // Load properties from the command context.
+        const { message, prefix, arguments } = this;
+
+        // TODO Load commands properly.
         const embed = new MessageEmbed()
             .setTitle("Silence Among Us - Help")
             .setURL('https://github.com/tanndev/silence-among-us#silence-among-us')
+            // TODO Load the guild's prefixes.
             .setDescription("Use `!sau <command>` or `!s<command>` to tell me what to do.\nI'll use your current voice channel to find your lobby.")
             .addField('Important Commands', importantCommands);
 
@@ -54,7 +58,7 @@ module.exports = new Command({
             .addField('Examples', moreExamples);
         else embed
             .addField('Examples', importantExamples)
-            .addField('Get More Help', 'Use `!sau help more` for all the commands,\nincluding how to run games manually.');
+            .addField('Get More Help', `Use \`${prefix} help more\` for all the commands, including how to run games manually.`);
 
         return message.channel.send(embed);
     }

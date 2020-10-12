@@ -7,22 +7,32 @@ const Guild = require('../../classes/Guild');
  */
 const commandsByAlias = new Map();
 
+/**
+ * All the registered commands, in sorted order.
+ *
+ * @type {Set<Command>}
+ */
+const commands = new Set();
+
 class Command {
 
     /**
      * Find a command that matches.
-     * @param command
-     * @returns {Command|null}
+     * @param alias
+     * @returns {Command}
      */
-    static find(command) {
-        if (!command || typeof command !== 'string') return null;
-        return commandsByAlias.get(command.toLowerCase());
+    static find(alias) {
+        if (!alias || typeof alias !== 'string') return null;
+        return commandsByAlias.get(alias.toLowerCase());
+    }
+
+    static all() {
+        return commands;
     }
 
     static async processMessage(message) {
         // Get the command pattern for this guild.
         const { commandPrefixes } = await Guild.load(message.guild.id);
-        const demoCommand = `\`${commandPrefixes[0]} help\``;
 
         // Help users who don't know the command.
         if (message.content.match(/^!sau\s*command/i)) {
@@ -30,14 +40,14 @@ class Command {
             if (prefixList.length > 1) prefixList[prefixList.length - 1] = `or ${prefixList[prefixList.length - 1]}`;
             return message.reply([
                 `I'm listening for ${prefixList.join(prefixList.length > 2 ? ', ' : ' ')}`,
-                `Try using ${demoCommand} for more information.`
+                `Try using \`${commandPrefixes[0]} help\` for more information.`
             ].join('\n'));
         }
 
         // Look for instruction.
-        const prefix = commandPrefixes.map(prefix => prefix.replace(/[.?*+()\[\]]/g, '\\$&')).join('|');
-        const commandPattern = new RegExp(`^(?:${prefix})\\s+(?<cmd>\\w+)(?:\\s+(?<args>.+))?$`, 'i');
-        const instruction = message.content.match(commandPattern);
+        const prefixes = commandPrefixes.map(prefix => prefix.replace(/[.?*+()\[\]]/g, '\\$&')).join('|');
+        const pattern = new RegExp(`^(?<prefix>${prefixes})\\s+(?<alias>\\S+)(?:\\s+(?<args>.+))?$`, 'i');
+        const instruction = message.content.match(pattern);
 
         // If there was no instruction, return.
         if (!instruction) return;
@@ -46,14 +56,15 @@ class Command {
         if (message.deletable) await message.delete();
 
         // Extract the components
-        const { cmd, args } = instruction.groups;
+        const { prefix, alias, args } = instruction.groups;
 
         // Find the appropriate command.
-        const command = Command.find(cmd);
-        if (!command) return message.reply(`Sorry, I don't recognize \`${cmd}\`. Try ${demoCommand}.`);
+        const command = Command.find(alias);
+        if (!command) return message.reply(`Sorry, I don't recognize \`${alias}\`. Try \`${prefix} help\`.`);
 
-        // Execute the command.
-        return command.handler(message, args ? args.trim() : '');
+        // Execute the command in the appropriate context.
+        const context = new CommandContext(command, message, prefix, alias, args ? args.trim() : '');
+        return command.handler.bind(context)();
     }
 
     constructor({aliases, handler, options, description, category}) {
@@ -76,67 +87,71 @@ class Command {
     }
 }
 
-/**
- * Requires that the given message came via a guild.
- * If not, throws an error.
- *
- * @param {Discord.Message} message
- * @returns {Promise<Discord.GuildMember>}
- */
-async function requireGuildMember(message) {
-    const { member } = message;
-    if (!member) throw new Error("I can't do that via direct-message. Try using a text channel.");
+module.exports = Command;
 
-    return member ;
+class CommandContext {
+    constructor(command, message, prefix, alias, args) {
+        this.command = command;
+        this.message = message;
+        this.prefix = prefix;
+        this.alias = alias;
+        this.arguments = args;
+    }
+
+    /**
+     * Requires that the given message came via a guild.
+     * If not, throws an error.
+     *
+     * @returns {Promise<Discord.GuildMember>}
+     */
+    async requireGuildMember() {
+        const { member } = this.message;
+        if (!member) throw new Error("I can't do that via direct-message. Try using a text channel.");
+
+        return member ;
+    }
+
+    /**
+     * Requires that the message came from a guild channel.
+     * If not, throws an error.
+     *
+     * @returns {Promise<Discord.TextChannel>}
+     */
+    async requireTextChannel() {
+        const { channel: textChannel, guild } = this.message
+        if (!guild) throw new Error("I can't do that via direct-message. Try using a text channel.");
+        return textChannel;
+    }
+
+    /**
+     * Requires that the sender of the given message is currently in a voice channel.
+     * If not, throws an error.
+     *
+     * @returns {Promise<Discord.VoiceChannel>}
+     */
+    async requireVoiceChannel() {
+        const member = await this.requireGuildMember();
+        const { voice: { channel: voiceChannel } } = member;
+        if (!voiceChannel) throw new Error("I can't do that. You're not in a voice channel here.");
+        return voiceChannel;
+    }
+
+    /**
+     * Requires that the sender of the given message is currently in a tracked lobby.
+     * If not, throws an error which will be sent as a reply.
+     *
+     * @returns {Promise<Lobby>}
+     */
+    async requireLobby() {
+        const voiceChannel = await this.requireVoiceChannel();
+        const lobby = await Lobby.findByVoiceChannel(voiceChannel);
+        if (!lobby) throw new Error(`There's not a lobby for your voice channel. Try \`${this.prefix} start\`!`);
+        return lobby;
+    }
 }
-
-async function requireTextChannel(message) {
-    const { channel: textChannel, guild } = message
-    if (!guild) throw new Error("I can't do that via direct-message. Try using a text channel.");
-    return textChannel;
-}
-
-/**
- * Requires that the sender of the given message is currently in a voice channel.
- * If not, throws an error.
- *
- * @param {Discord.Message} message
- * @returns {Promise<Discord.VoiceChannel>}
- */
-async function requireVoiceChannel(message) {
-    const member = await requireGuildMember(message);
-    const { voice: { channel: voiceChannel } } = member;
-    if (!voiceChannel) throw new Error("I can't do that. You're not in a voice channel here.");
-    return voiceChannel;
-}
-
-/**
- * Requires that the sender of the given message is currently in a tracked lobby.
- * If not, throws an error which will be sent as a reply.
- *
- * @param {Discord.Message} message
- * @returns {Promise<Lobby>}
- */
-async function requireLobby(message) {
-    const voiceChannel = await requireVoiceChannel(message);
-    const lobby = await Lobby.findByVoiceChannel(voiceChannel);
-    // TODO Get the right command prefix.
-    if (!lobby) throw new Error("There's not a lobby for your voice channel. Start one with `!sau start`!");
-
-    return lobby;
-}
-
-// Export the class, and all the helpers.
-module.exports = {
-    Command,
-    requireGuildMember,
-    requireTextChannel,
-    requireVoiceChannel,
-    requireLobby
-};
 
 // Load all commands automatically.
 require('fs')
     .readdirSync(__dirname)
     .filter(filename => filename.match(/^[^_].+\.js$/i) && filename !== 'index.js')
-    .forEach(filename => require(`./${filename}`));
+    .forEach(filename => commands.add(require(`./${filename}`)));
