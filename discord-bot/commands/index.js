@@ -1,5 +1,5 @@
 const Lobby = require('../../classes/Lobby');
-const Guild = require('../../classes/Guild');
+const GuildConfig = require('../../classes/GuildConfig');
 
 /**
  * All commands, mapped by alias.
@@ -36,7 +36,8 @@ class Command {
 
     static async processMessage(message) {
         // Get the command pattern for this guild.
-        const { commandPrefixes } = await Guild.load(message.guild.id);
+        const guildConfig = message.guild && await GuildConfig.load(message.guild.id)
+        const { commandPrefixes } = guildConfig || { commandPrefixes: ['!sau', '!s'] };
 
         // Help users who don't know the command.
         if (message.content.match(/^!sau\s*command/i)) {

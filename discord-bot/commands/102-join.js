@@ -1,5 +1,5 @@
 const Command = require('.');
-const User = require('../../classes/User');
+const UserConfig = require('../../classes/UserConfig');
 
 module.exports = new Command({
     aliases: ['join', 'j'],
@@ -12,10 +12,12 @@ module.exports = new Command({
         const guildMember = await this.requireGuildMember();
         const lobby = await this.requireLobby();
 
-        const user = await User.load(guildMember.id);
-        if (arguments) await user.updateAmongUsName(arguments);
-        if (!user.amongUsName) throw new Error("I don't know your in-game name yet, so you need to provide it to join.");
+        const UserConfig = await UserConfig.load(guildMember.id);
+        if (arguments) await UserConfig.updateAmongUsName(arguments);
+        if (!UserConfig.amongUsName) {
+            throw new Error("I don't know your in-game name yet, so you need to provide it to join.");
+        }
 
-        await lobby.guildMemberJoin(guildMember, user.amongUsName);
+        await lobby.guildMemberJoin(guildMember, UserConfig.amongUsName);
     }
 });

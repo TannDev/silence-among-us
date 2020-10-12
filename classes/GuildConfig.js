@@ -12,7 +12,7 @@ const cache = new NodeCache({
     useClones: false, // Store the original objects, for mutability.
 })
 
-class Guild {
+class GuildConfig {
     static async load(guildId) {
         // Check the cache first.
         const cachedGuild = await cache.get(guildId);
@@ -20,7 +20,7 @@ class Guild {
 
         // Otherwise, create a new one.
         const document = await database.get(guildId).catch(error => console.error(error));
-        return new Guild(document || { _id: guildId });
+        return new GuildConfig(document || { _id: guildId });
     }
 
     constructor(document) {
@@ -57,4 +57,4 @@ class Guild {
     }
 }
 
-module.exports = Guild;
+module.exports = GuildConfig;
