@@ -48,7 +48,7 @@ We're still working on more detailed documentation, but here's some basics to ke
 - Each game lobby connects to exactly one voice channel and exactly one text channel.
 - A voice channel can only be used for one lobby at a time.
 - A text channel can be used for multiple lobbies at the same time.
-- When you start a lobby (`!sau lobby start`), that lobby will bind to the text channel where you issued the command. All lobby updates will go to that text channel, until the lobby ends. (Though you can still use other channels to issue commands, if you wish.)
+- When you start a lobby (`!sau start`), that lobby will bind to the text channel where you issued the command. All lobby updates will go to that text channel, until the lobby ends. (Though you can still use other channels to issue commands, if you wish.)
 
 ### Game Integration
 The bot supports [AmongUsCapture](https://github.com/denverquane/amonguscapture) for automating your lobbies!
@@ -58,10 +58,18 @@ When you start a new lobby, the bot will DM you a link to connect the capture ap
 It'll also provide a link for downloading a compatible version directly from the bot's server, if you need it. You can also find the exe in the [downloads](/downloads) folder, if you prefer. (You can get it directly from [the official releases](https://github.com/denverquane/amonguscapture/releases) as well, but we can't guarantee compatibility with other versions.) 
 
 ### Commands
-When added to your app, the discord bot will automatically listen to every text channel it has access to.
-To issue it commands, use `!sau <command>` or `!s<command>`.
-Try starting with `!sau help` or `!s?`, to get a list of all the commands currently available.
-Or use `!sau lobby start` (`!sl start`) to start a new lobby in your current channels.
+When added to your app, the discord bot will automatically listen for commands in every text channel it has access to.
+However, it'll only look for messages with a certain prefix to process commands.  By default, that prefix is `!sau` or `!s`.
+The rest of this guide assumes that you are using the default settings, but just replace `!sau` with whatever your prefix is.
+
+To issue commands to the bot, use `!sau <command>`.
+Try starting with `!sau help` to get a list of all the commands currently available.
+Or use `!sau start`to start a new lobby in your current channels.
+
+If the bot is online but isn't responding to your commands, then it was probably [configured to use a different prefix](#configuration).
+Fortunately, you can find out the current prefix setting for *all* the bots in your channel by typing `!sau-rollcall`.
+Every SAU bot in the channel will respond with the list of prefixes that it's listening for in that channel.
+(If you're running multiple bots, make sure you change them!)
 
 ### Lobby Phases
 A lobby can be in one of three phases at any given time: "intermission", "working", and "meeting".
@@ -73,7 +81,7 @@ The lobby enters the intermission phase whenever you're in the drop ship, betwee
 - Everyone can both talk and hear.
 - New players can join.
 
-Start this phase manually with use `!sau intermission` or `!si`.
+Start this phase manually with use `!sau intermission`.
 
 #### Working
 The lobby enters the working phase whenever you start a new game or end a meeting.
@@ -82,7 +90,7 @@ The lobby enters the working phase whenever you start a new game or end a meetin
 - When a new player joins the lobby, they're set to "waiting" and unmuted accordingly.
 - If a player is killed during this phase, they're marked as "dying" and stay muted and deafened. (To avoid spoilers via Discord.)
 
-Start this phase manually with `!sau work` or `!sw`.
+Start this phase manually with `!sau work`.
 
 #### Meeting
 The lobby enters the meeting phase whenever you start a new meeting.
@@ -91,7 +99,34 @@ The lobby enters the meeting phase whenever you start a new meeting.
 - Everyone else is muted, but can still hear the discussion.
 - If a player is killed during this phase, they're immediately set to "dead" and muted.
 
-Start this phase manually with `!sau meet` or `!sm`.
+Start this phase manually with `!sau meet`.
+
+### Configuration
+You can configure some settings on a per-server basis.
+
+The `config` command will let you get, set, and reset options:
+- `!sau config get <option>`: Get the current value of the option.
+- `!sau config set <option> <value`: Set a new value for the option.
+- `!sau config reset <option>`: Reset the value of the option back to the default.
+
+Currently, the only configurable option is `prefix`, but this list will grow with future releases.
+
+_Note:_ Each deployed instance of the bot uses a different settings database.
+
+#### Configure Prefix
+(**Default:** `!sau|!s`)
+The `prefix` option allows you to change which prefixes the bot listens to.
+
+If you want to set multiple options, you can separate prefixes with spaces or `|`.
+
+If you want to run multiple instances of the bot, you'll need to set each of them to listen on a different prefix.
+This can be tricky, if they're all in a channel together already. But it can be fixed.
+First, add one of the instances to a private text channel without the others.
+In that private channel, change its prefix with `!sau config set prefix <new prefixes>`.
+Then, add the next bot to the private channel and change its prefix.
+Repeat this as many times as needed to make all the instances different
+To make test them, you can use `!sau-rollcall` in the common channel.
+
 
 ## Contributing
 If you'd like to contribute, check out our [Contributing Guidelines](CONTRIBUTING.md).
