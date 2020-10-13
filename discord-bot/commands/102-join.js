@@ -12,12 +12,12 @@ module.exports = new Command({
         const guildMember = await this.requireGuildMember();
         const lobby = await this.requireLobby();
 
-        const UserConfig = await UserConfig.load(guildMember.id);
-        if (arguments) await UserConfig.updateAmongUsName(arguments);
-        if (!UserConfig.amongUsName) {
+        const userConfig = await UserConfig.load(guildMember.id);
+        if (arguments) await userConfig.updateAmongUsName(arguments);
+        if (!userConfig.amongUsName) {
             throw new Error("I don't know your in-game name yet, so you need to provide it to join.");
         }
 
-        await lobby.guildMemberJoin(guildMember, UserConfig.amongUsName);
+        await lobby.guildMemberJoin(guildMember, userConfig.amongUsName);
     }
 });

@@ -1,7 +1,7 @@
 version: '3.5'
 
 services:
-  app:
+  bot:
     container_name: sau-bot
     image: ghcr.io/tanndev/silence-among-us:latest
     build: .
