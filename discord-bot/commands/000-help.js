@@ -5,7 +5,10 @@ module.exports = new Command({
     aliases: ['help', 'h', '?'],
     handler: async function () {
         // Load properties from the command context.
-        const { message, prefix, alias, arguments } = this;
+        const { message, prefix: originalPrefix, alias, arguments } = this;
+
+        // Ignore the original prefix if this is a dm.
+        const prefix = message.guild ? originalPrefix : '!sau';
 
         // Determine if the user wants more.
         const displayMore = arguments.match(/\bmore\b/i);

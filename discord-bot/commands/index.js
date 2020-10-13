@@ -35,9 +35,14 @@ class Command {
     }
 
     static async processMessage(message) {
-        // Get the command pattern for this guild.
-        const guildConfig = message.guild && await GuildConfig.load(message.guild.id)
-        const { commandPrefixes } = guildConfig || { commandPrefixes: ['!sau', '!s'] };
+        // Start with default prefixes.
+        let commandPrefixes = ['!sau', '!s', ''];
+
+        // If this is a guild message, get the guild's settings.
+        if (message.guild){
+            const guildConfig = await GuildConfig.load(message.guild.id);
+            commandPrefixes = guildConfig.get('prefix').split(/\|/g);
+        }
 
         // Help users who don't know the command.
         if (message.content.match(/^!sau\s*command/i)) {
@@ -51,7 +56,7 @@ class Command {
 
         // Look for instruction.
         const prefixes = commandPrefixes.map(prefix => prefix.replace(/[.?*+()\[\]]/g, '\\$&')).join('|');
-        const pattern = new RegExp(`^(?<prefix>${prefixes})\\s+(?<alias>\\S+)(?:\\s+(?<args>.+))?$`, 'i');
+        const pattern = new RegExp(`^(?<prefix>${prefixes})\\s*(?<alias>\\S+)(?:\\s+(?<args>.+))?$`, 'i');
         const instruction = message.content.match(pattern);
 
         // If there was no instruction, return.
@@ -114,13 +119,23 @@ class CommandContext {
      * Requires that the given message came via a guild.
      * If not, throws an error.
      *
+     * @returns {Promise<Discord.Guild>}
+     */
+    async requireGuild() {
+        const { guild } = this.message;
+        if (!guild) throw new Error("I can't do that via direct-message. Try using a text channel.");
+        return guild;
+    }
+
+    /**
+     * Requires that the given message came via a guild.
+     * If not, throws an error.
+     *
      * @returns {Promise<Discord.GuildMember>}
      */
     async requireGuildMember() {
-        const { member } = this.message;
-        if (!member) throw new Error("I can't do that via direct-message. Try using a text channel.");
-
-        return member;
+        await this.requireGuild();
+        return this.message.member;
     }
 
     /**
@@ -130,9 +145,8 @@ class CommandContext {
      * @returns {Promise<Discord.TextChannel>}
      */
     async requireTextChannel() {
-        const { channel: textChannel, guild } = this.message;
-        if (!guild) throw new Error("I can't do that via direct-message. Try using a text channel.");
-        return textChannel;
+        await this.requireGuild();
+        return this.message.channel;
     }
 
     /**

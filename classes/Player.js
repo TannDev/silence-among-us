@@ -17,7 +17,7 @@ class Player {
      * @param {Discord.GuildMember} [guildMember] - Guild member to attach.
      * @param {object} [document] - Existing settings, if loading from storage.
      */
-    constructor(lobby, guildMember, document) {
+    constructor(lobby, guildMember, { ...document }) {
         this._document = document || {status: STATUS.WAITING};
 
         // Attach the voice channel.

@@ -7,7 +7,7 @@ class UserConfig {
         return new UserConfig(document || { _id: userId });
     }
 
-    constructor(document) {
+    constructor({ ...document }) {
         this._document = document;
     }
 
