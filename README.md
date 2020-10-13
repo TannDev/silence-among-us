@@ -5,25 +5,20 @@
 ![GitHub Workflow Status](https://img.shields.io/github/workflow/status/tanndev/silence-among-us/Release/main?logo=github)
 ![Github Vulnerabilities](https://img.shields.io/snyk/vulnerabilities/github/tanndev/silence-among-us)
 
-A Discord bot designed to turn your server's voice channels into lobby for playing Among Us!
-
-This project was inspired by Denver Quane's excellent [AmongUsDiscord](https://github.com/denverquane/amongusdiscord)
-and leverages the same [AmongUsCapture](https://github.com/denverquane/amonguscapture) component to provide automation.
-
-In fact, there's a great deal of cooperation between the developers of Silence Among Us and AmongUsDiscord!
-If one bot doesn't suit your needs, check out the other one.
+A Discord bot to turn your server's voice channels into a lobby for playing Among Us!
 
 ## Features
 This bot turns your Discord voice channels into game lobbies for playing Among Us.
 
 It's got a few features, so far:
-- Tracks the status of players in the lobby, automatically or via simple commands.
+- Tracks the status of players in the game, [automatically](#game-integration) or via simple commands.
+- Provides regular lobby updates via text channels, **including the room code** and the status of all players.
 - Automatically controls the server-mute and server-deafen settings for players in the voice channel.
-- Automatically updates discord nicknames to match in-game names, when possible.
-- Provides lobby updates via text channels, including the room code and the status of all players.
+- Automatically updates Discord nicknames to match in-game names, when possible. (And back!)
 - Keeps the text channel clean, by removing commands and old lobby updates.
 
 If there's another feature you'd really want, you can [request it](https://github.com/tanndev/silence-among-us/issues/new)!
+
 Or, if you're a developer, maybe you can even [help us add it](CONTRIBUTING.md).
 
 ## Quickstart Guide
@@ -31,16 +26,23 @@ If you want to just jump in and get started, you can use our early-access hosted
 
 [Invite our bot](https://discord.com/api/oauth2/authorize?client_id=757007603149832203&permissions=150039808&scope=bot) to your discord server and get started right away! That authorization link contains all permissions that the bot needs (and some we expect it might need soon), though you may need to add the bot to any private channels you want to use for your games.
 
-Once you've added the bot to your server, just type `!sau help` in any text channel to get started.
+Once you've added the bot to your server, just type `!sau help` in any text channel with the bot to get started.
 
 Being in early-access does come with some rough edges, so there're some things we'd like you to keep in mind:
 - The bot might be a bit unstable, unreliable, or buggy. Help us improve it by [reporting issues](https://github.com/tanndev/silence-among-us/issues/new).
-- Our hosted instance might go offline unexpectedly and without warning when we do upgrades or maintenance. We're working on [fixing this](https://github.com/tanndev/silence-among-us/issues/1).
+- Our hosted instance might go offline unexpectedly and without warning when we do upgrades or maintenance. It _should_ recover where it left off.
 - Discord rate-limits bots on a per-guild basis. So if you try to run more than one game at a time in your server, the bot might be slow to respond. If you've got a server where you run lots of games, [let us know](https://github.com/tanndev/silence-among-us/issues/new).
 
 If none of that worries you, and you like to live on the cutting edge, you can [use the beta version](https://discord.com/api/oauth2/authorize?client_id=764878644341506068&permissions=149974272&scope=bot) instead. You could even use both at the same time, if you want. Though make sure you [configure the command prefix](#configure-prefix) of one of them to avoid conflicts. The beta will generally have the latest features, but at the cost of _much_ more frequent restarts and instability.
 
 Of course, you can always [host your own instance of the bot](/docs/host-your-own-bot.md) if you prefer.
+
+## Background
+This project was inspired by Denver Quane's excellent [AmongUsDiscord](https://github.com/denverquane/amongusdiscord)
+and leverages the same [AmongUsCapture](https://github.com/denverquane/amonguscapture) component to provide automation.
+
+In fact, there's a great deal of cooperation between the developers of Silence Among Us and AmongUsDiscord!
+If one bot doesn't suit your needs, check out the other one.
 
 ## How It Works
 The bot keeps track of multiple game "lobbies" at once, and controls the audio of each player in the lobby.
@@ -115,23 +117,26 @@ Currently, the only configurable option is `prefix`, but this list will grow wit
 
 _Note:_ Each deployed instance of the bot uses a different settings database.
 
-#### Configure Prefix
+#### Prefix
 (**Default:** `!sau|!s`)
 The `prefix` option allows you to change which prefixes the bot listens to.
 
 If you want to set multiple options, you can separate prefixes with spaces or `|`.
 
-If you want to run multiple instances of the bot, you'll need to set each of them to listen on a different prefix.
-This can be tricky, if they're all in a channel together already. But it can be fixed.
-First, add one of the instances to a private text channel without the others.
-In that private channel, change its prefix with `!sau config set prefix <new prefixes>`.
-Then, add the next bot to the private channel and change its prefix.
-Repeat this as many times as needed to make all the instances different
-To make test them, you can use `!sau-rollcall` in the common channel.
+If you want to run multiple instances of the bot, you'll need to set each of them to listen on a different prefix. This can be tricky, if they're all in a channel together already. But it can be fixed:
+1. First, add one of the instances to a private text channel without the others.
+1. In that private channel, change its prefix with `!sau config set prefix <new prefixes>`.
+1. Then, add the next bot to the private channel and change its prefix.
+1. Repeat this as many times as needed to make all the instances different
+
+To make test them, you can use `!sau-rollcall` in a channel with all of them, to make sure they have unique prefixes.
 
 ## Contributing
 If you'd like to contribute, check out our [Contributing Guidelines](CONTRIBUTING.md).
 
 ## Bundled Software
-Versions of [Among Us Capture](https://github.com/denverquane/amonguscapture) are included under the terms of
+A version of [Among Us Capture](https://github.com/denverquane/amonguscapture) is included under the terms of
 the [MIT License](https://github.com/denverquane/amonguscapture/blob/2.0.7/LICENSE). Copyright (c) 2020 Denver Quane.
+
+This exact version will vary from time to time. It's usually an official release, but it'll occasionally be a custom build.
+The current compatible version will be DMed to you when you start a new lobby and can be downloaded directly from the bot.
