@@ -752,6 +752,7 @@ class Lobby {
         this.voiceChannel.leave();
 
         // Delete the lobby from the database.
+        this.cancelScheduledSave();
         await database.delete(this._document);
 
         this.emit("Destroyed");
@@ -774,12 +775,17 @@ class Lobby {
         if (this.phase !== PHASE.INTERMISSION) await this.transition(PHASE.INTERMISSION);
     }
 
-    scheduleSave() {
-        // Reset any existing timeout, to reduce database load.
+    cancelScheduledSave() {
         if (this._nextSaveTimeout) {
             clearTimeout(this._nextSaveTimeout);
             delete this._nextSaveTimeout;
         }
+    }
+
+    scheduleSave() {
+        // Reset any existing timeout, to reduce database load.
+        this.cancelScheduledSave();
+
         // Create a new timeout, to save after a short delay.
         this._nextSaveTimeout = setTimeout(() => {
             delete this._nextSaveTimeout;
