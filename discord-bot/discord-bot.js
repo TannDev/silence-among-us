@@ -20,21 +20,26 @@ const client = new Client({
     },
     presence: {
         activity: {
-            name: '`!sau help`',
+            name: '`!sau-rollcall`',
             type: 'LISTENING'
         }
     }
 });
-module.exports = { client, getGuildCount, getGuildList };
+
+// Set up a promise to return when the client is ready.
+const clientReady = new Promise(resolve => {
+    client.on('ready', () => {
+        console.log(`Discord bot logged in as ${client.user.tag}`);
+        resolve();
+    });
+});
+
+module.exports = { client, clientReady, getGuildCount, getGuildList };
 
 // ==== It's now safe to require other modules. ====
 
-const processCommandMessage = require('./commands');
+const Command = require('./commands');
 const Lobby = require('../classes/Lobby');
-
-client.on('ready', () => {
-    console.log(`Discord bot logged in as ${client.user.tag}`);
-});
 
 client.on('error', (error) => {
     // TODO Use a better logger.
@@ -57,7 +62,10 @@ client.on('rateLimit', (rateLimitInfo) => {
 });
 
 client.on('message', (message) => {
-    processCommandMessage(message).catch(async error => {
+    // Ignore bots.
+    if (message.author.bot) return;
+
+    Command.processMessage(message).catch(async error => {
         console.error(error);
         await message.reply(error.message || "Something went wrong.");
     });
@@ -67,7 +75,7 @@ client.on('messageUpdate', (oldMessage, newMessage) => {
     // TODO Consider handling message updates to allow commands to be fixed.
 });
 
-client.on('voiceStateUpdate', async (oldPresence, newPresence) => {
+client.on('voiceStateUpdate', (oldPresence, newPresence) => {
     // TODO Find a better file for this to live in.
     // Track players as they move from channel to channel.
     const { channelID: oldChannelId } = oldPresence;
@@ -76,17 +84,20 @@ client.on('voiceStateUpdate', async (oldPresence, newPresence) => {
     // Ignore bots and any updates that don't involve changing channels.
     if (member.user.bot || oldChannelId === newChannelId) return;
 
-    // Determine if a player is joining/leaving a game.
-    const [oldLobby, newLobby] = await Promise.all([
-        Lobby.findByVoiceChannel(oldChannelId),
-        Lobby.findByVoiceChannel(newChannelId)
-    ]);
+    const moveLobbies = async () => {
+        // Determine if a player is joining/leaving a game.
+        const [oldLobby, newLobby] = await Promise.all([
+            Lobby.findByVoiceChannel(oldChannelId),
+            Lobby.findByVoiceChannel(newChannelId)
+        ]);
 
-    // If they've left an old lobby, disconnect them from that lobby. (Skip unmute if they're moving to a new one.)
-    if (oldLobby) await oldLobby.guildMemberDisconnected(member, Boolean(newLobby));
+        // If they've left an old lobby, disconnect them from that lobby. (Skip unmute if they're moving to a new one.)
+        if (oldLobby) await oldLobby.guildMemberDisconnected(member, Boolean(newLobby));
 
-    // If they're going into a new lobby, connect them to it.
-    if (newLobby) await newLobby.guildMemberConnected(member);
+        // If they're going into a new lobby, connect them to it.
+        if (newLobby) await newLobby.guildMemberConnected(member);
+    };
+    moveLobbies().catch(error => console.error(error));
 });
 
 /**

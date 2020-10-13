@@ -1,13 +1,13 @@
 const Database = require('./Database');
 const database = new Database('users');
 
-class User {
+class UserConfig {
     static async load(userId) {
         const document = await database.get(userId).catch(error => console.error(error));
-        return new User(document || { _id: userId });
+        return new UserConfig(document || { _id: userId });
     }
 
-    constructor(document) {
+    constructor({ ...document }) {
         this._document = document;
     }
 
@@ -29,4 +29,4 @@ class User {
     }
 }
 
-module.exports = User;
+module.exports = UserConfig;

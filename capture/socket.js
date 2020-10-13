@@ -50,10 +50,11 @@ const REGIONS = [
 
 io.on('connection', client => {
     client.on('connectCode', connectCode => {{
+        console.log('SOCKET connectCode:', connectCode);
+        client.connectCode = connectCode;
         Lobby.findByConnectCode(connectCode)
             .then(async lobby => {
                 if (!lobby) throw new Error(`No matching lobby for connect code: ${connectCode}`)
-                client.connectCode = connectCode;
                 await lobby.updateAutomationConnection(true);
                 console.log(`SocketIO: Connected code: ${connectCode}`);
             })
@@ -61,27 +62,30 @@ io.on('connection', client => {
     }});
 
     client.on('lobby', data => {
+        console.log('SOCKET lobby:', data);
+
         // Get the lobby
         const { connectCode } = client;
-        const {LobbyCode: roomCode, Region} = JSON.parse(data);
+        const {LobbyCode: code, Region} = JSON.parse(data);
         const region = REGIONS[Region];
 
         Lobby.findByConnectCode(connectCode)
             .then(async lobby => {
                 if (!lobby) return;
-                console.log(`SocketIO: Lobby update for ${connectCode}:`, roomCode);
+                console.log(`SocketIO: Lobby update for ${connectCode}:`, code);
 
                 // Update the room code.
-                if (roomCode) lobby.room = new Room(roomCode, region);
+                if (code) lobby.room = new Room({code, region});
                 else delete lobby.room;
 
                 // Update the info-post.
-                lobby.postLobbyInfo();
+                lobby.scheduleInfoPost();
             })
             .catch(error => console.error(error));
     })
 
     client.on('state', index => {
+        console.log('SOCKET state:', index);
         const state = STATES[index]
         const targetPhase = STATE_MAP[state];
 
@@ -103,6 +107,7 @@ io.on('connection', client => {
     });
 
     client.on('player', data => {
+        console.log('SOCKET player:', data);
         // Get the lobby
         const { connectCode } = client;
         const {Action, Name, IsDead, Disconnected, Color} = JSON.parse(data);

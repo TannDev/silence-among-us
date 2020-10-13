@@ -1,3 +1,5 @@
+const { client } = require('../discord-bot/discord-bot');
+
 const STATUS = {
     LIVING: 'Living',
     DYING: 'Dying',
@@ -9,55 +11,82 @@ const REASON_PREFIX = 'Silence Among Us'
 
 class Player {
 
-    // TODO Refactor this class to be database-friendly.
+    /**
+     *
+     * @param {Lobby} lobby - Lobby this player is for.
+     * @param {Discord.GuildMember} [guildMember] - Guild member to attach.
+     * @param {object} [document] - Existing settings, if loading from storage.
+     */
+    constructor(lobby, guildMember, { ...document } = {status: STATUS.WAITING} ) {
+        this._document = document;
 
+        // Attach the voice channel.
+        this._voiceChannelId = lobby.voiceChannel.id;
 
-    constructor(lobby, guildMember) {
-        this.voiceChannelId = lobby.voiceChannel.id;
-        if (guildMember) this.guildMember = guildMember;
+        // Attach the guild member, if provided.
+        if (guildMember) {
+            this._document.discordId = guildMember.id;
+            this._guildMember = guildMember;
+        }
+    }
+
+    get status() {
+        return this._document.status;
+    }
+
+    set status(status) {
+        if (!Object.values(STATUS).includes(status)) throw new Error('Invalid player status.')
+        this._document.status = status;
     }
 
     get guildMember() {
         return this._guildMember;
     }
 
-    set guildMember(guildMember) {
-        this._guildMember = guildMember;
-        this._originalNickname = guildMember.nickname;
-    }
-
     get discordId() {
-        return this._guildMember && this._guildMember.id;
+        return this._document.discordId;
     }
 
     get discordName() {
+        // This isn't preserved to the database, so it can always be loaded dynamically.
         return this._guildMember && this._guildMember.displayName;
+    }
+    get originalNickname() {
+        return this._document.originalNickname;
     }
 
     get amongUsName() {
-        return this._amongUs && this._amongUs.name;
+        return this._document.amongUsName;
     }
 
     get amongUsColor() {
-        return this._amongUs && this._amongUs.color;
+        return this._document.amongUsColor;
     }
 
     set amongUsColor(color) {
-        if (!this._amongUs) throw new Error("Can't set the color of a player that isn't playing.");
-        if (!color) delete this._amongUs.color;
-        else this._amongUs.color = color;
+        if (this.isSpectating) throw new Error("Can't set the color of a player that isn't playing.");
+        if (!color) delete this._document.amongUsColor;
+        else this._document.amongUsColor = color;
+    }
+
+    linkGuildMember(guildMember) {
+        // Update the document.
+        this._document.discordId = guildMember.id;
+        this._document.originalNickname = guildMember.nickname;
+
+        // Attach the new guild member.
+        this._guildMember = guildMember;
     }
 
     matchesGuildMember(targetGuildMember) {
-        if (!this.guildMember) return false;
-        if (typeof targetGuildMember === 'string') return this.guildMember.id === targetGuildMember;
-        return this.guildMember.id === targetGuildMember.id;
+        if (!this._guildMember) return false;
+        if (typeof targetGuildMember === 'string') return this._guildMember.id === targetGuildMember;
+        return this._guildMember.id === targetGuildMember.id;
     }
 
     matchesAmongUsName(targetName) {
-        const thisName = this.amongUsName;
-        if (!thisName || !targetName) return false;
-        return thisName.replace(/\s/g, '').toLowerCase() === targetName.replace(/\s/g, '').toLowerCase();
+        if (!this.amongUsName || !targetName) return false;
+        return this.amongUsName.replace(/\s/g, '').toLowerCase() === targetName.replace(/\s/g, '').toLowerCase();
     }
 
     kill() {
@@ -98,17 +127,18 @@ class Player {
      * @returns {boolean}
      */
     get isSpectating() {
-        return !this._amongUs;
+        return !this.amongUsName;
     }
 
     joinGame(amongUsName) {
-        if (this._amongUs) throw new Error("Player is already participating.");
+        if (this.amongUsName) throw new Error("Player is already participating.");
         this.status = STATUS.WAITING;
-        this._amongUs = {name: amongUsName};
+        this._document.amongUsName = amongUsName;
     }
 
     async leaveGame() {
-        delete this._amongUs;
+        delete this._document.amongUsName;
+        delete this._document.amongUsColor;
         await this.editGuildMember(false, false, "Left Lobby");
     }
 
@@ -161,10 +191,10 @@ class Player {
         const { voice } = member;
 
         // Don't adjust voice settings for other channels.
-        const updateVoice = anyChannel || (voice && voice.channelID === this.voiceChannelId);
+        const updateVoice = anyChannel || (voice && voice.channelID === this._voiceChannelId);
 
         // Decide which nickname to use.
-        const nick = this.isSpectating ? this._originalNickname : this.amongUsName;
+        const nick = this.isSpectating ? this.originalNickname : this.amongUsName;
 
         // Build the patch object.
         const patch = {};
@@ -196,13 +226,8 @@ class Player {
     }
 
     toJSON() {
-        // TODO Find a better way to do this.
-        return {
-            discordName: this.discordName,
-            discordId: this.discordId,
-            amongUsName: this.amongUsName,
-            status: this.status
-        };
+        const { ...document } = this._document;
+        return document;
     }
 }
 

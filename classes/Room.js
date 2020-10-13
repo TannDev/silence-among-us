@@ -2,7 +2,7 @@
 const codePattern = /^[a-z]{6}$/i;
 
 class Room {
-    constructor(code, region) {
+    constructor({code, region}) {
         if (typeof code !== 'string' || !code.match(codePattern)) throw new Error("That room code doesn't make sense");
         else code = code.toUpperCase();
 
