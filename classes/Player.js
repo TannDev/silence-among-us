@@ -190,7 +190,7 @@ class Player {
         const { voice } = member;
 
         // Don't adjust voice settings for other channels.
-        const updateVoice = voice && (anyChannel || voice.channelID === this._voiceChannelId);
+        const updateVoice = voice && voice.channelID && (anyChannel || voice.channelID === this._voiceChannelId);
 
         // Decide which nickname to use.
         const nick = this.isSpectating ? this.originalNickname : this.amongUsName;
