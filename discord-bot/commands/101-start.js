@@ -26,7 +26,8 @@ module.exports = new Command({
         const lobby = await Lobby.start(voiceChannel, textChannel, room);
 
         // Generate capture information.
-        const captureLink = `<aucapture://${host}/${lobby.connectCode}${secure ? '' : '?insecure'}>`;
+        const { connectCode } = lobby;
+        const captureLink = `<aucapture://${host}/${connectCode}${secure ? '' : '?insecure'}>`;
         const captureVersion = capture.publicRelease ? `v${capture.version}` : `${capture.version} Prerelease`;
         const versionLink = `${captureVersion} ([Download](${url}/api/capture/download))`;
 
@@ -40,8 +41,10 @@ module.exports = new Command({
                 `You can automate the lobby using [Among Us Capture](https://github.com/denverquane/amonguscapture).`,
                 `If you don't already have the right version, download it securely from the link below.`
             ].join('\n'))
-            .addField('Connect Capture App', captureLink, true)
             .addField('Compatible Version', versionLink, true)
+            .addField('Bot URL', `\`${url}\``, true)
+            .addField('Connect Code', `\`${connectCode}\``, true)
+            .addField('One-Click Connect Link', captureLink)
         );
 
         // Join the channel, if possible.
