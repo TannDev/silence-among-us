@@ -45,7 +45,7 @@ class Command {
         }
 
         // Help users who don't know the command.
-        if (message.content.match(/^!sau\s*command/i)) {
+        if (message.content.match(/^!sau-rollcall/i)) {
             const prefixList = commandPrefixes.map(prefix => `\`${prefix}\``);
             if (prefixList.length > 1) prefixList[prefixList.length - 1] = `or ${prefixList[prefixList.length - 1]}`;
             return message.reply([

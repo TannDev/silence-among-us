@@ -20,7 +20,7 @@ const client = new Client({
     },
     presence: {
         activity: {
-            name: '`!sau command`',
+            name: '`!sau-rollcall`',
             type: 'LISTENING'
         }
     }
