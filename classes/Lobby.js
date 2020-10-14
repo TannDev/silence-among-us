@@ -760,7 +760,7 @@ class Lobby {
 
     async resetToMenu() {
         // Delete the room code.
-        delete this.room;
+        this.room = null;
 
         // Disconnect automation players.
         this.players.forEach(player => {
