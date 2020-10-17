@@ -5,7 +5,6 @@ const Room = require('../../classes/Room');
 
 // Get server information.
 const { url, host, secure } = require('../../lib/server');
-const { capture } = require('../../downloads');
 
 module.exports = new Command({
     aliases: ['start'],
@@ -28,8 +27,10 @@ module.exports = new Command({
         // Generate capture information.
         const { connectCode } = lobby;
         const captureLink = `<aucapture://${host}/${connectCode}${secure ? '' : '?insecure'}>`;
-        const captureVersion = capture.publicRelease ? `v${capture.version}` : `${capture.version} Prerelease`;
-        const versionLink = `${captureVersion} ([Download](${url}/api/capture/download))`;
+        const captureRepo = 'https://github.com/denverquane/amonguscapture'
+        const captureVersion = `2.4.1`; // TODO Externalize this again.
+        const captureDownload = `${captureRepo}/releases/download/${captureVersion}/AmongUsCapture.exe`;
+        const versionLink = `${captureVersion} ([Download](${captureDownload}))`;
 
         // Give the user a connect code.
         const dmChannel = await message.author.createDM();
@@ -39,7 +40,7 @@ module.exports = new Command({
                 `You've created a new lobby using the **${voiceChannel.name}** channel in **${voiceChannel.guild.name}**.`,
                 `Lobby status and updates will be posted in <#${textChannel.id}>.\n`,
                 `You can automate the lobby using [Among Us Capture](https://github.com/denverquane/amonguscapture).`,
-                `If you don't already have the right version, download it securely from the link below.`
+                `If you don't already have the right version, download it from the link below.`
             ].join('\n'))
             .addField('Compatible Version', versionLink, true)
             .addField('Bot URL', `\`${url}\``, true)

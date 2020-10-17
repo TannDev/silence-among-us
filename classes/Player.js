@@ -24,10 +24,7 @@ class Player {
         this._voiceChannelId = lobby.voiceChannel.id;
 
         // Attach the guild member, if provided.
-        if (guildMember) {
-            this._document.discordId = guildMember.id;
-            this._guildMember = guildMember;
-        }
+        if (guildMember) this.linkGuildMember(guildMember)
     }
 
     get status() {
@@ -72,10 +69,12 @@ class Player {
     linkGuildMember(guildMember) {
         // Update the document.
         this._document.discordId = guildMember.id;
-        this._document.originalNickname = guildMember.nickname;
 
         // Attach the new guild member.
         this._guildMember = guildMember;
+
+        // Update the original nickname, unless there's already one from a previous session.
+        if (!this.originalNickname) this._document.originalNickname = guildMember.nickname;
     }
 
     matchesGuildMember(targetGuildMember) {
@@ -191,7 +190,7 @@ class Player {
         const { voice } = member;
 
         // Don't adjust voice settings for other channels.
-        const updateVoice = anyChannel || (voice && voice.channelID === this._voiceChannelId);
+        const updateVoice = voice && voice.channelID && (anyChannel || voice.channelID === this._voiceChannelId);
 
         // Decide which nickname to use.
         const nick = this.isSpectating ? this.originalNickname : this.amongUsName;

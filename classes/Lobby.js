@@ -58,19 +58,29 @@ const ready = clientReady
     .then(async documents => {
         // Resume all loaded lobbies.
         await Promise.all(documents.map(async document => {
-            const { voiceChannelId, textChannelId, players } = document;
-
-            // Get the voice and text channels.
-            const [voiceChannel, textChannel] = await Promise.all([
-                client.channels.fetch(voiceChannelId),
-                client.channels.fetch(textChannelId)
-            ]);
-
-            // Alert users about the restart.
-            textChannel.send("Uh oh! It looks like I may have restarted. Give me a few seconds to catch up.");
-
-            // Recreate the lobby.
             try {
+                const { voiceChannelId, textChannelId, players } = document;
+
+                // Get the voice and text channels.
+                const [voiceChannel, textChannel] = await Promise.all([
+                    client.channels.fetch(voiceChannelId),
+                    client.channels.fetch(textChannelId)
+                ]);
+
+                if (!textChannel) {
+                    throw new Error(`Failed to find text channel ${textChannelId}. Cancelling lobby restoration.`);
+                }
+
+                // Alert users about the restart.
+                textChannel.send("Uh oh! It looks like I may have restarted. Give me a few seconds to catch up.");
+
+                if (!voiceChannel) {
+                    textChannel.send("Oops! Now I can't find your voice channel. You'll need to start a new lobby.");
+                    throw new Error(`Failed to find voice channel ${voiceChannelId}. Cancelling lobby restoration.`);
+                }
+
+
+                // Restore the lobby.
                 const lobby = new Lobby(voiceChannel, textChannel, document);
 
                 // Restore all the players.
@@ -90,15 +100,15 @@ const ready = clientReady
                 // Handle everyone who has left.
                 await Promise.all(restoredPlayers
                     .filter(player => player.discordId && !voiceChannel.members.has(player.discordId))
-                    .map(player => lobby.guildMemberDisconnected(player.guildMember)))
+                    .map(player => lobby.guildMemberDisconnected(player.guildMember)));
 
                 // Post an update.
                 lobby.scheduleInfoPost();
-                lobby.scheduleSave()
+                lobby.scheduleSave();
 
             } catch (error) {
                 console.error('Error resuming lobby:', error);
-                // TODO Consider deleting the document.
+                await database.delete(document);
             }
         }));
     });
@@ -136,7 +146,13 @@ class Lobby {
         if (typeof voiceChannel === 'string') voiceChannel = await client.channels.fetch(voiceChannel);
 
         // Get the lobby from the map.
-        return voiceChannel && lobbiesByVoiceChannel.get(voiceChannel.id);
+        const lobby = voiceChannel && lobbiesByVoiceChannel.get(voiceChannel.id);
+
+        // If there's a lobby, reset the timer to destroy it.
+        if (lobby) lobby.resetInactivityTimeout();
+
+        // Return the lobby.
+        return lobby;
     }
 
     /**
@@ -150,7 +166,13 @@ class Lobby {
         await ready;
 
         // Fetch the lobby by connect code.
-        return connectCode && lobbiesByConnectCode.get(connectCode);
+        const lobby = connectCode && lobbiesByConnectCode.get(connectCode);
+
+        // If there's a lobby, reset the timer to destroy it.
+        if (lobby) lobby.resetInactivityTimeout();
+
+        // Return the lobby.
+        return lobby;
     }
 
     /**
@@ -244,6 +266,9 @@ class Lobby {
         // Store this in the maps.
         lobbiesByVoiceChannel.set(voiceChannel.id, this);
         lobbiesByConnectCode.set(this.connectCode, this);
+
+        // Start the inactivity timeout.
+        this.resetInactivityTimeout();
     }
 
     /**
@@ -752,6 +777,7 @@ class Lobby {
         this.voiceChannel.leave();
 
         // Delete the lobby from the database.
+        this.cancelScheduledSave();
         await database.delete(this._document);
 
         this.emit("Destroyed");
@@ -759,7 +785,7 @@ class Lobby {
 
     async resetToMenu() {
         // Delete the room code.
-        delete this.room;
+        this.room = null;
 
         // Disconnect automation players.
         this.players.forEach(player => {
@@ -774,12 +800,27 @@ class Lobby {
         if (this.phase !== PHASE.INTERMISSION) await this.transition(PHASE.INTERMISSION);
     }
 
-    scheduleSave() {
-        // Reset any existing timeout, to reduce database load.
+    resetInactivityTimeout() {
+        if (this._inctivityTimeout) clearTimeout(this._inctivityTimeout);
+        this._inctivityTimeout = setTimeout(() => {
+            this.emit('Terminating due to inactivity.');
+            this.stop().catch(error => console.error(error));
+            // TODO Use an embed for this. (Ideally inside stop.)
+            this.textChannel.send("Nothing has happened 30 minutes, so I ended the lobby.");
+        }, 1000 * 60 * 30) // Thirty minutes.
+    }
+
+    cancelScheduledSave() {
         if (this._nextSaveTimeout) {
             clearTimeout(this._nextSaveTimeout);
             delete this._nextSaveTimeout;
         }
+    }
+
+    scheduleSave() {
+        // Reset any existing timeout, to reduce database load.
+        this.cancelScheduledSave();
+
         // Create a new timeout, to save after a short delay.
         this._nextSaveTimeout = setTimeout(() => {
             delete this._nextSaveTimeout;
@@ -787,12 +828,14 @@ class Lobby {
         }, 1500);
     }
 
-    async save() {
-        const updates = await database.set(this.toJSON()).catch(error => console.error(error));
-        if (updates) {
-            this._document._id = updates.id;
-            this._document._rev = updates.rev;
-        }
+    save() {
+        database.set(this.toJSON())
+            .then(({ id, rev }) => {
+                this._document._id = id;
+                this._document._rev = rev;
+            })
+            .catch(error => console.error(error));
+
     }
 
     toJSON() {

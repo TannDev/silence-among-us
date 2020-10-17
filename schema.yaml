@@ -88,25 +88,6 @@ paths:
                   description: Name of a guild and the channel
                   example: Tanndev - Among Us
 
-  /capture/download:
-    get:
-      operationId: downloadCaptureApp
-      summary: Download a compatible version of AmongUsCapture
-      tags: [Capture]
-      description: |
-        Download a compatible version of [AmongUsCapture](https://github.com/denverquane/amonguscapture)
-
-        The provided version may or may not be a standard release version, as Silence Among Us is developed in
-        cooperation with AmongUsCapture and may leverage unpublished features from time to time.
-      responses:
-        '200':
-          description: An `AmongUsCapture.exe` executable.
-          content:
-            text/plain:
-              schema:
-                type: string
-                format: binary
-
   /lobby/{voiceChannelId}:
     parameters:
       - $ref: "#/components/parameters/voiceChannelId"
