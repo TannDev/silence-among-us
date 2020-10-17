@@ -2,7 +2,6 @@ const createError = require('http-errors');
 const { Router } = require('express');
 const Lobby = require('../classes/Lobby');
 const { getGuildCount, getGuildList } = require('../discord-bot/discord-bot');
-const { capture } = require('../downloads');
 const { version = 'Unreleased' } = require('../package.json');
 
 // Initialize the server
@@ -60,10 +59,6 @@ router.get('/lobby/:voiceChannelId/:playerId/kill', (req, res, next) => {
     req.lobby.guildMemberKill(req.player.guildMember)
         .then(player => res.json(player))
         .catch(error => next(error));
-});
-
-router.get('/capture/download', (req, res) => {
-    res.download(capture.filepath, capture.filename);
 });
 
 router.use((req, res, next) => {
