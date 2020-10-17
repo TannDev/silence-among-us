@@ -146,7 +146,13 @@ class Lobby {
         if (typeof voiceChannel === 'string') voiceChannel = await client.channels.fetch(voiceChannel);
 
         // Get the lobby from the map.
-        return voiceChannel && lobbiesByVoiceChannel.get(voiceChannel.id);
+        const lobby = voiceChannel && lobbiesByVoiceChannel.get(voiceChannel.id);
+
+        // If there's a lobby, reset the timer to destroy it.
+        if (lobby) lobby.resetInactivityTimeout();
+
+        // Return the lobby.
+        return lobby;
     }
 
     /**
@@ -160,7 +166,13 @@ class Lobby {
         await ready;
 
         // Fetch the lobby by connect code.
-        return connectCode && lobbiesByConnectCode.get(connectCode);
+        const lobby = connectCode && lobbiesByConnectCode.get(connectCode);
+
+        // If there's a lobby, reset the timer to destroy it.
+        if (lobby) lobby.resetInactivityTimeout();
+
+        // Return the lobby.
+        return lobby;
     }
 
     /**
@@ -254,6 +266,9 @@ class Lobby {
         // Store this in the maps.
         lobbiesByVoiceChannel.set(voiceChannel.id, this);
         lobbiesByConnectCode.set(this.connectCode, this);
+
+        // Start the inactivity timeout.
+        this.resetInactivityTimeout();
     }
 
     /**
@@ -783,6 +798,16 @@ class Lobby {
 
         // Return to intermission, unless already there.
         if (this.phase !== PHASE.INTERMISSION) await this.transition(PHASE.INTERMISSION);
+    }
+
+    resetInactivityTimeout() {
+        if (this._inctivityTimeout) clearTimeout(this._inctivityTimeout);
+        this._inctivityTimeout = setTimeout(() => {
+            this.emit('Terminating due to inactivity.');
+            this.stop().catch(error => console.error(error));
+            // TODO Use an embed for this. (Ideally inside stop.)
+            this.textChannel.send("Nothing has happened 30 minutes, so I ended the lobby.");
+        }, 1000 * 60 * 30) // Thirty minutes.
     }
 
     cancelScheduledSave() {
