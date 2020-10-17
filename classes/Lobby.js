@@ -58,31 +58,29 @@ const ready = clientReady
     .then(async documents => {
         // Resume all loaded lobbies.
         await Promise.all(documents.map(async document => {
-            const { voiceChannelId, textChannelId, players } = document;
-
-            // Get the voice and text channels.
-            const [voiceChannel, textChannel] = await Promise.all([
-                client.channels.fetch(voiceChannelId),
-                client.channels.fetch(textChannelId)
-            ]);
-
-            if (!textChannel){
-                console.log(`Failed to find text channel ${textChannelId}. Cancelling lobby restoration.`);
-                await database.delete(document);
-                return;
-            }
-
-            if (!voiceChannel){
-                textChannel.send("Oh no! I restarted, and now I can't find your voice channel. You'll need a new lobby.")
-                await database.delete(document);
-                return;
-            }
-
-            // Alert users about the restart.
-            textChannel.send("Uh oh! It looks like I may have restarted. Give me a few seconds to catch up.");
-
-            // Recreate the lobby.
             try {
+                const { voiceChannelId, textChannelId, players } = document;
+
+                // Get the voice and text channels.
+                const [voiceChannel, textChannel] = await Promise.all([
+                    client.channels.fetch(voiceChannelId),
+                    client.channels.fetch(textChannelId)
+                ]);
+
+                if (!textChannel) {
+                    throw new Error(`Failed to find text channel ${textChannelId}. Cancelling lobby restoration.`);
+                }
+
+                // Alert users about the restart.
+                textChannel.send("Uh oh! It looks like I may have restarted. Give me a few seconds to catch up.");
+
+                if (!voiceChannel) {
+                    textChannel.send("Oops! Now I can't find your voice channel. You'll need to start a new lobby.");
+                    throw new Error(`Failed to find voice channel ${voiceChannelId}. Cancelling lobby restoration.`);
+                }
+
+
+                // Restore the lobby.
                 const lobby = new Lobby(voiceChannel, textChannel, document);
 
                 // Restore all the players.
@@ -102,15 +100,15 @@ const ready = clientReady
                 // Handle everyone who has left.
                 await Promise.all(restoredPlayers
                     .filter(player => player.discordId && !voiceChannel.members.has(player.discordId))
-                    .map(player => lobby.guildMemberDisconnected(player.guildMember)))
+                    .map(player => lobby.guildMemberDisconnected(player.guildMember)));
 
                 // Post an update.
                 lobby.scheduleInfoPost();
-                lobby.scheduleSave()
+                lobby.scheduleSave();
 
             } catch (error) {
                 console.error('Error resuming lobby:', error);
-                // TODO Consider deleting the document.
+                await database.delete(document);
             }
         }));
     });
@@ -805,12 +803,14 @@ class Lobby {
         }, 1500);
     }
 
-    async save() {
-        const updates = await database.set(this.toJSON()).catch(error => console.error(error));
-        if (updates) {
-            this._document._id = updates.id;
-            this._document._rev = updates.rev;
-        }
+    save() {
+        database.set(this.toJSON())
+            .then(({ id, rev }) => {
+                this._document._id = id;
+                this._document._rev = rev;
+            })
+            .catch(error => console.error(error));
+
     }
 
     toJSON() {
