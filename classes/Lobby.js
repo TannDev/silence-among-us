@@ -66,6 +66,18 @@ const ready = clientReady
                 client.channels.fetch(textChannelId)
             ]);
 
+            if (!textChannel){
+                console.log(`Failed to find text channel ${textChannelId}. Cancelling lobby restoration.`);
+                await database.delete(document);
+                return;
+            }
+
+            if (!voiceChannel){
+                textChannel.send("Oh no! I restarted, and now I can't find your voice channel. You'll need a new lobby.")
+                await database.delete(document);
+                return;
+            }
+
             // Alert users about the restart.
             textChannel.send("Uh oh! It looks like I may have restarted. Give me a few seconds to catch up.");
 
