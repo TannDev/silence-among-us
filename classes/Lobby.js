@@ -142,11 +142,12 @@ class Lobby {
         // Wait for maps to populate, if near startup.
         await ready;
 
-        // Fetch the voice channel, if needed.
-        if (typeof voiceChannel === 'string') voiceChannel = await client.channels.fetch(voiceChannel);
+        // Get the voice channel id.
+        const voiceChannelId = typeof voiceChannel === 'string' ? voiceChannel : voiceChannel.id;
+        if (!voiceChannelId) throw new Error("Invalid voice channel.");
 
         // Get the lobby from the map.
-        const lobby = voiceChannel && lobbiesByVoiceChannel.get(voiceChannel.id);
+        const lobby = voiceChannel && lobbiesByVoiceChannel.get(voiceChannelId);
 
         // If there's a lobby, reset the timer to destroy it.
         if (lobby) lobby.resetInactivityTimeout();
