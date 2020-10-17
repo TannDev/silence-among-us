@@ -50,7 +50,6 @@ const REGIONS = [
 
 io.on('connection', client => {
     client.on('connectCode', connectCode => {{
-        console.log('SOCKET connectCode:', connectCode);
         client.connectCode = connectCode;
         Lobby.findByConnectCode(connectCode)
             .then(async lobby => {
@@ -62,8 +61,6 @@ io.on('connection', client => {
     }});
 
     client.on('lobby', data => {
-        console.log('SOCKET lobby:', data);
-
         // Get the lobby
         const { connectCode } = client;
         const {LobbyCode: code, Region} = JSON.parse(data);
@@ -85,7 +82,6 @@ io.on('connection', client => {
     })
 
     client.on('state', index => {
-        console.log('SOCKET state:', index);
         const state = STATES[index]
         const targetPhase = STATE_MAP[state];
 
@@ -107,7 +103,6 @@ io.on('connection', client => {
     });
 
     client.on('player', data => {
-        console.log('SOCKET player:', data);
         // Get the lobby
         const { connectCode } = client;
         const {Action, Name, IsDead, Disconnected, Color} = JSON.parse(data);
@@ -127,7 +122,7 @@ io.on('connection', client => {
                     dead: Boolean(IsDead),
                     disconnected: Boolean(Disconnected)
                 }
-                console.log(`SocketIO: Player update for ${connectCode}:`, update);
+                console.log(`SocketIO: Player update for ${connectCode}:`, JSON.stringify(update));
                 
                 // Process the action
                 switch(update.action){
