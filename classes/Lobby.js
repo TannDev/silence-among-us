@@ -139,6 +139,9 @@ class Lobby {
      * @returns {Promise<Lobby>} - Lobby matching the channel, or null
      */
     static async findByVoiceChannel(voiceChannel) {
+        // Return immediately if no channel was provided.
+        if (!voiceChannel) return null;
+
         // Wait for maps to populate, if near startup.
         await ready;
 
@@ -802,8 +805,8 @@ class Lobby {
     }
 
     resetInactivityTimeout() {
-        if (this._inctivityTimeout) clearTimeout(this._inctivityTimeout);
-        this._inctivityTimeout = setTimeout(() => {
+        if (this._inactivityTimeout) clearTimeout(this._inactivityTimeout);
+        this._inactivityTimeout = setTimeout(() => {
             this.emit('Terminating due to inactivity.');
             this.stop().catch(error => console.error(error));
             // TODO Use an embed for this. (Ideally inside stop.)
