@@ -25,7 +25,7 @@
   },
   "homepage": "https://github.com/tanndev/silence-among-us#readme",
   "engines": {
-    "node": ">=12.0.0"
+    "node": ">=14.0.0"
   },
   "dependencies": {
     "@discordjs/opus": "^0.3.2",
