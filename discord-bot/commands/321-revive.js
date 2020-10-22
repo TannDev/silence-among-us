@@ -4,6 +4,7 @@ module.exports = new Command({
     aliases: ['revive'],
     options: '[me] [@mentions...]',
     description: 'Mark players as being alive.',
+    category: 'manual',
     handler: async function() {
         // Load properties from the command context.
         const { message, arguments } = this;

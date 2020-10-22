@@ -4,7 +4,7 @@ const Room = require('../../classes/Room');
 module.exports = new Command({
     aliases: ['room'],
     options: '< unlist | <code> [na|eu|asia] >',
-    description: 'Update or remove the room code',
+    description: 'Update or remove the room code.',
     category: 'manual',
     handler: async function() {
         // Load properties from the command context.

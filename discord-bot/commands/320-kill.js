@@ -4,6 +4,7 @@ module.exports = new Command({
     aliases: ['kill', 'k', 'dead', 'd'],
     options: '[me] [@mentions...]',
     description: 'Mark players as being dead.',
+    category: 'manual',
     handler: async function() {
         // Load properties from the command context.
         const { message, arguments } = this;
