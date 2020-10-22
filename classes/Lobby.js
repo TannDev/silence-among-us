@@ -150,10 +150,10 @@ class Lobby {
         if (!voiceChannelId) throw new Error("Invalid voice channel.");
 
         // Get the lobby from the map.
-        const lobby = voiceChannel && lobbiesByVoiceChannel.get(voiceChannelId);
+        const lobby = lobbiesByVoiceChannel.get(voiceChannelId);
 
         // If there's a lobby, reset the timer to destroy it.
-        if (lobby) lobby.resetInactivityTimeout();
+        lobby?.resetInactivityTimeout();
 
         // Return the lobby.
         return lobby;
@@ -173,7 +173,7 @@ class Lobby {
         const lobby = connectCode && lobbiesByConnectCode.get(connectCode);
 
         // If there's a lobby, reset the timer to destroy it.
-        if (lobby) lobby.resetInactivityTimeout();
+        lobby?.resetInactivityTimeout();
 
         // Return the lobby.
         return lobby;
@@ -712,7 +712,7 @@ class Lobby {
 
             const hasNameMismatch = player.discordName && player.discordName !== player.amongUsName;
             const mismatchDisplay = hasNameMismatch ? ` (${player.amongUsName})` : '';
-            const color = player.amongUsColor || 'Untracked';
+            const color = player.amongUsColor ?? 'Untracked';
 
             const emoji = player.isWaiting ? ':stopwatch:' : (player.isKnownDead ? ':skull:' : ':heartpulse:');
 
@@ -763,7 +763,7 @@ class Lobby {
         // If there was an old message, delete it.
         const messageToDelete = this._lastInfoPosted;
         delete this._lastInfoPosted;
-        if (messageToDelete && messageToDelete.deletable) await messageToDelete.delete();
+        if (messageToDelete?.deletable) await messageToDelete.delete();
     }
 
     async stop() {

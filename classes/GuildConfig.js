@@ -25,7 +25,7 @@ const SETTINGS = {
 };
 
 function getSetting(key){
-    const setting = key && SETTINGS[key.toLowerCase()]
+    const setting = SETTINGS[key?.toLowerCase()]
     if (!setting) throw new Error("There's no such setting.");
     return setting;
 }
@@ -38,7 +38,7 @@ class GuildConfig {
 
         // Otherwise, create a new one.
         const document = await database.get(guildId).catch(error => console.error(error));
-        return new GuildConfig(document || { _id: guildId });
+        return new GuildConfig(document ?? { _id: guildId });
     }
 
     constructor({ ...document }) {
@@ -60,7 +60,7 @@ class GuildConfig {
 
     get(key) {
         const { defaultValue, getter } = getSetting(key);
-        const value = this._document.config[key] || defaultValue;
+        const value = this._document.config[key] ?? defaultValue;
         return getter ? getter(value) : value;
     }
 
@@ -85,7 +85,7 @@ class GuildConfig {
     }
 
     get commandPrefixes() {
-        return this._document.commandPrefixes || ['!sau', '!s'];
+        return this._document.commandPrefixes ?? ['!sau', '!s'];
     }
 
     async updateCommandPrefixes(...params) {

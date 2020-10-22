@@ -4,7 +4,7 @@ const database = new Database('users');
 class UserConfig {
     static async load(userId) {
         const document = await database.get(userId).catch(error => console.error(error));
-        return new UserConfig(document || { _id: userId });
+        return new UserConfig(document ?? { _id: userId });
     }
 
     constructor({ ...document }) {

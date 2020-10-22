@@ -5,7 +5,7 @@ const Nano = require('nano');
 const databaseUsername = process.env.DATABASE_USERNAME;
 const databasePassword = process.env.DATABASE_PASSWORD;
 const defaultDatabaseUrl = `http://${databaseUsername}:${databasePassword}@localhost:5984`;
-const nano = Nano(process.env.DATABASE_URL || defaultDatabaseUrl);
+const nano = Nano(process.env.DATABASE_URL ?? defaultDatabaseUrl);
 
 class Database {
     constructor(databaseName){
