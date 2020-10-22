@@ -769,7 +769,7 @@ class Lobby {
     async stop() {
         // Unlink the maps.
         lobbiesByVoiceChannel.delete(this.voiceChannel.id);
-        lobbiesByConnectCode.delete(this._connectCode);
+        lobbiesByConnectCode.delete(this.connectCode);
 
         // Reset all players.
         await Promise.all(this.players.map(player => player.leaveGame()));
