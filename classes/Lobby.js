@@ -788,20 +788,17 @@ class Lobby {
     }
 
     async resetToMenu() {
-        // Delete the room code.
-        this.room = null;
-
         // Disconnect automation players.
         this.players.forEach(player => {
             // If there's no associated guild member, just remove the player.
             if (!player.guildMember) return this._players.delete(player);
-
-            // Otherwise, unset the color.
-            if (player.amongUsColor) player.amongUsColor = null;
         });
 
         // Return to intermission, unless already there.
         if (this.phase !== PHASE.INTERMISSION) await this.transition(PHASE.INTERMISSION);
+
+        // Delete the room code.
+        this.room = null;
     }
 
     resetInactivityTimeout() {
