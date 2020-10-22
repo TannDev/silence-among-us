@@ -810,8 +810,8 @@ class Lobby {
             this.emit('Terminating due to inactivity.');
             this.stop().catch(error => console.error(error));
             // TODO Use an embed for this. (Ideally inside stop.)
-            this.textChannel.send("Nothing has happened 30 minutes, so I ended the lobby.");
-        }, 1000 * 60 * 30) // Thirty minutes.
+            this.textChannel.send("Nothing has happened in an hour, so I ended the lobby.");
+        }, 1000 * 60 * 60)
     }
 
     cancelScheduledSave() {
