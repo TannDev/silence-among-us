@@ -16,9 +16,6 @@ servers:
 
 tags:
   - name: Server Information
-  - name: Capture
-  - name: Lobby
-  - name: Player
 
 paths:
   /server:
@@ -88,72 +85,7 @@ paths:
                   description: Name of a guild and the channel
                   example: Tanndev - Among Us
 
-  /lobby/{voiceChannelId}:
-    parameters:
-      - $ref: "#/components/parameters/voiceChannelId"
-    get:
-      deprecated: true
-      operationId: getLobbyInformation
-      summary: Get information about a lobby.
-      tags: [Lobby]
-      description: |
-        Returns information about the lobby currently being tracked.
-      responses:
-        "200":
-          description: The lobby information
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Lobby"
-        "404":
-          $ref: "#/components/responses/404NotFoundError"
-        "4XX":
-          $ref: "#/components/responses/4xxClientError"
-        "5XX":
-          $ref: "#/components/responses/5xxInternalError"
-
-  /lobby/{voiceChannelId}/{playerId}/kill:
-    parameters:
-      - $ref: "#/components/parameters/voiceChannelId"
-      - $ref: "#/components/parameters/playerId"
-    get:
-      deprecated: true
-      operationId: killLobbyPlayer
-      summary: Kill a player in the lobby
-      tags: [Lobby, Player]
-      description: |
-        Kills the specified player in the lobby.
-      responses:
-        "200":
-          description: The updated player information
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Player"
-        "404":
-          $ref: "#/components/responses/404NotFoundError"
-        "4XX":
-          $ref: "#/components/responses/4xxClientError"
-        "5XX":
-          $ref: "#/components/responses/5xxInternalError"
-
 components:
-  parameters:
-    voiceChannelId:
-      description: Unique ID of the Discord channel and related lobby.
-      in: path
-      name: voiceChannelId
-      required: true
-      schema:
-        $ref: "#/components/schemas/Lobby/properties/voiceChannelId"
-    playerId:
-      description: Unique ID of the player.
-      in: path
-      name: playerId
-      required: true
-      schema:
-        $ref: "#/components/schemas/Player/properties/discordId"
-
   responses:
     404NotFoundError:
       description: The requested resource wasn't found.
