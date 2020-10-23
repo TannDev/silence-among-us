@@ -14,7 +14,7 @@ plugins:
       publishCmd: "VERSION=${nextRelease.version} CHANNEL=${nextRelease.channel} ./.release-scripts/publish.sh"
   - - '@semantic-release/github'
     - successComment: "This ${issue.pull_request ? 'pull request is included' : 'issue is resolved'} in version [${nextRelease.version}](<github_release_url>)"
-      releasedLabels: ["released<%= nextRelease.channel ? `in ${nextRelease.channel}` : '' %>"]
+      releasedLabels: [ "released<%= nextRelease.channel ? ` in ${nextRelease.channel}` : '' %>" ]
       assignees:
       - jftanner
       assets:

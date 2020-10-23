@@ -46,7 +46,7 @@ class Player {
 
     get discordName() {
         // This isn't preserved to the database, so it can always be loaded dynamically.
-        return this._guildMember && this._guildMember.displayName;
+        return this._guildMember?.displayName;
     }
     get originalNickname() {
         return this._document.originalNickname;
@@ -190,7 +190,7 @@ class Player {
         const { voice } = member;
 
         // Don't adjust voice settings for other channels.
-        const updateVoice = voice && voice.channelID && (anyChannel || voice.channelID === this._voiceChannelId);
+        const updateVoice = voice?.channelID && (anyChannel || voice.channelID === this._voiceChannelId);
 
         // Decide which nickname to use.
         const nick = this.isSpectating ? this.originalNickname : this.amongUsName;

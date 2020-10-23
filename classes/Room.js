@@ -7,7 +7,7 @@ class Room {
         else code = code.toUpperCase();
 
         // Map possible region parameters.
-        switch(region && region.toLowerCase && region.toLowerCase()){
+        switch(region?.toLowerCase?.()){
             case 'na':
             case 'us':
             case 'north':

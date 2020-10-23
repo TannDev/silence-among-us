@@ -12,7 +12,7 @@ module.exports = new Command({
         const guild = await this.requireGuild();
 
         const [accessor, key, ...remainder] = arguments.trim().split(/\s+/g);
-        const value = remainder && remainder.join(' ');
+        const value = remainder?.join(' ');
 
         // Get the guild config.
         const guildConfig = await GuildConfig.load(guild.id);
@@ -22,7 +22,7 @@ module.exports = new Command({
         const cmd = `${prefix} ${alias} `;
 
         // Handle the command.
-        switch (accessor && accessor.toLowerCase()){
+        switch (accessor?.toLowerCase()){
             // If the accessor is 'get'...
             case 'get':
             case 'g':
