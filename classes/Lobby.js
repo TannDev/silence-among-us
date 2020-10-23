@@ -406,9 +406,7 @@ class Lobby {
         this.scheduleSave();
     }
 
-    async amongUsKill({ name, dead }) {
-        if (!dead) throw new Error(`amongUsKill for "${name}", but dead is falsy.`);
-
+    async amongUsKill({ name }) {
         let player = this.getAmongUsPlayer(name);
         if (!player) throw new Error(`amongUsKill order for "${name}" but no such player.`);
 
@@ -421,11 +419,9 @@ class Lobby {
         this.scheduleSave();
     }
 
-    async amongUsExile({ name, dead }) {
-        if (!dead) throw new Error(`amongUsExile for "${name}", but dead is falsy.`);
-
+    async amongUsExile({ name }) {
         let player = this.getAmongUsPlayer(name);
-        if (!player) throw new Error(`amongUsKill order for "${name}" but no such player.`);
+        if (!player) throw new Error(`amongUsExile order for "${name}" but no such player.`);
 
         // Kill the player.
         player.instantKill();
