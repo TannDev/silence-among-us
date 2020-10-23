@@ -2,17 +2,14 @@ const crypto = require('crypto');
 const Database = require('./Database');
 const database = new Database('users');
 
-function calculateHash(userId) {
-    return crypto
-        .createHash('sha256')
-        .update(userId)
-        .digest('hex');
-}
-
 class UserConfig {
     static async load(userId) {
         if (!userId) throw new Error("Can't look up a user config without a user id.");
-        const documentId = `user:${calculateHash(userId)}`;
+        const hash = crypto
+            .createHash('sha256')
+            .update(userId)
+            .digest('hex');
+        const documentId = `user:${hash}`;
 
         // TODO Remove this upgrade logic.
         const [document, legacyDocument] = await Promise.all([
