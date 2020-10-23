@@ -14,6 +14,9 @@ module.exports = new Command({
         await userConfig.delete();
 
         // Tell them it's done.
-        message.reply("Okay. I've forgotten everything I know about you.");
+        message.reply([
+            "Okay. I've forgotten everything I know about you.",
+            "**Note:** If you're in any active lobbies, associated data won't be deleted until the lobby ends."
+        ].join('\n'));
     }
 });
