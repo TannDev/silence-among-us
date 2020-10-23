@@ -45,9 +45,26 @@ class UserConfig {
 
     // TODO Apply settings.
 
+    get isSaved() {
+        return Boolean(this._document._rev);
+    }
+
     async save() {
         const updates = await database.set(this._document).catch(error => console.error(error));
         if (updates) this._document._rev = updates.rev;
+    }
+
+    async delete() {
+        // Delete the database record.
+        if (this.isSaved) await database.delete(this._document);
+
+        // Erase all the settings in the document.
+        this._document = { _id: this._document._id };
+    }
+
+    toJSON() {
+        const { _id, _rev, ...json } = this._document;
+        return json;
     }
 }
 

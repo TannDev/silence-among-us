@@ -132,6 +132,13 @@ class Lobby {
             .map(lobby => `${lobby.voiceChannel.guild.name} - ${lobby.voiceChannel.name}`);
     }
 
+    static async gatherUserData(discordId) {
+        // TODO Make this more efficient, with a view or query.
+        const documents = await database.getAll();
+        const playerEntries = documents.map(doc => doc.players?.find(player => player?.discordId === discordId));
+        return playerEntries.filter(player => player);
+    }
+
     /**
      * Find a lobby associated with a channel id.
      *
@@ -808,7 +815,7 @@ class Lobby {
             this.stop().catch(error => console.error(error));
             // TODO Use an embed for this. (Ideally inside stop.)
             this.textChannel.send("Nothing has happened in an hour, so I ended the lobby.");
-        }, 1000 * 60 * 60)
+        }, 1000 * 60 * 60);
     }
 
     cancelScheduledSave() {
