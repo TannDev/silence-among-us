@@ -200,7 +200,7 @@ class Player {
 
         // Build the patch object.
         const patch = {};
-        if (member.manageable && member.nickname !== nick) patch.nick = nick;
+        if (member.manageable && member.displayName !== nick) patch.nick = nick;
         if (updateVoice && voice.serverMute !== mute) patch.mute = mute;
         if (updateVoice && voice.serverDeaf !== deaf) patch.deaf = deaf;
 
