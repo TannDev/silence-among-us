@@ -787,6 +787,9 @@ class Lobby {
         this.cancelScheduledSave();
         await database.delete(this._document);
 
+        // Clear the timeout.
+        if (this._inactivityTimeout) clearTimeout(this._inactivityTimeout);
+
         this.emit("Destroyed");
     }
 
