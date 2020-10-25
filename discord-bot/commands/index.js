@@ -55,7 +55,7 @@ class Command {
         }
 
         // Look for instruction.
-        const prefixes = commandPrefixes.map(prefix => prefix.replace(/[.?*+()\[\]]/g, '\\$&')).join('|');
+        const prefixes = commandPrefixes.map(prefix => prefix.replace(/[.?*+()\[\]^$]/g, '\\$&')).join('|');
         const pattern = new RegExp(`^(?<prefix>${prefixes})\\s*(?<alias>\\S+)(?:\\s+(?<args>.+))?$`, 'i');
         const instruction = message.content.match(pattern);
 
