@@ -138,7 +138,7 @@ Unfortunately, that includes modifying it to try and steal your information.
 Take caution when interacting with an instance of SAU that doesn't come from us.
  
 In order to work properly, the bot needs to store some information about you:
-- Your Discord user ID (hashed)
+- Your Discord user ID
 - The last in-game name you provided via `!sau join <name>`
 
 As we add more features, we may need to store more information. However, we have a few policies:
