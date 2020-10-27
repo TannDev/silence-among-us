@@ -59,7 +59,7 @@ const ready = clientReady
         // Resume all loaded lobbies.
         await Promise.all(documents.map(async document => {
             try {
-                const { voiceChannelId, textChannelId, players } = document;
+                const { voiceChannelId, textChannelId, players, infoPostId } = document;
 
                 // Get the voice and text channels.
                 const [voiceChannel, textChannel] = await Promise.all([
@@ -74,11 +74,15 @@ const ready = clientReady
                 // Alert users about the restart.
                 textChannel.send("Uh oh! It looks like I may have restarted. Give me a few seconds to catch up.");
 
+                // Delete the old info post, if any.
+                await textChannel.messages.fetch(infoPostId)
+                    .then(infoPost => infoPost.delete())
+                    .catch(() => null);
+
                 if (!voiceChannel) {
                     textChannel.send("Oops! Now I can't find your voice channel. You'll need to start a new lobby.");
                     throw new Error(`Failed to find voice channel ${voiceChannelId}. Cancelling lobby restoration.`);
                 }
-
 
                 // Restore the lobby.
                 const lobby = new Lobby(voiceChannel, textChannel, document);
@@ -103,7 +107,7 @@ const ready = clientReady
                     .map(player => lobby.guildMemberDisconnected(player.guildMember)));
 
                 // Post an update.
-                lobby.scheduleInfoPost();
+                lobby.scheduleInfoPost({ force: true });
                 lobby.scheduleSave();
 
             } catch (error) {
@@ -762,6 +766,8 @@ class Lobby {
                 const messageSent = await this.textChannel.send(embed);
                 await this.deleteLastLobbyInfo().catch(error => console.error(error));
                 this._lastInfoPosted = messageSent;
+                this._document.infoPostId = messageSent.id;
+                this.scheduleSave();
             }, 500);
         }
 
