@@ -26,6 +26,10 @@ If you want to just jump in and get started, you can use our early-access hosted
 
 [Invite our bot](https://discord.com/api/oauth2/authorize?client_id=757007603149832203&permissions=150039808&scope=bot) to your discord server and get started right away! That authorization link contains all permissions that the bot needs (and some we expect it might need soon), though you may need to add the bot to any private channels you want to use for your games.
 
+> **Note:** We are currently in the process of getting verified. Unfortunately, we reached 100 guilds before that was complete.
+>
+> **If you encounter an error saying "This bot can't join more servers as it has not been verified"**, then you'll need to wait until the verification process is complete, or invite the beta version instead. You can also follow [the open issue](https://github.com/tanndev/silence-among-us/issues/29) for updates.)
+
 Once you've added the bot to your server, just type `!sau help` in any text channel with the bot to get started.
 
 Being in early-access does come with some rough edges, so there're some things we'd like you to keep in mind:
