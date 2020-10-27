@@ -59,7 +59,7 @@ The bot supports [AmongUsCapture](https://github.com/denverquane/amonguscapture)
 
 When you start a new lobby, the bot will DM you a link to connect the capture app automatically.
 
-It'll also provide a link for downloading a compatible version directly from the bot's server, if you need it. You can also find the exe in the [downloads](/downloads) folder, if you prefer. (You can get it directly from [the official releases](https://github.com/denverquane/amonguscapture/releases) as well, but we can't guarantee compatibility with other versions.) 
+It'll also provide a link for downloading a compatible version from Github, if you need it. Or, you can get it directly from [the official releases](https://github.com/denverquane/amonguscapture/releases) instead. (Though we can't guarantee compatibility with other versions.) 
 
 ### Commands
 When added to your app, the discord bot will automatically listen for commands in every text channel it has access to.

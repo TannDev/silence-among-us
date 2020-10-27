@@ -17,5 +17,3 @@ plugins:
       releasedLabels: [ "released<%= nextRelease.channel ? ` in ${nextRelease.channel}` : '' %>" ]
       assignees:
       - jftanner
-      assets:
-        - downloads/AmongUsCapture*.exe
