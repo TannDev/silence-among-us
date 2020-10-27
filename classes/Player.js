@@ -159,17 +159,19 @@ class Player {
     }
 
     async setForIntermission() {
-        // Everyone is alive again at intermission.
-        this.status = STATUS.LIVING;
+        // Everyone except for spectators is alive again at intermission.
+        if (!this.isSpectating) this.status = STATUS.LIVING;
 
-        // Spectators aren't modified
-        if (this.isSpectating) return;
+        // Everyone is unmuted.
         await this.editGuildMember(false, false, "Intermission");
     }
 
     async setForWorking() {
-        // Spectators aren't modified.
-        if (this.isSpectating) return;
+        // Spectators are muted.
+        if (this.isSpectating) {
+            await this.editGuildMember(true, true, "Spectator");
+            return;
+        }
 
         // Set audio permissions based on working status.
         this.isWorker
@@ -178,8 +180,11 @@ class Player {
     }
 
     async setForMeeting() {
-        // Spectators aren't modified
-        if (this.isSpectating) return;
+        // Spectators are muted.
+        if (this.isSpectating) {
+            await this.editGuildMember(true, true, "Spectator");
+            return;
+        }
 
         // At the start of meetings, dying players become dead.
         if (this.status === STATUS.DYING) this.status = STATUS.DEAD;
