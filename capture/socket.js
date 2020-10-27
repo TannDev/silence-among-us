@@ -69,7 +69,7 @@ io.on('connection', client => {
         Lobby.findByConnectCode(connectCode)
             .then(async lobby => {
                 if (!lobby) return;
-                console.log(`SocketIO: Lobby update for ${connectCode}:`, code);
+                console.log(`SocketIO: Lobby update for ${connectCode}: ${code}`);
 
                 // Update the room code.
                 if (code) lobby.room = new Room({code, region});
@@ -90,7 +90,7 @@ io.on('connection', client => {
         Lobby.findByConnectCode(connectCode)
             .then(async lobby => {
                 if (!lobby) return;
-                console.log(`SocketIO: State update for ${connectCode}:`, state);
+                console.log(`SocketIO: State update for ${connectCode}: ${state}`);
 
                 // Handle the menu state differently, by deleting the room.
                 if (state === 'MENU') return lobby.resetToMenu();
@@ -122,7 +122,7 @@ io.on('connection', client => {
                     dead: Boolean(IsDead),
                     disconnected: Boolean(Disconnected)
                 }
-                console.log(`SocketIO: Player update for ${connectCode}:`, JSON.stringify(update));
+                console.log(`SocketIO: Player update for ${connectCode}: ${JSON.stringify(update)}`);
                 
                 // Process the action
                 switch(update.action){
