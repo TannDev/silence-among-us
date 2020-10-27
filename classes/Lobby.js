@@ -642,16 +642,22 @@ class Lobby {
         this._document.phase = targetPhase;
 
         // Sort players into batches, to avoid cross-talk.
-        const everyone = this.players;
-        const workers = everyone.filter(player => player.isWorker);
-        const nonWorkers = everyone.filter(player => !player.isWorker);
+        const participants = [];
+        const workers = [];
+        const nonWorkers = [];
+        const spectators = [];
+        this.players.forEach(player => {
+            player.isSpectating ? spectators.push(player) : participants.push(player);
+            player.isWorker ? workers.push(player) : nonWorkers.push(player);
+        });
 
         // Handle the transition.
         this.emit(`Transitioning to ${targetPhase}`);
         switch (targetPhase) {
             // And perform the same transition as intermission.
             case PHASE.INTERMISSION:
-                await Promise.all(everyone.map(player => player.setForIntermission()));
+                await Promise.all(participants.map(player => player.setForIntermission()));
+                await Promise.all(spectators.map(player => player.setForIntermission()));
                 break;
 
             case PHASE.WORKING:
