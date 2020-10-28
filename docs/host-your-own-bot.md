@@ -28,13 +28,15 @@ Before you can run your own bot, you'll need to create a Discord application.
 1. Take the bot token you generated earlier and configure your bot with the instructions below.
 
 ## Environment Variables
-The bot uses a couple environment variables:
+The bot uses several environment variables:
 - `DISCORD_TOKEN`: The bot token for your Discord application. (Required)
 - `DATABASE_USERNAME`: The username for the bundled (or remote) CouchDB database. (Required)
 - `DATABASE_PASSWORD`: The password for the bundled (or remote) CouchDB database. (Required)
 - `PORT`: Which port the API app should listen on. (Default: '8080')
 - `HOST`: The _external_ host where the server will listen. (Default: 'localhost:${PORT}')
 - `SECURE`: Whether the bot is available via HTTPS. (Default: 'false')
+- `CUSTOM_PRESENCE_NAME`: A custom presence message to display. (Default: '`!sau-rollcall`')
+- `CUSTOM_PRESENCE_TYPE`: (Optional) The [type of presence](https://discord.js.org/#/docs/main/stable/typedef/ActivityType) to display. (Default: 'LISTENING')
 
 _Note:_ The server doesn't include SSL natively, but can be placed behind an appropriate proxy such as nginx.
 In this case, set `PORT` to the _actual_ port used by the server, but set `HOST` and `SECURE` to the values that your users will use.

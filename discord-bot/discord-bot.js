@@ -20,8 +20,8 @@ const client = new Client({
     },
     presence: {
         activity: {
-            name: '`!sau-rollcall`',
-            type: 'LISTENING'
+            name: process.env.CUSTOM_PRESENCE_NAME ?? '`!sau-rollcall`',
+            type: process.env.CUSTOM_PRESENCE_TYPE ?? 'LISTENING'
         }
     }
 });
