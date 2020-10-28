@@ -2,9 +2,10 @@ const chance = require('chance').Chance();
 const deepEqual = require('deep-equal');
 const { Permissions, MessageEmbed } = require('discord.js');
 const { client, clientReady } = require('../discord-bot/discord-bot');
+const Database = require('./Database');
+const GuildConfig = require('./GuildConfig');
 const Player = require('./Player');
 const Room = require('./Room');
-const Database = require('./Database');
 
 const requiredTextPermissionsFlags = [
     'VIEW_CHANNEL',
@@ -743,8 +744,12 @@ class Lobby {
             .setFooter(`Capture Status: ${this.automation}`);
 
         if (spectators) {
+            const guildConfig = await GuildConfig.load(this.voiceChannel.guild.id);
+            const prefix = guildConfig.defaultPrefix;
             embed.addField('Spectators', spectators);
-            embed.addField('Join the Game!', 'Use `!sau join <In-Game Name>` to join!');
+            embed.addField('Join the Game!', [
+                `Use \`${prefix} join [In-Game Name]\` to join! (_Without the brackets._)`
+            ].join('\n'));
         }
 
         // If there's a text channel bound, send the embed to it.

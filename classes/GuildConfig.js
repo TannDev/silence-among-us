@@ -77,26 +77,19 @@ class GuildConfig {
 
     reset(key) {
         const { defaultValue, getter } = getSetting(key);
-        if (this._document.config.hasOwnProperty(key)){
-            delete this._document.config[key]
+        if (this._document.config.hasOwnProperty(key)) {
+            delete this._document.config[key];
             this.scheduleSave();
         }
         return getter ? getter(defaultValue) : defaultValue;
     }
 
-    get commandPrefixes() {
-        return this._document.commandPrefixes ?? ['!sau', '!s'];
-    }
-
-    async updateCommandPrefixes(...params) {
-        const prefixes = params.map(param => param.trim());
-
-        // Skip the rest, if it's the same as what we already have.
-        if (deepEquals(prefixes, this.commandPrefixes)) return;
-
-        // Store the prefix and save.
-        this._document.commandPrefixes = prefixes;
-        await this.save();
+    /**
+     * A helper method for getting the default command prefix.
+     * @returns {string}
+     */
+    get defaultPrefix() {
+        return this.get('prefix').split(/\|/g)[0];
     }
 
     scheduleSave() {
