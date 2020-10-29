@@ -13,9 +13,9 @@ plugins:
       prepareCmd: "VERSION=${nextRelease.version} ./.release-scripts/prepare.sh"
       publishCmd: "VERSION=${nextRelease.version} CHANNEL=${nextRelease.channel} ./.release-scripts/publish.sh"
   - - '@semantic-release/github'
-    - successComment: "This ${issue.pull_request ? 'pull request is included' : 'issue is resolved'} in version [${nextRelease.version}](<github_release_url>)"
+    - successComment: "This ${issue.pull_request ? 'pull request is included' : 'issue is resolved'} in version [${nextRelease.version}](${releases[0].url})"
       releasedLabels: [ "released<%= nextRelease.channel ? ` in ${nextRelease.channel}` : '' %>" ]
       assignees:
-      - jftanner
+        - jftanner
       assets:
         - downloads/AmongUsCapture*.exe
