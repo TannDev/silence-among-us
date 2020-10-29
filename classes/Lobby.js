@@ -418,25 +418,16 @@ class Lobby {
         let player = this.getAmongUsPlayer(name);
         if (!player) throw new Error(`AmongUs name "${name}" left, but isn't a player.`);
 
-        // If the player is on Discord, mark them as as killed since they're out of the round.
+        // If the player is on Discord, disconnect them.
         if (player.guildMember) {
-            // Remove the color.
             player.amongUsColor = null;
-            // TODO Find a better way to track if the player is auto-tracked.
-
-            // Outside of intermission, kill them.
-            if (this.phase !== PHASE.INTERMISSION) {
-                player.instantKill();
-                await this.setPlayerForCurrentPhase(player);
-                // TODO Make them a spectator?
-            }
+            await player.leaveGame();
         }
 
         // Otherwise, just remove them from the game entirely.
         else this._players.delete(player);
-        // TODO Keep dead players around until the end of the match.
 
-        // TODO Find a better way to identify disconnected players.
+        // TODO Keep dead players around until the end of the match.
 
         // Schedule updates.
         this.scheduleInfoPost();
