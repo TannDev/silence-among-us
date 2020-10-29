@@ -714,6 +714,11 @@ class Lobby {
      * @returns {module:"discord.js".MessageEmbed}
      */
     async scheduleInfoPost(options = {}) {
+        // Get the guild command prefix for command hints.
+        const guildConfig = await GuildConfig.load(this.voiceChannel.guild.id);
+        const prefix = guildConfig.defaultPrefix;
+
+        // Get room info.
         const roomInfo = this.room ? `**${this.room.code}** (${this.room.region})` : 'Not Listed';
 
         // Get and categorize players.
@@ -744,11 +749,12 @@ class Lobby {
             .setFooter(`Capture Status: ${this.automation}`);
 
         if (spectators) {
-            const guildConfig = await GuildConfig.load(this.voiceChannel.guild.id);
-            const prefix = guildConfig.defaultPrefix;
             embed.addField('Spectators', spectators);
             embed.addField('Join the Game!', [
-                `Use \`${prefix} join [In-Game Name]\` to join! (_Without the brackets._)`
+                `Use \`${prefix} join [In-Game Name]\` to join! (_Without the brackets._)`,
+                '',
+                'If you join a lobby, **the bot will store some data about you**.',
+                `You can use \`${prefix} privacy\` to review our privacy policy first.`
             ].join('\n'));
         }
 

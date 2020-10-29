@@ -4,8 +4,7 @@ const UserConfig = require('../../classes/UserConfig');
 
 module.exports = new Command({
     aliases: ['show-me'],
-    description: 'Get a copy of all information the bot has about you',
-    category: 'more',
+    description: 'Get a copy of all information the bot has about you.',
     handler: async function () {
         // Load properties from the command context.
         const { message } = this;

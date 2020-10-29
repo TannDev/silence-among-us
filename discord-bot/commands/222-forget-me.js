@@ -3,8 +3,7 @@ const UserConfig = require('../../classes/UserConfig');
 
 module.exports = new Command({
     aliases: ['forget-me'],
-    description: 'Erase all information the bot knows about you',
-    category: 'more',
+    description: 'Erase all information the bot knows about you.',
     handler: async function () {
         // Load properties from the command context.
         const { message } = this;
