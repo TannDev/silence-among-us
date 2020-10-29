@@ -4,6 +4,7 @@ const { Permissions, MessageEmbed } = require('discord.js');
 const { client, clientReady } = require('../discord-bot/discord-bot');
 const Database = require('./Database');
 const GuildConfig = require('./GuildConfig');
+const UserConfig = require('./UserConfig');
 const Player = require('./Player');
 const Room = require('./Room');
 
@@ -100,7 +101,7 @@ const ready = clientReady
                 restoredPlayers.forEach(player => lobby._players.add(player));
 
                 // Handle everyone still in the channel.
-                await Promise.all(voiceChannel.members.map(member => lobby.guildMemberConnected(member)));
+                await Promise.all(voiceChannel.members.map(member => lobby.guildMemberConnected(member, false)));
 
                 // Handle everyone who has left.
                 await Promise.all(restoredPlayers
@@ -339,6 +340,10 @@ class Lobby {
         this.scheduleInfoPost();
     }
 
+    async getGuildConfig() {
+        return GuildConfig.load(this.voiceChannel.guild.id);
+    }
+
     /**
      * Searches for players in the lobby.
      *
@@ -347,6 +352,7 @@ class Lobby {
      */
     getGuildMemberPlayer(guildMember) {
         // TODO Store a map of these, rather than a slow search.
+        if (!guildMember) return undefined;
         return this.players.find(player => player.matchesGuildMember(guildMember));
     }
 
@@ -357,13 +363,39 @@ class Lobby {
      */
     getAmongUsPlayer(name) {
         // TODO Store a map of these, rather than a slow search.
+        if (!name) return undefined;
         return this.players.find(player => player.matchesAmongUsName(name));
     }
 
-    async amongUsJoin({ name, color, dead }) {
+    async amongUsJoin({ name, color, dead }, allowAutoJoin = true) {
         let player = this.getAmongUsPlayer(name);
 
-        // If there's no player yet, add them.
+        // If there's no player yet, try to auto-join them.
+        if (!player && allowAutoJoin) {
+            // Look for a valid auto-join target.
+            const guildConfig = await this.getGuildConfig();
+            if (guildConfig.get('autojoin')) {
+                const spectators = this.players.filter(player => player.isSpectating);
+                const playerCache = await Promise.all(spectators.map(async player => {
+                    const { amongUsName } = await UserConfig.load(player.discordId);
+                    return { player, amongUsName };
+                }));
+
+                // Find all matching players.
+                const matchingPlayers = playerCache
+                    .filter(({ amongUsName }) => amongUsName === name)
+                    .map(({ player }) => player);
+
+                // Only auto-join if there's exactly one matching player.
+                if (matchingPlayers.length === 1) {
+                    player = matchingPlayers[0];
+                    this.emit(`Auto-join guild member ${player.discordId} as "${name}".`);
+                    player.joinGame(name);
+                }
+            }
+        }
+
+        // If there's still no player, create one.
         if (!player) {
             player = new Player(this);
             this._players.add(player);
@@ -443,8 +475,8 @@ class Lobby {
             return;
         }
 
-        // For everyone else, add/update them
-        await this.amongUsJoin({ name, color, dead, disconnected });
+        // For everyone else, add/update them (without auto-join)
+        await this.amongUsJoin({ name, color, dead, disconnected }, false);
     }
 
     async guildMemberJoin(guildMember, amongUsName) {
@@ -500,8 +532,8 @@ class Lobby {
         await player.leaveGame();
         await this.setPlayerForCurrentPhase(player);
 
-        // If the player was being tracked by automation, create a new one.
-        if (color) await this.amongUsJoin({ name, color, dead });
+        // If the player was being tracked by automation, create a new one. (Without auto-joining.)
+        if (color) await this.amongUsJoin({ name, color, dead }, false);
 
         // Schedule updates.
         this.scheduleInfoPost();
@@ -532,7 +564,7 @@ class Lobby {
         this.scheduleSave();
     }
 
-    async guildMemberConnected(guildMember) {
+    async guildMemberConnected(guildMember, allowAutoJoin = true) {
         // Ignore bots.
         if (guildMember.user.bot) return null;
 
@@ -541,6 +573,19 @@ class Lobby {
         if (!player) {
             player = new Player(this, guildMember);
             this._players.add(player);
+        }
+
+        // Auto-join, if enabled.
+        if (allowAutoJoin && player.isSpectating) {
+            const guildConfig = await this.getGuildConfig();
+            if (guildConfig.get('autojoin')) {
+                const { amongUsName } = await UserConfig.load(guildMember.id);
+                const existingPlayer = this.getAmongUsPlayer(amongUsName);
+                if (existingPlayer && !existingPlayer.discordId) {
+                    this.emit(`Auto-join guild member ${guildMember.id} as "${amongUsName}".`);
+                    return this.guildMemberJoin(guildMember, amongUsName);
+                }
+            }
         }
 
         // Make sure their voice state matches the current game phase.
@@ -715,7 +760,7 @@ class Lobby {
      */
     async scheduleInfoPost(options = {}) {
         // Get the guild command prefix for command hints.
-        const guildConfig = await GuildConfig.load(this.voiceChannel.guild.id);
+        const guildConfig = await this.getGuildConfig();
         const prefix = guildConfig.defaultPrefix;
 
         // Get room info.

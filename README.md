@@ -16,6 +16,7 @@ It's got a few features, so far:
 - Automatically controls the server-mute and server-deafen settings for players in the voice channel.
 - Automatically updates Discord nicknames to match in-game names, when possible. (And back!)
 - Keeps the text channel clean, by removing commands and old lobby updates.
+- Auto-joins returning players with the same in-game name. (No more `!sau join`!)
 
 If there's another feature you'd really want, you can [request it](https://github.com/tanndev/silence-among-us/issues/new)!
 
@@ -118,7 +119,9 @@ Currently, the only configurable option is `prefix`, but this list will grow wit
 _Note:_ Each deployed instance of the bot uses a different settings database.
 
 #### Prefix
-(**Default:** `!sau|!s`)
+- **Default:** `!sau|!s`
+- **Example:** `!sau config set prefix !sau|!s`
+
 The `prefix` option allows you to change which prefixes the bot listens to.
 
 If you want to set multiple options, you can separate prefixes with spaces or `|`.
@@ -130,6 +133,15 @@ If you want to run multiple instances of the bot, you'll need to set each of the
 1. Repeat this as many times as needed to make all the instances different
 
 To make test them, you can use `!sau-rollcall` in a channel with all of them, to make sure they have unique prefixes.
+
+#### Auto-join
+- **Default:** `true`
+- **Valid Options:** `on`, `off`, `true`, `false`
+- **Example:** `!sau config set autojoin on`
+
+With this feature enabled, discord users spectating an automated lobby will be automatically joined to the lobby if their saved in-game name matches an unlinked player from the capture. This auto-join is done whenever a user connects to the voice channel _and_ whenever the capture reports a new player has connected to the game. So users can connect to the game and discord in either order.
+
+Use `!sau config set autojoin off` to disable this feature for your server.
 
 ## Privacy
 **Note:** This section only applies to the Tanndev-hosted instances of the bot.

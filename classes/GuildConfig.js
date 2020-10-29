@@ -17,9 +17,17 @@ const SETTINGS = {
     prefix: {
         defaultValue: '!sau|!s',
         setter: (value) => {
-            const stripped = value.toLowerCase().trim().split(/[\s|]+/g,).join('|');
+            const stripped = value.toLowerCase().trim().split(/[\s|]+/g).join('|');
             if (!stripped) throw new Error("Can't set an empty command prefix.");
             return stripped;
+        }
+    },
+    autojoin: {
+        defaultValue: true,
+        setter: (value) => {
+            if (value.match(/^(:?1|t(?:rue)?|y(?:es)?|on)$/i)) return true;
+            if (value.match(/^(:?0|f(?:alse)?|n(?:O)?|off)$/i)) return false;
+            throw new Error("Autojoin must be either `on` or `off`");
         }
     }
 };
