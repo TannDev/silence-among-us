@@ -102,7 +102,7 @@ const ready = clientReady
                 restoredPlayers.forEach(player => lobby._players.add(player));
 
                 // Handle everyone still in the channel.
-                await Promise.all(voiceChannel.members.map(member => lobby.guildMemberConnected(member, false)));
+                await Promise.all(voiceChannel.members.map(member => lobby.guildMemberConnected(member)));
 
                 // Handle everyone who has left.
                 await Promise.all(restoredPlayers
@@ -429,7 +429,11 @@ class Lobby {
             await player.leaveGame();
 
             // If they're no longer in the voice channel, disconnect them entirely.
-            if (guildMember.voice?.channelID !== this.voiceChannelId) await this.guildMemberDisconnected(guildMember);
+            const { voice } = await guildMember.fetch();
+            if (voice?.channelID !== this.voiceChannel.id) await this.guildMemberDisconnected(guildMember);
+
+            // If The lobby ended because of that disconnect, return immediately.
+            if (this.stopped) return;
         }
 
         // Otherwise, just remove them from the game entirely.
@@ -475,7 +479,7 @@ class Lobby {
         }
 
         // For everyone else, add/update them (without auto-join)
-        await this.amongUsJoin({ name, color, dead, disconnected }, false);
+        await this.amongUsJoin({ name, color, dead, disconnected });
     }
 
     async guildMemberJoin(guildMember, amongUsName) {
@@ -857,7 +861,12 @@ class Lobby {
             }
             // Create a new timeout, to post an update after a short delay.
             this._nextInfoPostTimeout = setTimeout(async () => {
+                // If the lobby stopped since the timeout was scheduled, do nothing.
+                if (this.stopped) return;
+
+                // Clean up the last timeout.
                 delete this._nextInfoPostTimeout;
+
                 // Skip the post if it's the same as the last one.
                 if (this._lastInfoPosted && !options.force) {
                     const [lastEmbed] = this._lastInfoPosted.embeds;
@@ -883,6 +892,9 @@ class Lobby {
     }
 
     async stop(reason) {
+        // Giver straggling processes a way to check that this lobby was ended.
+        this.stopped = true;
+
         // Unlink the maps.
         lobbiesByVoiceChannel.delete(this.voiceChannel.id);
         lobbiesByConnectCode.delete(this.connectCode);
@@ -918,6 +930,10 @@ class Lobby {
     resetInactivityTimeout() {
         if (this._inactivityTimeout) clearTimeout(this._inactivityTimeout);
         this._inactivityTimeout = setTimeout(() => {
+            // If the lobby stopped since the timeout was scheduled, do nothing.
+            if (this.stopped) return;
+
+            // Terminate the lobby.
             this.emit('Terminating due to inactivity.');
             this.stop("Nothing has happened in an hour, so I ended the lobby.")
                 .catch(error => console.error(error));
@@ -937,6 +953,9 @@ class Lobby {
 
         // Create a new timeout, to save after a short delay.
         this._nextSaveTimeout = setTimeout(() => {
+            // If the lobby stopped since the timeout was scheduled, do nothing.
+            if (this.stopped) return;
+
             delete this._nextSaveTimeout;
             this.save();
         }, 1500);
