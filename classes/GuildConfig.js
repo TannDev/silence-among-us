@@ -12,6 +12,7 @@ const cache = new NodeCache({
     useClones: false // Store the original objects, for mutability.
 });
 
+const BOOLEAN_OPTIONS = ['on', 'off', 'true', 'false'];
 const BOOLEAN_TRUE_PATTERN = /^(:?1|t(?:rue)?|y(?:es)?|on)$/i;
 const BOOLEAN_FALSE_PATTERN = /^(:?0|f(?:alse)?|n(?:O)?|off)$/i;
 
@@ -19,6 +20,10 @@ const BOOLEAN_FALSE_PATTERN = /^(:?0|f(?:alse)?|n(?:O)?|off)$/i;
 const SETTINGS = {
     prefix: {
         defaultValue: '!sau|!s',
+        description: [
+            'The command prefix that the bot will respond to.',
+            'To set multiple options, separate prefixes with spaces or `|`.'
+        ].join(' '),
         setter: (value) => {
             const stripped = value.toLowerCase().trim().split(/[\s|]+/g).join('|');
             if (!stripped) throw new Error("Can't set an empty command prefix.");
@@ -27,6 +32,11 @@ const SETTINGS = {
     },
     autojoin: {
         defaultValue: true,
+        description: [
+            "When enabled, spectators will automatically join an automated lobby",
+            "if their saved in-game name matches an unlinked player from the capture."
+        ].join(' '),
+        options: BOOLEAN_OPTIONS,
         setter: (value) => {
             if (value.match(BOOLEAN_TRUE_PATTERN)) return true;
             if (value.match(BOOLEAN_FALSE_PATTERN)) return false;
@@ -35,6 +45,8 @@ const SETTINGS = {
     },
     speech: {
         defaultValue: true,
+        description: "When enabled, the bot will play spoken announcements into the voice channel.",
+        options: BOOLEAN_OPTIONS,
         setter: (value) => {
             if (value.match(BOOLEAN_TRUE_PATTERN)) return true;
             if (value.match(BOOLEAN_FALSE_PATTERN)) return false;
@@ -43,13 +55,17 @@ const SETTINGS = {
     }
 };
 
-function getSetting(key){
-    const setting = SETTINGS[key?.toLowerCase()]
+function getSetting(key) {
+    const setting = SETTINGS[key?.toLowerCase()];
     if (!setting) throw new Error("There's no such setting.");
     return setting;
 }
 
 class GuildConfig {
+    static get SETTINGS() {
+        return SETTINGS;
+    }
+
     static async load(guildId) {
         // Check the cache first.
         const cachedGuild = await cache.get(guildId);
@@ -76,6 +92,9 @@ class GuildConfig {
 
     get id() { return this._document._id; }
 
+    usesDefault(key) {
+        return !this._document.config.hasOwnProperty(key);
+    }
 
     get(key) {
         const { defaultValue, getter } = getSetting(key);
@@ -86,7 +105,7 @@ class GuildConfig {
     set(key, value) {
         const { setter, getter } = getSetting(key);
         const storedValue = setter ? setter(value) : value;
-        if (!deepEquals(storedValue, this._document.config[key])){
+        if (!deepEquals(storedValue, this._document.config[key])) {
             this._document.config[key] = storedValue;
             this.scheduleSave();
         }
