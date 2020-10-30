@@ -605,8 +605,7 @@ class Lobby {
 
         // End the lobby if there are no more connected players.
         if (this.players.every(player => !player.guildMember)) {
-            await this.stop();
-            this.textChannel.send("Everyone in Discord left, so I ended the lobby.");
+            await this.stop("Everyone in Discord left, so I ended the lobby.");
         }
         else {
             // Schedule updates.
@@ -782,7 +781,10 @@ class Lobby {
                 "The host is the game menu right now, but hang in there.",
                 "As soon as they create a new game, I'll post the room code!"
             ].join('\n');
-            const people = everyone.map(player => `:stopwatch: <@${player.discordId}>`).join('\n');
+            const people = everyone
+                .filter(player => player.discordId)
+                .map(player => `:stopwatch: <@${player.discordId}>`)
+                .join('\n');
 
             embed.setTitle(`Among Us - Getting ready in "${this.voiceChannel.name}"`)
                 .addField('Ready to play?', menuMessage)
@@ -875,16 +877,13 @@ class Lobby {
         if (messageToDelete?.deletable) await messageToDelete.delete();
     }
 
-    async stop() {
+    async stop(reason) {
         // Unlink the maps.
         lobbiesByVoiceChannel.delete(this.voiceChannel.id);
         lobbiesByConnectCode.delete(this.connectCode);
 
         // Reset all players.
         await Promise.all(this.players.map(player => player.leaveGame()));
-
-        // Delete the last lobby info.
-        await this.deleteLastLobbyInfo();
 
         // Leave the voice channel
         this.voiceChannel.leave();
@@ -896,6 +895,18 @@ class Lobby {
         // Clear the timeout.
         if (this._inactivityTimeout) clearTimeout(this._inactivityTimeout);
 
+        // Delete the last lobby info.
+        await this.deleteLastLobbyInfo();
+
+        // Create a lobby-over embed.
+        const { defaultPrefix } = await this.getGuildConfig();
+        const restartMessage = `If you want to play again, just start a new lobby with \`${defaultPrefix} start\`!`;
+        const embed = new MessageEmbed()
+            .setTitle(`Among Us - Ended lobby in "${this.voiceChannel.name}"`)
+            .setDescription(reason)
+            .addField('Thanks for playing!', restartMessage);
+        await this.textChannel.send(embed);
+
         this.emit("Destroyed");
     }
 
@@ -903,9 +914,8 @@ class Lobby {
         if (this._inactivityTimeout) clearTimeout(this._inactivityTimeout);
         this._inactivityTimeout = setTimeout(() => {
             this.emit('Terminating due to inactivity.');
-            this.stop().catch(error => console.error(error));
-            // TODO Use an embed for this. (Ideally inside stop.)
-            this.textChannel.send("Nothing has happened in an hour, so I ended the lobby.");
+            this.stop("Nothing has happened in an hour, so I ended the lobby.")
+                .catch(error => console.error(error));
         }, 1000 * 60 * 60);
     }
 
