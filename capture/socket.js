@@ -17,7 +17,7 @@ const STATE_MAP = {
     LOBBY: Lobby.PHASE.INTERMISSION,
     TASKS: Lobby.PHASE.WORKING,
     DISCUSSION: Lobby.PHASE.MEETING,
-    MENU: Lobby.PHASE.INTERMISSION
+    MENU: Lobby.PHASE.MENU
 }
 
 const STATES = [
@@ -92,12 +92,8 @@ io.on('connection', client => {
                 if (!lobby) return;
                 console.log(`SocketIO: State update for ${connectCode}: ${state}`);
 
-                // Handle the menu state differently, by deleting the room.
-                if (state === 'MENU') return lobby.resetToMenu();
-
-                // Otherwise, transition to the target phase.
-                if (lobby.phase === targetPhase) return;
-                await lobby.transition(targetPhase);
+                // Transition to the target phase.
+                if (lobby.phase !== targetPhase) await lobby.transition(targetPhase);
             })
             .catch(error => console.error(error));
     });

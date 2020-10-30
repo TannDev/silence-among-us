@@ -29,7 +29,8 @@ const requiredVoicePermissions = new Permissions(requiredVoicePermissionsFlags);
 const PHASE = {
     INTERMISSION: 'Intermission',
     WORKING: 'Working',
-    MEETING: 'Meeting'
+    MEETING: 'Meeting',
+    MENU: 'Menu'
 };
 
 const AUTOMATION = {
@@ -416,7 +417,9 @@ class Lobby {
 
     async amongUsLeave({ name }) {
         let player = this.getAmongUsPlayer(name);
-        if (!player) throw new Error(`AmongUs name "${name}" left, but isn't a player.`);
+
+        // Ignore players that are no longer tracked. (This happens frequently after starting a new game.)
+        if (!player) return;
 
         // If the player is on Discord, disconnect them.
         if (player.guildMember) {
@@ -621,7 +624,9 @@ class Lobby {
      * @returns {Promise<void>}
      */
     async guildMemberKill(...members) {
-        if (this.phase === PHASE.INTERMISSION) throw new Error("You can't kill people during intermission.");
+        if (this.phase === PHASE.INTERMISSION || this.phase === PHASE.MENU) {
+            throw new Error("You can't kill people outside games.");
+        }
 
         // Generate kill orders for each member passed in.
         const killOrders = members.map(async member => {
@@ -695,7 +700,17 @@ class Lobby {
         // Handle the transition.
         this.emit(`Transitioning to ${targetPhase}`);
         switch (targetPhase) {
-            // And perform the same transition as intermission.
+            case PHASE.MENU:
+                // Delete the room code.
+                this.room = null;
+
+                // Unmute all discord users and delete everyone else.
+                await Promise.all(this.players.map(async player => {
+                    if (player.guildMember) await player.setForIntermission();
+                    else this._players.delete(player);
+
+                }));
+                break;
             case PHASE.INTERMISSION:
                 await Promise.all(participants.map(player => player.setForIntermission()));
                 await Promise.all(spectators.map(player => player.setForIntermission()));
@@ -731,6 +746,7 @@ class Lobby {
      */
     async setPlayerForCurrentPhase(player) {
         switch (this.phase) {
+            case PHASE.MENU:
             case PHASE.INTERMISSION:
                 return player.setForIntermission();
             case PHASE.WORKING:
@@ -754,45 +770,76 @@ class Lobby {
         const guildConfig = await this.getGuildConfig();
         const prefix = guildConfig.defaultPrefix;
 
-        // Get room info.
-        const roomInfo = this.room ? `**${this.room.code}** (${this.room.region})` : 'Not Listed';
-
-        // Get and categorize players.
+        // Get and all the players.
         const everyone = this.players; // TODO Put them in some sorted order.
 
-        const players = everyone.filter(player => !player.isSpectating).map(player => {
-            const showStatus = options.spoil || this.phase !== PHASE.WORKING || player.isWaiting || player.isKnownDead;
-            const status = showStatus ? player.status : '_Working_';
-            const name = player.discordId ? `<@${player.discordId}>` : player.amongUsName;
+        // Create the embed.
+        const embed = new MessageEmbed();
 
-            const hasNameMismatch = player.discordName && player.discordName !== player.amongUsName;
-            const mismatchDisplay = hasNameMismatch ? ` (${player.amongUsName})` : '';
-            const color = player.amongUsColor ?? 'Untracked';
+        // Handle the menu phase differently.
+        if (this.phase === PHASE.MENU) {
+            const menuMessage = [
+                "The host is the game menu right now, but hang in there.",
+                "As soon as they create a new game, I'll post the room code!"
+            ].join('\n');
+            const people = everyone.map(player => `:stopwatch: <@${player.discordId}>`).join('\n');
 
-            const emoji = player.isWaiting ? ':stopwatch:' : (player.isKnownDead ? ':skull:' : ':heartpulse:');
-
-            return `${emoji} ${status}: ${name}${mismatchDisplay} (${color})`;
-        }).join('\n') || 'None';
-
-        const spectators = everyone.filter(player => player.isSpectating)
-            .map(player => `<@${player.discordId}>`).join('\n');
-
-        const embed = new MessageEmbed()
-            .setTitle(`Among Us - Playing in "${this.voiceChannel.name}"`)
-            .addField('Game Phase', this.phase, true)
-            .addField('Room Code', roomInfo, true)
-            .addField('Players', players)
-            .setFooter(`Capture Status: ${this.automation}`);
-
-        if (spectators) {
-            embed.addField('Spectators', spectators);
-            embed.addField('Join the Game!', [
-                `Use \`${prefix} join [In-Game Name]\` to join! (_Without the brackets._)`,
-                '',
-                'If you join a lobby, **the bot will store some data about you**.',
-                `You can use \`${prefix} privacy\` to review our privacy policy first.`
-            ].join('\n'));
+            embed.setTitle(`Among Us - Getting ready in "${this.voiceChannel.name}"`)
+                .addField('Ready to play?', menuMessage)
+                .addField('People Waiting', people);
         }
+
+        // Otherwise, treat the other phases similarly.
+        else {
+            const roomInfo = this.room ? `**${this.room.code}** (${this.room.region})` : 'Not Listed';
+
+            // Build a display for all the players.
+            const players = everyone.filter(player => !player.isSpectating);
+            const playerList = players.map(player => {
+                const name = player.discordId ? `<@${player.discordId}>` : player.amongUsName;
+                const hasNameMismatch = player.discordName && player.discordName !== player.amongUsName;
+                const mismatchDisplay = hasNameMismatch ? ` (${player.amongUsName})` : '';
+                const color = player.amongUsColor ?? 'Untracked';
+
+                if (this.phase === PHASE.INTERMISSION) {
+                    return `:stopwatch: ${name}${mismatchDisplay} (${color})`;
+                }
+                else {
+                    const showStatus = options.spoil || !player.isWorker || this.phase !== PHASE.WORKING;
+                    const status = showStatus ? player.status : '_Working_';
+                    const emoji = player.isWaiting ? ':stopwatch:' : (player.isKnownDead ? ':skull:' : ':heartpulse:');
+                    return `${emoji} ${status}: ${name}${mismatchDisplay} (${color})`;
+                }
+            }).join('\n') || 'None';
+
+            // Build a display for all the spectators.
+            const spectators = everyone.filter(player => player.isSpectating);
+            const spectatorList = spectators.map(player => `<@${player.discordId}>`).join('\n');
+
+            // Update the embed.
+            embed.setTitle(`Among Us - ${this.phase} in "${this.voiceChannel.name}"`)
+                .addField('Room Code', roomInfo)
+                .addField(`Players (${players.length})`, playerList, true);
+
+            // Add spectators and join info, if necessary.
+            if (spectatorList) {
+                const spectatorName = spectators.length > 1 ? 'Spectators' : `<@${spectators[0].discordId}>`;
+                embed.addField('Spectators', spectatorList, true);
+                embed.addField('Join the Game!', [
+                    `Hey, ${spectatorName}! You wanna get in on this?`,
+                    `Use \`${prefix} join <In-Game Name>\` to join! (_Without the brackets._)`,
+                    "\n**But you should know:**",
+                    "If you join a lobby, _the bot will store some data about you_.",
+                    `You can use \`${prefix} privacy\` to review our privacy policy first.`
+                ].join('\n'));
+            }
+
+        }
+
+        // Attach the capture status.
+        embed.setFooter(
+            `Capture Status: ${this.automation}`
+        );
 
         // If there's a text channel bound, send the embed to it.
         if (this.textChannel) {
@@ -850,20 +897,6 @@ class Lobby {
         if (this._inactivityTimeout) clearTimeout(this._inactivityTimeout);
 
         this.emit("Destroyed");
-    }
-
-    async resetToMenu() {
-        // Disconnect automation players.
-        this.players.forEach(player => {
-            // If there's no associated guild member, just remove the player.
-            if (!player.guildMember) return this._players.delete(player);
-        });
-
-        // Return to intermission, unless already there.
-        if (this.phase !== PHASE.INTERMISSION) await this.transition(PHASE.INTERMISSION);
-
-        // Delete the room code.
-        this.room = null;
     }
 
     resetInactivityTimeout() {
