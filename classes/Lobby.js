@@ -422,9 +422,14 @@ class Lobby {
         if (!player) return;
 
         // If the player is on Discord, disconnect them.
-        if (player.guildMember) {
+        const { guildMember } = player;
+        if (guildMember) {
             player.amongUsColor = null;
+            // Remove the player from the game, making them a spectator.
             await player.leaveGame();
+
+            // If they're no longer in the voice channel, disconnect them entirely.
+            if (guildMember.voice?.channelID !== this.voiceChannelId) await this.guildMemberDisconnected(guildMember);
         }
 
         // Otherwise, just remove them from the game entirely.
