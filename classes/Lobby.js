@@ -622,7 +622,7 @@ class Lobby {
         // End the lobby if there are no more connected players.
         const gameIsInMenu = this.phase === PHASE.MENU;
         const gameHasNoGuildMembers = this.players.every(player => !player.guildMember);
-        const channelIsEmpty = !this.voiceChannel.members.first();
+        const channelIsEmpty = this.voiceChannel.members.array().every(member => member?.user?.bot);
         if (gameHasNoGuildMembers || (channelIsEmpty && gameIsInMenu)) {
             await this.stop("All the Discord users left, so I ended the lobby.");
         }
@@ -930,7 +930,10 @@ class Lobby {
         this.stopped = true;
 
         // Announce to users, then leave the channel.
-        await this.speak('see-you-later', () => {this.voiceChannel.leave();});
+        if (this.voiceChannel.members.array().some(member => !member?.user?.bot)) {
+            await this.speak('see-you-later', () => {this.voiceChannel.leave();});
+        }
+        else this.voiceChannel.leave();
 
         // Unlink the maps.
         lobbiesByVoiceChannel.delete(this.voiceChannel.id);
