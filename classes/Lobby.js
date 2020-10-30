@@ -2,6 +2,7 @@ const chance = require('chance').Chance();
 const deepEqual = require('deep-equal');
 const { Permissions, MessageEmbed } = require('discord.js');
 const { client, clientReady } = require('../discord-bot/discord-bot');
+const sound = require('../sounds');
 const Database = require('./Database');
 const GuildConfig = require('./GuildConfig');
 const UserConfig = require('./UserConfig');
@@ -196,8 +197,8 @@ class Lobby {
     /**
      * Create a new lobby for a channel.
      *
-     * @param {string|Discord.VoiceChannel} voiceChannel - Voice channel, or the id of one.
-     * @param {string|Discord.TextChannel} textChannel - Guild text channel, or the id of one.
+     * @param {VoiceChannel} voiceChannel - Voice channel, or the id of one.
+     * @param {TextChannel} textChannel - Guild text channel, or the id of one.
      * @param {Room} [room] - A room to start with.
      * @returns {Promise<Lobby>}
      */
@@ -232,6 +233,9 @@ class Lobby {
 
         // Immediately save to the database.
         await lobby.save();
+
+        // Play a greeting.
+        await lobby.speak('murder-your-friends');
 
         // Return the new lobby.
         return lobby;
@@ -274,8 +278,7 @@ class Lobby {
         // TODO Make players properly serializable.
 
         // Store the room.
-        if (room) this.room = room;
-
+        if (room) this._document.room = new Room(room);
 
         // Update the connection status
         // TODO Verify that this doesn't need to be serialized.
@@ -325,9 +328,12 @@ class Lobby {
 
     get room() {return this._document.room;};
 
-    set room(room) {
+    async updateRoom(room) {
         if (!room) delete this._document.room;
-        else this._document.room = new Room(room);
+        else {
+            this._document.room = new Room(room);
+            if (this.phase !== PHASE.MENU) await this.speak('new-room-code');
+        }
         this.scheduleInfoPost();
         this.scheduleSave();
     }
@@ -337,12 +343,15 @@ class Lobby {
     }
 
     async updateAutomationConnection(connected) {
+        // Make an announcement the first time capture connects.
+        if (this.automation === AUTOMATION.WAITING && connected) await this.speak('capture-connected');
         this.automation = connected ? AUTOMATION.CONNECTED : AUTOMATION.DISCONNECTED;
         this.scheduleInfoPost();
     }
 
-    async getGuildConfig() {
-        return GuildConfig.load(this.voiceChannel.guild.id);
+    async getGuildConfig(key) {
+        const guildConfig = await GuildConfig.load(this.voiceChannel.guild.id);
+        return key ? guildConfig.get(key) : guildConfig;
     }
 
     /**
@@ -374,8 +383,7 @@ class Lobby {
         // If there's no player yet, try to auto-join them.
         if (!player && allowAutoJoin) {
             // Look for a valid auto-join target.
-            const guildConfig = await this.getGuildConfig();
-            if (guildConfig.get('autojoin')) {
+            if (await this.getGuildConfig('autojoin')) {
                 const spectators = this.players.filter(player => player.isSpectating);
                 const playerCache = await Promise.all(spectators.map(async player => {
                     const { amongUsName } = await UserConfig.load(player.discordId);
@@ -580,8 +588,7 @@ class Lobby {
 
         // Auto-join, if enabled.
         if (allowAutoJoin && player.isSpectating) {
-            const guildConfig = await this.getGuildConfig();
-            if (guildConfig.get('autojoin')) {
+            if (await this.getGuildConfig('autojoin')) {
                 const { amongUsName } = await UserConfig.load(guildMember.id);
                 const existingPlayer = this.getAmongUsPlayer(amongUsName);
                 if (existingPlayer && !existingPlayer.discordId) {
@@ -713,7 +720,7 @@ class Lobby {
         switch (targetPhase) {
             case PHASE.MENU:
                 // Delete the room code.
-                this.room = null;
+                await this.updateRoom(null);
 
                 // Unmute all discord users and delete everyone else.
                 await Promise.all(this.players.map(async player => {
@@ -894,9 +901,36 @@ class Lobby {
         if (messageToDelete?.deletable) await messageToDelete.delete();
     }
 
+    async speak(file, onFinish) {
+        // Do nothing if this guild has speech disabled.
+        if (!await this.getGuildConfig('speech')) return;
+
+        try {
+            // First, see if we need to join the channel.
+            if (!this.voiceConnection) {
+                const { voiceChannel } = this;
+                if (voiceChannel.joinable && voiceChannel.speakable) {
+                    this.voiceConnection = await voiceChannel.join();
+                    this.voiceConnection.setSpeaking('PRIORITY_SPEAKING');
+                }
+            }
+
+            // Then try to play.
+            const dispatcher = this.voiceConnection?.play(sound(file));
+
+            // Schedule the follow-on task.
+            if (dispatcher && onFinish) dispatcher.once('finish', onFinish);
+        } catch (error) {
+            console.error("Failed to play sound:", error);
+        }
+    }
+
     async stop(reason) {
         // Giver straggling processes a way to check that this lobby was ended.
         this.stopped = true;
+
+        // Announce to users, then leave the channel.
+        await this.speak('see-you-later', () => {this.voiceChannel.leave();});
 
         // Unlink the maps.
         lobbiesByVoiceChannel.delete(this.voiceChannel.id);
@@ -904,9 +938,6 @@ class Lobby {
 
         // Reset all players.
         await Promise.all(this.players.map(player => player.leaveGame()));
-
-        // Leave the voice channel
-        this.voiceChannel.leave();
 
         // Delete the lobby from the database.
         this.cancelScheduledSave();

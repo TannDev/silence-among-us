@@ -72,11 +72,8 @@ io.on('connection', client => {
                 console.log(`SocketIO: Lobby update for ${connectCode}: ${code}`);
 
                 // Update the room code.
-                if (code) lobby.room = new Room({code, region});
-                else delete lobby.room;
-
-                // Update the info-post.
-                lobby.scheduleInfoPost();
+                if (code) await lobby.updateRoom({ code, region });
+                else await lobby.updateRoom(null);
             })
             .catch(error => console.error(error));
     })

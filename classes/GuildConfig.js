@@ -12,6 +12,9 @@ const cache = new NodeCache({
     useClones: false // Store the original objects, for mutability.
 });
 
+const BOOLEAN_TRUE_PATTERN = /^(:?1|t(?:rue)?|y(?:es)?|on)$/i;
+const BOOLEAN_FALSE_PATTERN = /^(:?0|f(?:alse)?|n(?:O)?|off)$/i;
+
 // TODO Convert this to a map of class instances.
 const SETTINGS = {
     prefix: {
@@ -25,9 +28,17 @@ const SETTINGS = {
     autojoin: {
         defaultValue: true,
         setter: (value) => {
-            if (value.match(/^(:?1|t(?:rue)?|y(?:es)?|on)$/i)) return true;
-            if (value.match(/^(:?0|f(?:alse)?|n(?:O)?|off)$/i)) return false;
+            if (value.match(BOOLEAN_TRUE_PATTERN)) return true;
+            if (value.match(BOOLEAN_FALSE_PATTERN)) return false;
             throw new Error("Autojoin must be either `on` or `off`");
+        }
+    },
+    speech: {
+        defaultValue: true,
+        setter: (value) => {
+            if (value.match(BOOLEAN_TRUE_PATTERN)) return true;
+            if (value.match(BOOLEAN_FALSE_PATTERN)) return false;
+            throw new Error("Speech must be either `on` or `off`");
         }
     }
 };

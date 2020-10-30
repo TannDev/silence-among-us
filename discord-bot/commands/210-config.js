@@ -3,10 +3,10 @@ const GuildConfig = require('../../classes/GuildConfig');
 
 module.exports = new Command({
     aliases: ['config'],
-    options: '<get|set|reset> <setting> [new value | reset]',
+    options: '<get|set|reset> <setting> [new value]',
     description: 'Get or set configuration values. (See docs.)',
     category: 'more', // TODO Remove in lieu of custom docs.
-    handler: async function() {
+    handler: async function () {
         // Load properties from the command context.
         const { message, arguments, prefix, alias } = this;
         const guild = await this.requireGuild();

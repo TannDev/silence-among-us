@@ -37,8 +37,8 @@ module.exports = new Command({
             ...coreExamples,
             `\`${prefix} start abcdef eu\`: Start a new lobby with a room code.`,
             `\`${prefix} work\`: Start a new game, from intermission, or end a meeting.`,
-            `\`${prefix} kill me @tanner\`: Mark yourself and @tanner as dead. (Must be a real at-mention)`,
-            `\`${prefix} config set prefix !sau !s\`: Set the command prefix in this server to accept "!sau" or "!s"`
+            `\`${prefix} kill me @tanner\`: Mark yourself and @tanner as dead. (Must be a real at-mention.)`,
+            `\`${prefix} config set speech off\`: Stop the bot from speaking in the voice channel.`
         ];
         const examples = (displayMore ? moreExamples : coreExamples).join('\n\t- ');
 

@@ -114,8 +114,6 @@ The `config` command will let you get, set, and reset options:
 - `!sau config set <option> <value`: Set a new value for the option.
 - `!sau config reset <option>`: Reset the value of the option back to the default.
 
-Currently, the only configurable option is `prefix`, but this list will grow with future releases.
-
 _Note:_ Each deployed instance of the bot uses a different settings database.
 
 #### Prefix
@@ -137,11 +135,20 @@ To make test them, you can use `!sau-rollcall` in a channel with all of them, to
 #### Auto-join
 - **Default:** `true`
 - **Valid Options:** `on`, `off`, `true`, `false`
-- **Example:** `!sau config set autojoin on`
+- **Example:** `!sau config set autojoin off`
 
 With this feature enabled, discord users spectating an automated lobby will be automatically joined to the lobby if their saved in-game name matches an unlinked player from the capture. This auto-join is done whenever a user connects to the voice channel _and_ whenever the capture reports a new player has connected to the game. So users can connect to the game and discord in either order.
 
 Use `!sau config set autojoin off` to disable this feature for your server.
+
+#### Speech
+- **Default:** `true`
+- **Valid Options:** `on`, `off`, `true`, `false`
+- **Example:** `!sau config set speech off`
+
+With this feature enabled, the bot will play spoken announcements in the voice channel if it has the permissions to do so.
+
+Use `!sau config set speech off` to disable this feature for your server.
 
 ## Privacy
 **Note:** This section only applies to the Tanndev-hosted instances of the bot.

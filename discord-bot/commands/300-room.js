@@ -17,6 +17,6 @@ module.exports = new Command({
 
         // Update the room.
         if (code.match(/^unlist|remove|x$/i)) lobby.room = null;
-        else lobby.room = new Room({ code, region });
+        else await lobby.updateRoom({ code, region });
     }
 });
