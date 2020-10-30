@@ -12,7 +12,7 @@ plugins:
       prepareCmd: "VERSION=${nextRelease.version} ./.release-scripts/prepare.sh"
       publishCmd: "VERSION=${nextRelease.version} CHANNEL=${nextRelease.channel} ./.release-scripts/publish.sh"
   - - '@semantic-release/github'
-    - successComment: "This ${issue.pull_request ? 'pull request is included' : 'issue is resolved'} in version [${nextRelease.version}](${releases[0].url})"
+    - successComment: "This ${issue.pull_request ? 'pull request is included' : 'issue is resolved'} in version [${nextRelease.version}](${releases.find(release => /github/i.test(release.url)).url})"
       releasedLabels: [ "released<%= nextRelease.channel ? ` in ${nextRelease.channel}` : '' %>" ]
       assignees:
         - jftanner
