@@ -234,8 +234,8 @@ class Lobby {
         // Immediately save to the database.
         await lobby.save();
 
-        // Play a greeting.
-        await lobby.speak('murder-your-friends');
+        // Play a greeting, asynchronously.
+        lobby.speak('murder-your-friends').catch(() => {/* Do nothing */});
 
         // Return the new lobby.
         return lobby;
