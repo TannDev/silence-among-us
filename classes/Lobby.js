@@ -613,8 +613,11 @@ class Lobby {
         await player.editGuildMember(false, false, "Left Voice Channel", true);
 
         // End the lobby if there are no more connected players.
-        if (this.players.every(player => !player.guildMember)) {
-            await this.stop("Everyone in Discord left, so I ended the lobby.");
+        const gameIsInMenu = this.phase === PHASE.MENU;
+        const gameHasNoGuildMembers = this.players.every(player => !player.guildMember);
+        const channelIsEmpty = !this.voiceChannel.members.first();
+        if (gameHasNoGuildMembers || (channelIsEmpty && gameIsInMenu)) {
+            await this.stop("All the Discord users left, so I ended the lobby.");
         }
         else {
             // Schedule updates.
