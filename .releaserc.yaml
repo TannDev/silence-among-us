@@ -7,6 +7,7 @@ plugins:
     - preset: eslint
   - - '@semantic-release/release-notes-generator'
     - preset: eslint
+  - - '@semantic-release/npm'
   - - "@semantic-release/exec"
     - verifyConditionsCmd: "chmod +x ./.release-scripts/*.sh && ./.release-scripts/verify-conditions.sh"
       prepareCmd: "VERSION=${nextRelease.version} ./.release-scripts/prepare.sh"
