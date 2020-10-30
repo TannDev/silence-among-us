@@ -16,6 +16,7 @@ It's got a few features, so far:
 - Automatically controls the server-mute and server-deafen settings for players in the voice channel.
 - Automatically updates Discord nicknames to match in-game names, when possible. (And back!)
 - Keeps the text channel clean, by removing commands and old lobby updates.
+- Auto-joins returning players with the same in-game name. (No more `!sau join`!)
 
 If there's another feature you'd really want, you can [request it](https://github.com/tanndev/silence-among-us/issues/new)!
 
@@ -59,7 +60,7 @@ The bot supports [AmongUsCapture](https://github.com/denverquane/amonguscapture)
 
 When you start a new lobby, the bot will DM you a link to connect the capture app automatically.
 
-It'll also provide a link for downloading a compatible version directly from the bot's server, if you need it. You can also find the exe in the [downloads](/downloads) folder, if you prefer. (You can get it directly from [the official releases](https://github.com/denverquane/amonguscapture/releases) as well, but we can't guarantee compatibility with other versions.) 
+It'll also provide a link for downloading a compatible version from Github, if you need it. Or, you can get it directly from [the official releases](https://github.com/denverquane/amonguscapture/releases) instead. (Though we can't guarantee compatibility with other versions.) 
 
 ### Commands
 When added to your app, the discord bot will automatically listen for commands in every text channel it has access to.
@@ -113,12 +114,12 @@ The `config` command will let you get, set, and reset options:
 - `!sau config set <option> <value`: Set a new value for the option.
 - `!sau config reset <option>`: Reset the value of the option back to the default.
 
-Currently, the only configurable option is `prefix`, but this list will grow with future releases.
-
 _Note:_ Each deployed instance of the bot uses a different settings database.
 
 #### Prefix
-(**Default:** `!sau|!s`)
+- **Default:** `!sau|!s`
+- **Example:** `!sau config set prefix !sau|!s`
+
 The `prefix` option allows you to change which prefixes the bot listens to.
 
 If you want to set multiple options, you can separate prefixes with spaces or `|`.
@@ -130,6 +131,24 @@ If you want to run multiple instances of the bot, you'll need to set each of the
 1. Repeat this as many times as needed to make all the instances different
 
 To make test them, you can use `!sau-rollcall` in a channel with all of them, to make sure they have unique prefixes.
+
+#### Auto-join
+- **Default:** `true`
+- **Valid Options:** `on`, `off`, `true`, `false`
+- **Example:** `!sau config set autojoin off`
+
+With this feature enabled, discord users spectating an automated lobby will be automatically joined to the lobby if their saved in-game name matches an unlinked player from the capture. This auto-join is done whenever a user connects to the voice channel _and_ whenever the capture reports a new player has connected to the game. So users can connect to the game and discord in either order.
+
+Use `!sau config set autojoin off` to disable this feature for your server.
+
+#### Speech
+- **Default:** `true`
+- **Valid Options:** `on`, `off`, `true`, `false`
+- **Example:** `!sau config set speech off`
+
+With this feature enabled, the bot will play spoken announcements in the voice channel if it has the permissions to do so.
+
+Use `!sau config set speech off` to disable this feature for your server.
 
 ## Privacy
 **Note:** This section only applies to the Tanndev-hosted instances of the bot.

@@ -12,25 +12,60 @@ const cache = new NodeCache({
     useClones: false // Store the original objects, for mutability.
 });
 
+const BOOLEAN_OPTIONS = ['on', 'off', 'true', 'false'];
+const BOOLEAN_TRUE_PATTERN = /^(:?1|t(?:rue)?|y(?:es)?|on)$/i;
+const BOOLEAN_FALSE_PATTERN = /^(:?0|f(?:alse)?|n(?:O)?|off)$/i;
+
 // TODO Convert this to a map of class instances.
 const SETTINGS = {
     prefix: {
         defaultValue: '!sau|!s',
+        description: [
+            'The command prefix that the bot will respond to.',
+            'To set multiple options, separate prefixes with spaces or `|`.'
+        ].join(' '),
         setter: (value) => {
-            const stripped = value.toLowerCase().trim().split(/[\s|]+/g,).join('|');
+            const stripped = value.toLowerCase().trim().split(/[\s|]+/g).join('|');
             if (!stripped) throw new Error("Can't set an empty command prefix.");
             return stripped;
+        }
+    },
+    autojoin: {
+        defaultValue: true,
+        description: [
+            "When enabled, spectators will automatically join an automated lobby",
+            "if their saved in-game name matches an unlinked player from the capture."
+        ].join(' '),
+        options: BOOLEAN_OPTIONS,
+        setter: (value) => {
+            if (value.match(BOOLEAN_TRUE_PATTERN)) return true;
+            if (value.match(BOOLEAN_FALSE_PATTERN)) return false;
+            throw new Error("Autojoin must be either `on` or `off`");
+        }
+    },
+    speech: {
+        defaultValue: true,
+        description: "When enabled, the bot will play spoken announcements into the voice channel.",
+        options: BOOLEAN_OPTIONS,
+        setter: (value) => {
+            if (value.match(BOOLEAN_TRUE_PATTERN)) return true;
+            if (value.match(BOOLEAN_FALSE_PATTERN)) return false;
+            throw new Error("Speech must be either `on` or `off`");
         }
     }
 };
 
-function getSetting(key){
-    const setting = SETTINGS[key?.toLowerCase()]
+function getSetting(key) {
+    const setting = SETTINGS[key?.toLowerCase()];
     if (!setting) throw new Error("There's no such setting.");
     return setting;
 }
 
 class GuildConfig {
+    static get SETTINGS() {
+        return SETTINGS;
+    }
+
     static async load(guildId) {
         // Check the cache first.
         const cachedGuild = await cache.get(guildId);
@@ -57,6 +92,9 @@ class GuildConfig {
 
     get id() { return this._document._id; }
 
+    usesDefault(key) {
+        return !this._document.config.hasOwnProperty(key);
+    }
 
     get(key) {
         const { defaultValue, getter } = getSetting(key);
@@ -67,7 +105,7 @@ class GuildConfig {
     set(key, value) {
         const { setter, getter } = getSetting(key);
         const storedValue = setter ? setter(value) : value;
-        if (!deepEquals(storedValue, this._document.config[key])){
+        if (!deepEquals(storedValue, this._document.config[key])) {
             this._document.config[key] = storedValue;
             this.scheduleSave();
         }
@@ -77,26 +115,19 @@ class GuildConfig {
 
     reset(key) {
         const { defaultValue, getter } = getSetting(key);
-        if (this._document.config.hasOwnProperty(key)){
-            delete this._document.config[key]
+        if (this._document.config.hasOwnProperty(key)) {
+            delete this._document.config[key];
             this.scheduleSave();
         }
         return getter ? getter(defaultValue) : defaultValue;
     }
 
-    get commandPrefixes() {
-        return this._document.commandPrefixes ?? ['!sau', '!s'];
-    }
-
-    async updateCommandPrefixes(...params) {
-        const prefixes = params.map(param => param.trim());
-
-        // Skip the rest, if it's the same as what we already have.
-        if (deepEquals(prefixes, this.commandPrefixes)) return;
-
-        // Store the prefix and save.
-        this._document.commandPrefixes = prefixes;
-        await this.save();
+    /**
+     * A helper method for getting the default command prefix.
+     * @returns {string}
+     */
+    get defaultPrefix() {
+        return this.get('prefix').split(/\|/g)[0];
     }
 
     scheduleSave() {

@@ -17,7 +17,7 @@ const STATE_MAP = {
     LOBBY: Lobby.PHASE.INTERMISSION,
     TASKS: Lobby.PHASE.WORKING,
     DISCUSSION: Lobby.PHASE.MEETING,
-    MENU: Lobby.PHASE.INTERMISSION
+    MENU: Lobby.PHASE.MENU
 }
 
 const STATES = [
@@ -69,14 +69,11 @@ io.on('connection', client => {
         Lobby.findByConnectCode(connectCode)
             .then(async lobby => {
                 if (!lobby) return;
-                console.log(`SocketIO: Lobby update for ${connectCode}:`, code);
+                console.log(`SocketIO: Lobby update for ${connectCode}: ${code}`);
 
                 // Update the room code.
-                if (code) lobby.room = new Room({code, region});
-                else delete lobby.room;
-
-                // Update the info-post.
-                lobby.scheduleInfoPost();
+                if (code) await lobby.updateRoom({ code, region });
+                else await lobby.updateRoom(null);
             })
             .catch(error => console.error(error));
     })
@@ -90,14 +87,10 @@ io.on('connection', client => {
         Lobby.findByConnectCode(connectCode)
             .then(async lobby => {
                 if (!lobby) return;
-                console.log(`SocketIO: State update for ${connectCode}:`, state);
+                console.log(`SocketIO: State update for ${connectCode}: ${state}`);
 
-                // Handle the menu state differently, by deleting the room.
-                if (state === 'MENU') return lobby.resetToMenu();
-
-                // Otherwise, transition to the target phase.
-                if (lobby.phase === targetPhase) return;
-                await lobby.transition(targetPhase);
+                // Transition to the target phase.
+                if (lobby.phase !== targetPhase) await lobby.transition(targetPhase);
             })
             .catch(error => console.error(error));
     });
@@ -122,7 +115,7 @@ io.on('connection', client => {
                     dead: Boolean(IsDead),
                     disconnected: Boolean(Disconnected)
                 }
-                console.log(`SocketIO: Player update for ${connectCode}:`, JSON.stringify(update));
+                console.log(`SocketIO: Player update for ${connectCode}: ${JSON.stringify(update)}`);
                 
                 // Process the action
                 switch(update.action){

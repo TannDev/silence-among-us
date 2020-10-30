@@ -2,9 +2,12 @@ const chance = require('chance').Chance();
 const deepEqual = require('deep-equal');
 const { Permissions, MessageEmbed } = require('discord.js');
 const { client, clientReady } = require('../discord-bot/discord-bot');
+const sound = require('../sounds');
+const Database = require('./Database');
+const GuildConfig = require('./GuildConfig');
+const UserConfig = require('./UserConfig');
 const Player = require('./Player');
 const Room = require('./Room');
-const Database = require('./Database');
 
 const requiredTextPermissionsFlags = [
     'VIEW_CHANNEL',
@@ -27,7 +30,8 @@ const requiredVoicePermissions = new Permissions(requiredVoicePermissionsFlags);
 const PHASE = {
     INTERMISSION: 'Intermission',
     WORKING: 'Working',
-    MEETING: 'Meeting'
+    MEETING: 'Meeting',
+    MENU: 'Menu'
 };
 
 const AUTOMATION = {
@@ -59,7 +63,7 @@ const ready = clientReady
         // Resume all loaded lobbies.
         await Promise.all(documents.map(async document => {
             try {
-                const { voiceChannelId, textChannelId, players } = document;
+                const { voiceChannelId, textChannelId, players, infoPostId } = document;
 
                 // Get the voice and text channels.
                 const [voiceChannel, textChannel] = await Promise.all([
@@ -74,11 +78,15 @@ const ready = clientReady
                 // Alert users about the restart.
                 textChannel.send("Uh oh! It looks like I may have restarted. Give me a few seconds to catch up.");
 
+                // Delete the old info post, if any.
+                await textChannel.messages.fetch(infoPostId)
+                    .then(infoPost => infoPost.delete())
+                    .catch(() => null);
+
                 if (!voiceChannel) {
                     textChannel.send("Oops! Now I can't find your voice channel. You'll need to start a new lobby.");
                     throw new Error(`Failed to find voice channel ${voiceChannelId}. Cancelling lobby restoration.`);
                 }
-
 
                 // Restore the lobby.
                 const lobby = new Lobby(voiceChannel, textChannel, document);
@@ -103,7 +111,7 @@ const ready = clientReady
                     .map(player => lobby.guildMemberDisconnected(player.guildMember)));
 
                 // Post an update.
-                lobby.scheduleInfoPost();
+                lobby.scheduleInfoPost({ force: true });
                 lobby.scheduleSave();
 
             } catch (error) {
@@ -189,8 +197,8 @@ class Lobby {
     /**
      * Create a new lobby for a channel.
      *
-     * @param {string|Discord.VoiceChannel} voiceChannel - Voice channel, or the id of one.
-     * @param {string|Discord.TextChannel} textChannel - Guild text channel, or the id of one.
+     * @param {VoiceChannel} voiceChannel - Voice channel, or the id of one.
+     * @param {TextChannel} textChannel - Guild text channel, or the id of one.
      * @param {Room} [room] - A room to start with.
      * @returns {Promise<Lobby>}
      */
@@ -225,6 +233,9 @@ class Lobby {
 
         // Immediately save to the database.
         await lobby.save();
+
+        // Play a greeting, asynchronously.
+        lobby.speak('murder-your-friends').catch(() => {/* Do nothing */});
 
         // Return the new lobby.
         return lobby;
@@ -267,8 +278,7 @@ class Lobby {
         // TODO Make players properly serializable.
 
         // Store the room.
-        if (room) this.room = room;
-
+        if (room) this._document.room = new Room(room);
 
         // Update the connection status
         // TODO Verify that this doesn't need to be serialized.
@@ -318,9 +328,12 @@ class Lobby {
 
     get room() {return this._document.room;};
 
-    set room(room) {
+    async updateRoom(room) {
         if (!room) delete this._document.room;
-        else this._document.room = new Room(room);
+        else {
+            this._document.room = new Room(room);
+            if (this.phase !== PHASE.MENU) await this.speak('new-room-code');
+        }
         this.scheduleInfoPost();
         this.scheduleSave();
     }
@@ -330,8 +343,15 @@ class Lobby {
     }
 
     async updateAutomationConnection(connected) {
+        // Make an announcement the first time capture connects.
+        if (this.automation === AUTOMATION.WAITING && connected) await this.speak('capture-connected');
         this.automation = connected ? AUTOMATION.CONNECTED : AUTOMATION.DISCONNECTED;
         this.scheduleInfoPost();
+    }
+
+    async getGuildConfig(key) {
+        const guildConfig = await GuildConfig.load(this.voiceChannel.guild.id);
+        return key ? guildConfig.get(key) : guildConfig;
     }
 
     /**
@@ -342,6 +362,7 @@ class Lobby {
      */
     getGuildMemberPlayer(guildMember) {
         // TODO Store a map of these, rather than a slow search.
+        if (!guildMember) return undefined;
         return this.players.find(player => player.matchesGuildMember(guildMember));
     }
 
@@ -352,13 +373,38 @@ class Lobby {
      */
     getAmongUsPlayer(name) {
         // TODO Store a map of these, rather than a slow search.
+        if (!name) return undefined;
         return this.players.find(player => player.matchesAmongUsName(name));
     }
 
-    async amongUsJoin({ name, color, dead }) {
+    async amongUsJoin({ name, color, dead }, allowAutoJoin = true) {
         let player = this.getAmongUsPlayer(name);
 
-        // If there's no player yet, add them.
+        // If there's no player yet, try to auto-join them.
+        if (!player && allowAutoJoin) {
+            // Look for a valid auto-join target.
+            if (await this.getGuildConfig('autojoin')) {
+                const spectators = this.players.filter(player => player.isSpectating);
+                const playerCache = await Promise.all(spectators.map(async player => {
+                    const { amongUsName } = await UserConfig.load(player.discordId);
+                    return { player, amongUsName };
+                }));
+
+                // Find all matching players.
+                const matchingPlayers = playerCache
+                    .filter(({ amongUsName }) => amongUsName === name)
+                    .map(({ player }) => player);
+
+                // Only auto-join if there's exactly one matching player.
+                if (matchingPlayers.length === 1) {
+                    player = matchingPlayers[0];
+                    this.emit(`Auto-join guild member ${player.discordId} as "${name}".`);
+                    player.joinGame(name);
+                }
+            }
+        }
+
+        // If there's still no player, create one.
         if (!player) {
             player = new Player(this);
             this._players.add(player);
@@ -379,27 +425,29 @@ class Lobby {
 
     async amongUsLeave({ name }) {
         let player = this.getAmongUsPlayer(name);
-        if (!player) throw new Error(`AmongUs name "${name}" left, but isn't a player.`);
 
-        // If the player is on Discord, mark them as as killed since they're out of the round.
-        if (player.guildMember) {
-            // Remove the color.
+        // Ignore players that are no longer tracked. (This happens frequently after starting a new game.)
+        if (!player) return;
+
+        // If the player is on Discord, disconnect them.
+        const { guildMember } = player;
+        if (guildMember) {
             player.amongUsColor = null;
-            // TODO Find a better way to track if the player is auto-tracked.
+            // Remove the player from the game, making them a spectator.
+            await player.leaveGame();
 
-            // Outside of intermission, kill them.
-            if (this.phase !== PHASE.INTERMISSION) {
-                player.instantKill();
-                await this.setPlayerForCurrentPhase(player);
-                // TODO Make them a spectator?
-            }
+            // If they're no longer in the voice channel, disconnect them entirely.
+            const { voice } = await guildMember.fetch();
+            if (voice?.channelID !== this.voiceChannel.id) await this.guildMemberDisconnected(guildMember);
+
+            // If The lobby ended because of that disconnect, return immediately.
+            if (this.stopped) return;
         }
 
         // Otherwise, just remove them from the game entirely.
         else this._players.delete(player);
-        // TODO Keep dead players around until the end of the match.
 
-        // TODO Find a better way to identify disconnected players.
+        // TODO Keep dead players around until the end of the match.
 
         // Schedule updates.
         this.scheduleInfoPost();
@@ -438,7 +486,7 @@ class Lobby {
             return;
         }
 
-        // For everyone else, add/update them
+        // For everyone else, add/update them (without auto-join)
         await this.amongUsJoin({ name, color, dead, disconnected });
     }
 
@@ -495,8 +543,8 @@ class Lobby {
         await player.leaveGame();
         await this.setPlayerForCurrentPhase(player);
 
-        // If the player was being tracked by automation, create a new one.
-        if (color) await this.amongUsJoin({ name, color, dead });
+        // If the player was being tracked by automation, create a new one. (Without auto-joining.)
+        if (color) await this.amongUsJoin({ name, color, dead }, false);
 
         // Schedule updates.
         this.scheduleInfoPost();
@@ -527,7 +575,7 @@ class Lobby {
         this.scheduleSave();
     }
 
-    async guildMemberConnected(guildMember) {
+    async guildMemberConnected(guildMember, allowAutoJoin = true) {
         // Ignore bots.
         if (guildMember.user.bot) return null;
 
@@ -536,6 +584,18 @@ class Lobby {
         if (!player) {
             player = new Player(this, guildMember);
             this._players.add(player);
+        }
+
+        // Auto-join, if enabled.
+        if (allowAutoJoin && player.isSpectating) {
+            if (await this.getGuildConfig('autojoin')) {
+                const { amongUsName } = await UserConfig.load(guildMember.id);
+                const existingPlayer = this.getAmongUsPlayer(amongUsName);
+                if (existingPlayer && !existingPlayer.discordId) {
+                    this.emit(`Auto-join guild member ${guildMember.id} as "${amongUsName}".`);
+                    return this.guildMemberJoin(guildMember, amongUsName);
+                }
+            }
         }
 
         // Make sure their voice state matches the current game phase.
@@ -560,9 +620,11 @@ class Lobby {
         await player.editGuildMember(false, false, "Left Voice Channel", true);
 
         // End the lobby if there are no more connected players.
-        if (this.players.every(player => !player.guildMember)) {
-            await this.stop();
-            this.textChannel.send("Everyone in Discord left, so I ended the lobby.");
+        const gameIsInMenu = this.phase === PHASE.MENU;
+        const gameHasNoGuildMembers = this.players.every(player => !player.guildMember);
+        const channelIsEmpty = this.voiceChannel.members.array().every(member => member?.user?.bot);
+        if (gameHasNoGuildMembers || (channelIsEmpty && gameIsInMenu)) {
+            await this.stop("All the Discord users left, so I ended the lobby.");
         }
         else {
             // Schedule updates.
@@ -580,7 +642,9 @@ class Lobby {
      * @returns {Promise<void>}
      */
     async guildMemberKill(...members) {
-        if (this.phase === PHASE.INTERMISSION) throw new Error("You can't kill people during intermission.");
+        if (this.phase === PHASE.INTERMISSION || this.phase === PHASE.MENU) {
+            throw new Error("You can't kill people outside games.");
+        }
 
         // Generate kill orders for each member passed in.
         const killOrders = members.map(async member => {
@@ -642,16 +706,32 @@ class Lobby {
         this._document.phase = targetPhase;
 
         // Sort players into batches, to avoid cross-talk.
-        const everyone = this.players;
-        const workers = everyone.filter(player => player.isWorker);
-        const nonWorkers = everyone.filter(player => !player.isWorker);
+        const participants = [];
+        const workers = [];
+        const nonWorkers = [];
+        const spectators = [];
+        this.players.forEach(player => {
+            player.isSpectating ? spectators.push(player) : participants.push(player);
+            player.isWorker ? workers.push(player) : nonWorkers.push(player);
+        });
 
         // Handle the transition.
         this.emit(`Transitioning to ${targetPhase}`);
         switch (targetPhase) {
-            // And perform the same transition as intermission.
+            case PHASE.MENU:
+                // Delete the room code.
+                await this.updateRoom(null);
+
+                // Unmute all discord users and delete everyone else.
+                await Promise.all(this.players.map(async player => {
+                    if (player.guildMember) await player.setForIntermission();
+                    else this._players.delete(player);
+
+                }));
+                break;
             case PHASE.INTERMISSION:
-                await Promise.all(everyone.map(player => player.setForIntermission()));
+                await Promise.all(participants.map(player => player.setForIntermission()));
+                await Promise.all(spectators.map(player => player.setForIntermission()));
                 break;
 
             case PHASE.WORKING:
@@ -684,6 +764,7 @@ class Lobby {
      */
     async setPlayerForCurrentPhase(player) {
         switch (this.phase) {
+            case PHASE.MENU:
             case PHASE.INTERMISSION:
                 return player.setForIntermission();
             case PHASE.WORKING:
@@ -703,39 +784,83 @@ class Lobby {
      * @returns {module:"discord.js".MessageEmbed}
      */
     async scheduleInfoPost(options = {}) {
-        const roomInfo = this.room ? `**${this.room.code}** (${this.room.region})` : 'Not Listed';
+        // Get the guild command prefix for command hints.
+        const guildConfig = await this.getGuildConfig();
+        const prefix = guildConfig.defaultPrefix;
 
-        // Get and categorize players.
+        // Get and all the players.
         const everyone = this.players; // TODO Put them in some sorted order.
 
-        const players = everyone.filter(player => !player.isSpectating).map(player => {
-            const showStatus = options.spoil || this.phase !== PHASE.WORKING || player.isWaiting || player.isKnownDead;
-            const status = showStatus ? player.status : '_Working_';
-            const name = player.discordId ? `<@${player.discordId}>` : player.amongUsName;
+        // Create the embed.
+        const embed = new MessageEmbed();
 
-            const hasNameMismatch = player.discordName && player.discordName !== player.amongUsName;
-            const mismatchDisplay = hasNameMismatch ? ` (${player.amongUsName})` : '';
-            const color = player.amongUsColor ?? 'Untracked';
+        // Handle the menu phase differently.
+        if (this.phase === PHASE.MENU) {
+            const menuMessage = [
+                "The host is the game menu right now, but hang in there.",
+                "As soon as they create a new game, I'll post the room code!"
+            ].join('\n');
+            const people = everyone
+                .filter(player => player.discordId)
+                .map(player => `:stopwatch: <@${player.discordId}>`)
+                .join('\n');
 
-            const emoji = player.isWaiting ? ':stopwatch:' : (player.isKnownDead ? ':skull:' : ':heartpulse:');
-
-            return `${emoji} ${status}: ${name}${mismatchDisplay} (${color})`;
-        }).join('\n') || 'None';
-
-        const spectators = everyone.filter(player => player.isSpectating)
-            .map(player => `<@${player.discordId}>`).join('\n');
-
-        const embed = new MessageEmbed()
-            .setTitle(`Among Us - Playing in "${this.voiceChannel.name}"`)
-            .addField('Game Phase', this.phase, true)
-            .addField('Room Code', roomInfo, true)
-            .addField('Players', players)
-            .setFooter(`Capture Status: ${this.automation}`);
-
-        if (spectators) {
-            embed.addField('Spectators', spectators);
-            embed.addField('Join the Game!', 'Use `!sau join <In-Game Name>` to join!');
+            embed.setTitle(`Among Us - Getting ready in "${this.voiceChannel.name}"`)
+                .addField('Ready to play?', menuMessage)
+                .addField('People Waiting', people);
         }
+
+        // Otherwise, treat the other phases similarly.
+        else {
+            const roomInfo = this.room ? `**${this.room.code}** (${this.room.region})` : 'Not Listed';
+
+            // Build a display for all the players.
+            const players = everyone.filter(player => !player.isSpectating);
+            const playerList = players.map(player => {
+                const name = player.discordId ? `<@${player.discordId}>` : player.amongUsName;
+                const hasNameMismatch = player.discordName && player.discordName !== player.amongUsName;
+                const mismatchDisplay = hasNameMismatch ? ` (${player.amongUsName})` : '';
+                const color = player.amongUsColor ?? 'Untracked';
+
+                if (this.phase === PHASE.INTERMISSION) {
+                    return `:stopwatch: ${name}${mismatchDisplay} (${color})`;
+                }
+                else {
+                    const showStatus = options.spoil || !player.isWorker || this.phase !== PHASE.WORKING;
+                    const status = showStatus ? player.status : '_Working_';
+                    const emoji = player.isWaiting ? ':stopwatch:' : (player.isKnownDead ? ':skull:' : ':heartpulse:');
+                    return `${emoji} ${status}: ${name}${mismatchDisplay} (${color})`;
+                }
+            }).join('\n') || 'None';
+
+            // Build a display for all the spectators.
+            const spectators = everyone.filter(player => player.isSpectating);
+            const spectatorList = spectators.map(player => `<@${player.discordId}>`).join('\n');
+
+            // Update the embed.
+            embed.setTitle(`Among Us - ${this.phase} in "${this.voiceChannel.name}"`)
+                .addField('Room Code', roomInfo)
+                .addField(`Players (${players.length})`, playerList, true);
+
+            // Add spectators and join info, if necessary.
+            if (spectatorList) {
+                const spectatorName = spectators.length > 1 ? 'Spectators' : `<@${spectators[0].discordId}>`;
+                embed.addField('Spectators', spectatorList, true);
+                embed.addField('Join the Game!', [
+                    `Hey, ${spectatorName}! You wanna get in on this?`,
+                    `Use \`${prefix} join <In-Game Name>\` to join! (_Without the brackets._)`,
+                    "\n**But you should know:**",
+                    "If you join a lobby, _the bot will store some data about you_.",
+                    `You can use \`${prefix} privacy\` to review our privacy policy first.`
+                ].join('\n'));
+            }
+
+        }
+
+        // Attach the capture status.
+        embed.setFooter(
+            `Capture Status: ${this.automation}`
+        );
 
         // If there's a text channel bound, send the embed to it.
         if (this.textChannel) {
@@ -746,7 +871,12 @@ class Lobby {
             }
             // Create a new timeout, to post an update after a short delay.
             this._nextInfoPostTimeout = setTimeout(async () => {
+                // If the lobby stopped since the timeout was scheduled, do nothing.
+                if (this.stopped) return;
+
+                // Clean up the last timeout.
                 delete this._nextInfoPostTimeout;
+
                 // Skip the post if it's the same as the last one.
                 if (this._lastInfoPosted && !options.force) {
                     const [lastEmbed] = this._lastInfoPosted.embeds;
@@ -756,6 +886,8 @@ class Lobby {
                 const messageSent = await this.textChannel.send(embed);
                 await this.deleteLastLobbyInfo().catch(error => console.error(error));
                 this._lastInfoPosted = messageSent;
+                this._document.infoPostId = messageSent.id;
+                this.scheduleSave();
             }, 500);
         }
 
@@ -769,19 +901,46 @@ class Lobby {
         if (messageToDelete?.deletable) await messageToDelete.delete();
     }
 
-    async stop() {
+    async speak(file, onFinish) {
+        // Do nothing if this guild has speech disabled.
+        if (!await this.getGuildConfig('speech')) return;
+
+        try {
+            // First, see if we need to join the channel.
+            if (!this.voiceConnection) {
+                const { voiceChannel } = this;
+                if (voiceChannel.joinable && voiceChannel.speakable) {
+                    this.voiceConnection = await voiceChannel.join();
+                    this.voiceConnection.setSpeaking('PRIORITY_SPEAKING');
+                }
+            }
+
+            // Then try to play.
+            const dispatcher = this.voiceConnection?.play(sound(file));
+
+            // Schedule the follow-on task.
+            if (dispatcher && onFinish) dispatcher.once('finish', onFinish);
+        } catch (error) {
+            console.error("Failed to play sound:", error);
+        }
+    }
+
+    async stop(reason) {
+        // Giver straggling processes a way to check that this lobby was ended.
+        this.stopped = true;
+
+        // Announce to users, then leave the channel.
+        if (this.voiceChannel.members.array().some(member => !member?.user?.bot)) {
+            await this.speak('see-you-later', () => {this.voiceChannel.leave();});
+        }
+        else this.voiceChannel.leave();
+
         // Unlink the maps.
         lobbiesByVoiceChannel.delete(this.voiceChannel.id);
         lobbiesByConnectCode.delete(this.connectCode);
 
         // Reset all players.
         await Promise.all(this.players.map(player => player.leaveGame()));
-
-        // Delete the last lobby info.
-        await this.deleteLastLobbyInfo();
-
-        // Leave the voice channel
-        this.voiceChannel.leave();
 
         // Delete the lobby from the database.
         this.cancelScheduledSave();
@@ -790,30 +949,31 @@ class Lobby {
         // Clear the timeout.
         if (this._inactivityTimeout) clearTimeout(this._inactivityTimeout);
 
+        // Delete the last lobby info.
+        await this.deleteLastLobbyInfo();
+
+        // Create a lobby-over embed.
+        const { defaultPrefix } = await this.getGuildConfig();
+        const restartMessage = `If you want to play again, just start a new lobby with \`${defaultPrefix} start\`!`;
+        const embed = new MessageEmbed()
+            .setTitle(`Among Us - Ended lobby in "${this.voiceChannel.name}"`)
+            .setDescription(reason)
+            .addField('Thanks for playing!', restartMessage);
+        await this.textChannel.send(embed);
+
         this.emit("Destroyed");
-    }
-
-    async resetToMenu() {
-        // Disconnect automation players.
-        this.players.forEach(player => {
-            // If there's no associated guild member, just remove the player.
-            if (!player.guildMember) return this._players.delete(player);
-        });
-
-        // Return to intermission, unless already there.
-        if (this.phase !== PHASE.INTERMISSION) await this.transition(PHASE.INTERMISSION);
-
-        // Delete the room code.
-        this.room = null;
     }
 
     resetInactivityTimeout() {
         if (this._inactivityTimeout) clearTimeout(this._inactivityTimeout);
         this._inactivityTimeout = setTimeout(() => {
+            // If the lobby stopped since the timeout was scheduled, do nothing.
+            if (this.stopped) return;
+
+            // Terminate the lobby.
             this.emit('Terminating due to inactivity.');
-            this.stop().catch(error => console.error(error));
-            // TODO Use an embed for this. (Ideally inside stop.)
-            this.textChannel.send("Nothing has happened in an hour, so I ended the lobby.");
+            this.stop("Nothing has happened in an hour, so I ended the lobby.")
+                .catch(error => console.error(error));
         }, 1000 * 60 * 60);
     }
 
@@ -830,6 +990,9 @@ class Lobby {
 
         // Create a new timeout, to save after a short delay.
         this._nextSaveTimeout = setTimeout(() => {
+            // If the lobby stopped since the timeout was scheduled, do nothing.
+            if (this.stopped) return;
+
             delete this._nextSaveTimeout;
             this.save();
         }, 1500);

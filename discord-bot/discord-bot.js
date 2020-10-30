@@ -20,8 +20,8 @@ const client = new Client({
     },
     presence: {
         activity: {
-            name: '`!sau-rollcall`',
-            type: 'LISTENING'
+            name: process.env.CUSTOM_PRESENCE_NAME ?? '`!sau-rollcall`',
+            type: process.env.CUSTOM_PRESENCE_TYPE ?? 'LISTENING'
         }
     }
 });
@@ -92,7 +92,7 @@ client.on('voiceStateUpdate', (oldPresence, newPresence) => {
         ]);
 
         // If they've left an old lobby, disconnect them from that lobby. (Skip unmute if they're moving to a new one.)
-        if (oldLobby) await oldLobby.guildMemberDisconnected(member, Boolean(newLobby));
+        if (oldLobby) await oldLobby.guildMemberDisconnected(member);
 
         // If they're going into a new lobby, connect them to it.
         if (newLobby) await newLobby.guildMemberConnected(member);

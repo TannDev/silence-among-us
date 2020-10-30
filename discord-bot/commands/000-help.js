@@ -28,6 +28,7 @@ module.exports = new Command({
         // Generate the examples.
         // TODO Do this automatically from the command definitions.
         const coreExamples = [
+            "Here's come examples of how you might use the commands above:",
             `\`${prefix} start\`: Start a new lobby.`,
             `\`${prefix} join\`: Join the current lobby using your previously-saved in-game name.`,
             `\`${prefix} join Alice\`: Set your in-game name to "Alice" and join the current lobby.`
@@ -36,10 +37,10 @@ module.exports = new Command({
             ...coreExamples,
             `\`${prefix} start abcdef eu\`: Start a new lobby with a room code.`,
             `\`${prefix} work\`: Start a new game, from intermission, or end a meeting.`,
-            `\`${prefix} kill me @tanner\`: Mark yourself and @tanner as dead. (Must be a real at-mention)`,
-            `\`${prefix} config set prefix !sau !s\`: Set the command prefix in this server to accept "!sau" or "!s"`
+            `\`${prefix} kill me @tanner\`: Mark yourself and @tanner as dead. (Must be a real at-mention.)`,
+            `\`${prefix} config set speech off\`: Stop the bot from speaking in the voice channel.`
         ];
-        const examples = (displayMore ? moreExamples : coreExamples).map(example => `\t- ${example}`).join('\n');
+        const examples = (displayMore ? moreExamples : coreExamples).join('\n\t- ');
 
         // Generate the basic embed.
         const embed = new MessageEmbed()
@@ -62,6 +63,10 @@ module.exports = new Command({
         if (!displayMore) {
             embed.addField('Get More Help', `Use \`${prefix} ${alias} more\` for all the commands.`);
         }
+
+        // Add privacy information.
+        const privacy = `Use \`${prefix} privacy\` to review our privacy policy and related commands.`;
+        embed.addField('Privacy & Data Security', privacy);
 
         return message.channel.send(embed);
     }

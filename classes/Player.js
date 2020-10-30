@@ -4,7 +4,8 @@ const STATUS = {
     LIVING: 'Living',
     DYING: 'Dying',
     DEAD: 'Dead',
-    WAITING: 'Waiting'
+    WAITING: 'Waiting',
+    SPECTATING: 'Spectating'
 };
 
 const REASON_PREFIX = 'Silence Among Us'
@@ -17,14 +18,14 @@ class Player {
      * @param {Discord.GuildMember} [guildMember] - Guild member to attach.
      * @param {object} [document] - Existing settings, if loading from storage.
      */
-    constructor(lobby, guildMember, { ...document } = {status: STATUS.WAITING} ) {
+    constructor(lobby, guildMember, { ...document } = { status: STATUS.SPECTATING }) {
         this._document = document;
 
         // Attach the voice channel.
         this._voiceChannelId = lobby.voiceChannel.id;
 
         // Attach the guild member, if provided.
-        if (guildMember) this.linkGuildMember(guildMember)
+        if (guildMember) this.linkGuildMember(guildMember);
     }
 
     get status() {
@@ -89,14 +90,17 @@ class Player {
     }
 
     kill() {
+        if (this.isSpectating) throw new Error("Can't kill spectators.");
         if (this.status !== STATUS.DEAD) this.status = STATUS.DYING;
     }
 
     instantKill() {
+        if (this.isSpectating) throw new Error("Can't kill spectators.");
         this.status = STATUS.DEAD;
     }
 
     revive() {
+        if (this.isSpectating) throw new Error("Can't revive spectators.");
         this.status = STATUS.LIVING;
     }
 
@@ -109,14 +113,26 @@ class Player {
         return this.status === STATUS.LIVING || this.status === STATUS.DYING;
     }
 
-    get isKnownDead() {
-        return this.status === STATUS.DEAD;
-    }
-
+    /**
+     * Identifies whether this player is in a dead state. (Either "dying" or "dead").
+     * @returns {boolean}
+     */
     get isDeadOrDying() {
         return this.status === STATUS.DEAD || this.status === STATUS.DYING;
     }
 
+    /**
+     * Identifies whether this player is in the "dead" state, and known to the players.
+     * @returns {boolean}
+     */
+    get isKnownDead() {
+        return this.status === STATUS.DEAD;
+    }
+
+    /**
+     * Identifies whether this player is waiting.
+     * @returns {boolean}
+     */
     get isWaiting() {
         return this.status === STATUS.WAITING;
     }
@@ -126,7 +142,7 @@ class Player {
      * @returns {boolean}
      */
     get isSpectating() {
-        return !this.amongUsName;
+        return this.status === STATUS.SPECTATING;
     }
 
     joinGame(amongUsName) {
@@ -138,21 +154,24 @@ class Player {
     async leaveGame() {
         delete this._document.amongUsName;
         delete this._document.amongUsColor;
+        this.status = STATUS.SPECTATING;
         await this.editGuildMember(false, false, "Left Lobby");
     }
 
     async setForIntermission() {
-        // Everyone is alive again at intermission.
-        this.status = STATUS.LIVING;
+        // Everyone except for spectators is alive again at intermission.
+        if (!this.isSpectating) this.status = STATUS.LIVING;
 
-        // Spectators aren't modified
-        if (this.isSpectating) return;
+        // Everyone is unmuted.
         await this.editGuildMember(false, false, "Intermission");
     }
 
     async setForWorking() {
-        // Spectators aren't modified.
-        if (this.isSpectating) return;
+        // Spectators are muted.
+        if (this.isSpectating) {
+            await this.editGuildMember(true, true, "Spectator");
+            return;
+        }
 
         // Set audio permissions based on working status.
         this.isWorker
@@ -161,8 +180,11 @@ class Player {
     }
 
     async setForMeeting() {
-        // Spectators aren't modified
-        if (this.isSpectating) return;
+        // Spectators are muted.
+        if (this.isSpectating) {
+            await this.editGuildMember(true, true, "Spectator");
+            return;
+        }
 
         // At the start of meetings, dying players become dead.
         if (this.status === STATUS.DYING) this.status = STATUS.DEAD;
