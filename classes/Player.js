@@ -169,7 +169,7 @@ class Player {
     async setForWorking() {
         // Spectators are muted.
         if (this.isSpectating) {
-            await this.editGuildMember(true, true, "Spectator");
+            await this.editGuildMember(true, false, "Spectator");
             return;
         }
 
@@ -182,7 +182,7 @@ class Player {
     async setForMeeting() {
         // Spectators are muted.
         if (this.isSpectating) {
-            await this.editGuildMember(true, true, "Spectator");
+            await this.editGuildMember(true, false, "Spectator");
             return;
         }
 
