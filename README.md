@@ -25,16 +25,15 @@ Or, if you're a developer, maybe you can even [help us add it](CONTRIBUTING.md).
 ## Quickstart Guide
 If you want to just jump in and get started, you can use our early-access hosted bots!
 
-[Invite our verified bot](https://discord.com/api/oauth2/authorize?client_id=757007603149832203&permissions=150039808&scope=bot) to your discord server and get started right away! That authorization link contains all permissions that the bot needs (and some we expect it might need soon), though you may need to add the bot to any private channels you want to use for your games.
+**[Invite our verified bot](https://discord.com/api/oauth2/authorize?client_id=757007603149832203&permissions=150039808&scope=bot) to your discord server and get started right away!** That authorization link contains all permissions that the bot needs (and some we expect it might need soon), though you may need to add the bot to any private channels you want to use for your games.
 
 Once you've added the bot to your server, just type `!sau help` in any text channel with the bot to get started.
 
-Being in early-access does come with some rough edges, so there're some things we'd like you to keep in mind:
-- The bot might be a bit unstable, unreliable, or buggy. Help us improve it by [reporting issues](https://github.com/tanndev/silence-among-us/issues/new).
-- Our hosted instance might go offline unexpectedly and without warning when we do upgrades or maintenance. It _should_ recover where it left off.
+Here's a couple things we'd like you to keep in mind.
+- There are probably some bugs kicking around. Help us improve the bot by [reporting issues](https://github.com/tanndev/silence-among-us/issues/new).
 - Discord rate-limits bots on a per-guild basis. So if you try to run more than one game at a time in your server, the bot might be slow to respond. If you've got a server where you run lots of games, [let us know](https://github.com/tanndev/silence-among-us/issues/new).
 
-If none of that worries you, and you like to live on the cutting edge, you can [use the beta version](https://discord.com/api/oauth2/authorize?client_id=764878644341506068&permissions=149974272&scope=bot) instead. You could even use both at the same time, if you want. Though make sure you [configure the command prefix](#configure-prefix) of one of them to avoid conflicts. The beta will generally have the latest features, but at the cost of _much_ more frequent restarts and instability.
+If you like to live on the cutting edge, you can [use the beta version](https://discord.com/api/oauth2/authorize?client_id=764878644341506068&permissions=149974272&scope=bot) instead. You could even use both at the same time, if you want. (Though you'll need to [configure the command prefix](#configure-prefix) of one of them to avoid conflicts.) The beta will generally have the latest features, but at the cost of more frequent restarts and instability.
 
 Of course, you can always [host your own instance of the bot](/docs/host-your-own-bot.md) if you prefer.
 
