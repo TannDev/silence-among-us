@@ -101,7 +101,7 @@ Check out DigitalOcean's excellent [tutorial on the subject](https://www.digital
 There are several steps required to get this working (again, you should read that tutorial), but here's our configuration to serve as an example.
 
 (Of course, this is all just friendly advice. Ultimately, **you** are responsible for your own security.
-If you're not comfortable setting up a secure server, then you might want to consider [using ours](README.md#quickstart-guide) instead.)
+If you're not comfortable setting up a secure server, then you might want to consider [using ours](../README.md#quickstart-guide) instead.)
 
 ### NGINX Site
 ```
