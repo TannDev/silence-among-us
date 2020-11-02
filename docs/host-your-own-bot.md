@@ -70,17 +70,35 @@ _Note:_ Unfortunately, we can't provide support for users that are unfamiliar wi
 The easiest way to run the bot is by using Docker Desktop on your computer and connecting the capture app via localhost.
 
 However, if you want an always-on solution -- or to allow other people to connect the capture app -- then you'll need to host it somewhere else.
-We use a [DigitalOcean](https://www.digitalocean.com/) droplet for the [early-access bot](https://sau.tanndev.com) and will include some helpful setup guides for that later, if there's interest.
+
+### Digital Ocean
+We use a [DigitalOcean](https://www.digitalocean.com/) droplet for the [official bot](https://sau.tanndev.com), as well as the [public beta](https://sau-beta.tanndev.com). In fact, a $5/mo Ubuntu 20.04 droplet has proven to be perfectly sufficient for both instances together.
+
+If you want to use this platform, we recommend following these tutorials in order:
+- [Initial Server Setup](https://www.digitalocean.com/community/tutorials/initial-server-setup-with-ubuntu-20-04)
+- [Install Nginx](https://www.digitalocean.com/community/tutorials/how-to-install-nginx-on-ubuntu-20-04)
+- [Secure Nginx with Let's Encrypt](https://www.digitalocean.com/community/tutorials/how-to-secure-nginx-with-let-s-encrypt-on-ubuntu-20-04)
+
+Once you've done that, you can install Docker and deploy your bot.
+
+### Heroku
+_We don't have any suggestions for hosting on Heroku, nor do we know if it's possible._
+
+_If you get it working, feel free to contribute a guide for this section!_
 
 ## Securing Your Bot
 By default, the bot doesn't use any form of encryption, and communicates openly via HTTP.
 This isn't ideal if you're hosting your bot on the internet somewhere. You _definitely_ don't want your database exposed.
 
+> We **cannot** stress enough how important it is _not_ to have your database exposed on the internet.
+> The bot necessarily collects some user information during normal operation.
+> Failing to secure that data properly can land you in all kinds of legal trouble.
+
 We **strongly** recommend running your bot behind a secure proxy, such as NGINX.
 
 Check out DigitalOcean's excellent [tutorial on the subject](https://www.digitalocean.com/community/tutorials/how-to-secure-nginx-with-let-s-encrypt-on-ubuntu-20-04).
 
-There're several steps required to get this working (again, you should read that tutorial), but here's our configuration to serve as an example.
+There are several steps required to get this working (again, you should read that tutorial), but here's our configuration to serve as an example.
 
 (Of course, this is all just friendly advice. Ultimately, **you** are responsible for your own security.
 If you're not comfortable setting up a secure server, then you might want to consider [using ours](README.md#quickstart-guide) instead.)
