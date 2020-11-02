@@ -39,10 +39,10 @@ If none of that worries you, and you like to live on the cutting edge, you can [
 Of course, you can always [host your own instance of the bot](/docs/host-your-own-bot.md) if you prefer.
 
 ## Background
-This project was inspired by Denver Quane's excellent [AmongUsDiscord](https://github.com/denverquane/amongusdiscord)
+This project was inspired by Denver Quane's excellent [AutoMuteUs](https://github.com/denverquane/amongusdiscord)
 and leverages the same [AmongUsCapture](https://github.com/denverquane/amonguscapture) component to provide automation.
 
-In fact, there's a great deal of cooperation between the developers of Silence Among Us and AmongUsDiscord!
+In fact, there's a great deal of cooperation between the developers of Silence Among Us and AutoMuteUs!
 If one bot doesn't suit your needs, check out the other one.
 
 ## How It Works
