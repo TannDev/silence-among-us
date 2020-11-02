@@ -1,6 +1,8 @@
 const Command = require('.');
 const { MessageEmbed } = require('discord.js');
 
+const PRIVACY_URL = 'https://github.com/tanndev/silence-among-us/blob/main/docs/privacy.md#privacy-policy';
+
 module.exports = new Command({
     aliases: ['privacy'],
     description: "Review our privacy policy and related commands.",
@@ -17,7 +19,7 @@ module.exports = new Command({
             "- We only store the data we actually need to support the bot's features.",
             "- You can see what data we've collected at any time with the `show-me` command.",
             "- We'll never sell your information. To anyone. Ever.",
-            "\nYou can read our [privacy statement](https://github.com/tanndev/silence-among-us#privacy) for details."
+            `\nYou can read our [privacy policy](${PRIVACY_URL}) for details.`
         ].join('\n');
 
         const disclaimer = [
