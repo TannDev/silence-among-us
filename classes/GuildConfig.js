@@ -43,6 +43,21 @@ const SETTINGS = {
             throw new Error("Autojoin must be either `on` or `off`");
         }
     },
+    spectators: {
+        defaultValue: 'mute',
+        description: [
+            'Controls how spectators are handled during the game:',
+            '- `mute`: Mute spectators during the working and meeting phases.',
+            '- `ignore`: Ignore spectators entirely, never muting/unmuting them.',
+            '- `dynamic`: Treat spectators like dead players. (**Will** cause severe lag with 10+ users.)'
+        ].join('\n'),
+        options: ['mute', 'ignore', 'dynamic'],
+        setter: (value) => {
+            const parsed = value?.toLowerCase().trim();
+            if (!SETTINGS.spectators.options.includes(parsed)) throw new Error("That's not a valid option.");
+            return parsed;
+        }
+    },
     speech: {
         defaultValue: true,
         description: "When enabled, the bot will play spoken announcements into the voice channel.",
