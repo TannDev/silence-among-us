@@ -28,7 +28,7 @@ module.exports = new Command({
         const { connectCode } = lobby;
         const captureLink = `<aucapture://${host}/${connectCode}${secure ? '' : '?insecure'}>`;
         const captureRepo = 'https://github.com/denverquane/amonguscapture'
-        const captureVersion = `2.4.1`; // TODO Externalize this again.
+        const captureVersion = `2.4.2`; // TODO Externalize this again.
         const captureDownload = `${captureRepo}/releases/download/${captureVersion}/AmongUsCapture.exe`;
         const versionLink = `${captureVersion} ([Download](${captureDownload}))`;
 
