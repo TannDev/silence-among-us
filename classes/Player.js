@@ -21,8 +21,8 @@ class Player {
     constructor(lobby, guildMember, { ...document } = { status: STATUS.SPECTATING }) {
         this._document = document;
 
-        // Attach the voice channel.
-        this._voiceChannelId = lobby.voiceChannel.id;
+        // Attach the lobby..
+        this._lobby = lobby;
 
         // Attach the guild member, if provided.
         if (guildMember) this.linkGuildMember(guildMember);
@@ -154,8 +154,8 @@ class Player {
     async leaveGame() {
         delete this._document.amongUsName;
         delete this._document.amongUsColor;
-        this.status = STATUS.SPECTATING;
         await this.editGuildMember(false, false, "Left Lobby");
+        this.status = STATUS.SPECTATING;
     }
 
     async setForIntermission() {
@@ -167,9 +167,13 @@ class Player {
     }
 
     async setForWorking() {
-        // Spectators are muted.
+        // Spectators are handled according to the guild configuration.
         if (this.isSpectating) {
-            await this.editGuildMember(true, false, "Spectator");
+            // Spectators are only unmuted in the Working phase if the `dynamic` setting is used.
+            if (await this._lobby.getGuildConfig('spectators') === 'dynamic')
+                await this.editGuildMember(false, false, "Spectator (Dynamic)");
+            else
+                await this.editGuildMember(true, false, "Spectator");
             return;
         }
 
@@ -180,7 +184,7 @@ class Player {
     }
 
     async setForMeeting() {
-        // Spectators are muted.
+        // Spectators are muted or ignored.
         if (this.isSpectating) {
             await this.editGuildMember(true, false, "Spectator");
             return;
@@ -215,10 +219,19 @@ class Player {
         const { voice } = member;
 
         // Don't adjust voice settings for other channels.
-        const updateVoice = voice?.channelID && (anyChannel || voice.channelID === this._voiceChannelId);
+        let updateVoice = voice?.channelID && (anyChannel || voice.channelID === this._lobby.voiceChannel.id);
 
-        // Decide which nickname to use.
-        const nick = this.isSpectating ? this.originalNickname : this.amongUsName;
+        // By default, use the user's in-game name as their Discord nickname.
+        let nick = this.amongUsName;
+
+        // Handle spectators differently.
+        if (this.isSpectating) {
+            // Don't update spectators' voice state if set to `ignore`.
+            if (await this._lobby.getGuildConfig('spectators') === 'ignore') updateVoice = false;
+
+            // Reset their nickname to the original.
+            nick = this.originalNickname;
+        }
 
         // Build the patch object.
         const patch = {};
